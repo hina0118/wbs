@@ -7,4 +7,5 @@ export interface Task {
   color?: string;
   parentId?: string;
   collapsed?: boolean;
+  assignee?: string;
 }

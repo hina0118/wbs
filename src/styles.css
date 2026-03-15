@@ -102,6 +102,43 @@
   gap: 4px;
 }
 
+.gantt-col-assignee {
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid #dde3ed;
+  overflow: hidden;
+}
+
+.gantt-col-assignee--leaf {
+  cursor: pointer;
+}
+
+.assignee-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: #e8edf5;
+  color: #444;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 72px;
+  transition: background 0.2s;
+}
+
+.gantt-col-assignee--leaf:hover .assignee-badge {
+  background: #d0daf0;
+}
+
+.assignee-empty {
+  color: #ccc;
+  font-size: 0.75rem;
+}
+
 .gantt-col-progress {
   width: 70px;
   display: flex;
@@ -122,18 +159,47 @@
   border-bottom: 1px solid #eef1f6;
 }
 
-.gantt-row-parent {
-  background: #f7f9fc;
-  font-weight: 600;
+/* 深さ別スタイル */
+.gantt-row-depth-0 {
+  background: #f0f4fa;
+  font-weight: 700;
+  font-size: 0.88rem;
 }
 
-.gantt-row-child {
-  background: #fff;
+.gantt-row-depth-1 {
+  background: #f7f9fc;
+  font-weight: 600;
   font-size: 0.85rem;
+}
+
+.gantt-row-depth-2 {
+  background: #fff;
+  font-size: 0.83rem;
+}
+
+.gantt-row-depth-3 {
+  background: #fff;
+  font-size: 0.8rem;
+  color: #555;
 }
 
 .gantt-row:hover {
   background: #eef3ff;
+}
+
+.gantt-row--done {
+  opacity: 0.5;
+}
+
+.gantt-row--done:hover {
+  opacity: 0.7;
+}
+
+.gantt-leaf-icon {
+  color: #bbb;
+  font-size: 0.7rem;
+  margin-right: 2px;
+  flex-shrink: 0;
 }
 
 .gantt-collapse-btn {
@@ -283,6 +349,31 @@
   filter: brightness(1.1);
 }
 
+/* ── Bar drag handles ── */
+.gantt-bar-handle {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  z-index: 3;
+  cursor: ew-resize;
+  background: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.gantt-bar-handle--left {
+  left: 0;
+  border-radius: 4px 0 0 4px;
+}
+
+.gantt-bar-handle--right {
+  right: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.gantt-bar-handle:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
 .gantt-bar-progress {
   position: absolute;
   left: 0;
@@ -332,15 +423,78 @@
   color: #1a1a2e;
 }
 
-.gantt-modal label {
+.modal-label {
   font-size: 0.85rem;
   color: #555;
+}
+
+.modal-date-row {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-date-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #dde3ed;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.date-input:focus {
+  border-color: #4a90d9;
+}
+
+.assignee-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #dde3ed;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.assignee-input:focus {
+  border-color: #4a90d9;
 }
 
 .progress-slider {
   width: 100%;
   accent-color: #4a90d9;
   cursor: pointer;
+}
+
+.progress-bar-readonly {
+  width: 100%;
+  height: 8px;
+  background: #eef1f6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-readonly-fill {
+  height: 100%;
+  background: #aaa;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.modal-label-sub {
+  margin-left: 6px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #999;
 }
 
 .gantt-modal-actions {

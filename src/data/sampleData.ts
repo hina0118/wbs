@@ -1,6 +1,7 @@
 import { Task } from "../types/task";
 
 export const sampleTasks: Task[] = [
+  // ── 深さ0: フェーズ ──
   {
     id: "1",
     name: "フェーズ1: 要件定義",
@@ -9,6 +10,7 @@ export const sampleTasks: Task[] = [
     progress: 100,
     color: "#4A90D9",
   },
+  // 深さ1
   {
     id: "1-1",
     name: "ヒアリング",
@@ -17,6 +19,38 @@ export const sampleTasks: Task[] = [
     progress: 100,
     color: "#4A90D9",
     parentId: "1",
+  },
+  // 深さ2
+  {
+    id: "1-1-1",
+    name: "ステークホルダーへのヒアリング",
+    startDate: new Date(2026, 2, 1),
+    endDate: new Date(2026, 2, 4),
+    progress: 100,
+    color: "#4A90D9",
+    parentId: "1-1",
+    assignee: "田中",
+  },
+  // 深さ3
+  {
+    id: "1-1-1-1",
+    name: "議事録作成",
+    startDate: new Date(2026, 2, 4),
+    endDate: new Date(2026, 2, 4),
+    progress: 100,
+    color: "#4A90D9",
+    parentId: "1-1-1",
+    assignee: "佐藤",
+  },
+  {
+    id: "1-1-2",
+    name: "ユーザーインタビュー",
+    startDate: new Date(2026, 2, 5),
+    endDate: new Date(2026, 2, 7),
+    progress: 100,
+    color: "#4A90D9",
+    parentId: "1-1",
+    assignee: "田中",
   },
   {
     id: "1-2",
@@ -28,11 +62,33 @@ export const sampleTasks: Task[] = [
     parentId: "1",
   },
   {
+    id: "1-2-1",
+    name: "機能要件定義",
+    startDate: new Date(2026, 2, 8),
+    endDate: new Date(2026, 2, 11),
+    progress: 100,
+    color: "#4A90D9",
+    parentId: "1-2",
+    assignee: "田中",
+  },
+  {
+    id: "1-2-2",
+    name: "非機能要件定義",
+    startDate: new Date(2026, 2, 12),
+    endDate: new Date(2026, 2, 15),
+    progress: 100,
+    color: "#4A90D9",
+    parentId: "1-2",
+    assignee: "佐藤",
+  },
+
+  // ── 深さ0: フェーズ2 ──
+  {
     id: "2",
     name: "フェーズ2: 設計",
     startDate: new Date(2026, 2, 16),
     endDate: new Date(2026, 3, 10),
-    progress: 60,
+    progress: 55,
     color: "#7B68EE",
   },
   {
@@ -45,14 +101,56 @@ export const sampleTasks: Task[] = [
     parentId: "2",
   },
   {
+    id: "2-1-1",
+    name: "アーキテクチャ設計",
+    startDate: new Date(2026, 2, 16),
+    endDate: new Date(2026, 2, 20),
+    progress: 100,
+    color: "#7B68EE",
+    parentId: "2-1",
+    assignee: "鈴木",
+  },
+  {
+    id: "2-1-2",
+    name: "DB設計",
+    startDate: new Date(2026, 2, 21),
+    endDate: new Date(2026, 2, 25),
+    progress: 100,
+    color: "#7B68EE",
+    parentId: "2-1",
+    assignee: "高橋",
+  },
+  {
     id: "2-2",
     name: "詳細設計",
     startDate: new Date(2026, 2, 26),
     endDate: new Date(2026, 3, 10),
-    progress: 30,
+    progress: 20,
     color: "#7B68EE",
     parentId: "2",
   },
+  {
+    id: "2-2-1",
+    name: "API設計",
+    startDate: new Date(2026, 2, 26),
+    endDate: new Date(2026, 3, 3),
+    progress: 40,
+    color: "#7B68EE",
+    parentId: "2-2",
+    assignee: "鈴木",
+  },
+  {
+    id: "2-2-2",
+    name: "画面設計",
+    startDate: new Date(2026, 3, 4),
+    endDate: new Date(2026, 3, 10),
+    progress: 0,
+    color: "#7B68EE",
+    parentId: "2-2",
+    assignee: "高橋",
+  },
+
+  // ── 深さ0: フェーズ3 ──
   {
     id: "3",
     name: "フェーズ3: 開発",
@@ -71,6 +169,26 @@ export const sampleTasks: Task[] = [
     parentId: "3",
   },
   {
+    id: "3-1-1",
+    name: "認証機能",
+    startDate: new Date(2026, 3, 11),
+    endDate: new Date(2026, 3, 20),
+    progress: 0,
+    color: "#50C878",
+    parentId: "3-1",
+    assignee: "高橋",
+  },
+  {
+    id: "3-1-2",
+    name: "業務ロジック実装",
+    startDate: new Date(2026, 3, 21),
+    endDate: new Date(2026, 4, 15),
+    progress: 0,
+    color: "#50C878",
+    parentId: "3-1",
+    assignee: "高橋",
+  },
+  {
     id: "3-2",
     name: "フロントエンド開発",
     startDate: new Date(2026, 3, 20),
@@ -79,6 +197,28 @@ export const sampleTasks: Task[] = [
     color: "#50C878",
     parentId: "3",
   },
+  {
+    id: "3-2-1",
+    name: "画面実装",
+    startDate: new Date(2026, 3, 20),
+    endDate: new Date(2026, 4, 20),
+    progress: 0,
+    color: "#50C878",
+    parentId: "3-2",
+    assignee: "伊藤",
+  },
+  {
+    id: "3-2-2",
+    name: "結合・動作確認",
+    startDate: new Date(2026, 4, 21),
+    endDate: new Date(2026, 4, 31),
+    progress: 0,
+    color: "#50C878",
+    parentId: "3-2",
+    assignee: "伊藤",
+  },
+
+  // ── 深さ0: フェーズ4 ──
   {
     id: "4",
     name: "フェーズ4: テスト・リリース",
@@ -95,6 +235,7 @@ export const sampleTasks: Task[] = [
     progress: 0,
     color: "#FF7F50",
     parentId: "4",
+    assignee: "佐藤",
   },
   {
     id: "4-2",
@@ -104,5 +245,6 @@ export const sampleTasks: Task[] = [
     progress: 0,
     color: "#FF7F50",
     parentId: "4",
+    assignee: "田中",
   },
 ];
