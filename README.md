@@ -157,6 +157,85 @@ https://proxy.example.com:8443
 
 ---
 
+## 自動更新（GitHub Releases）
+
+アプリ起動から 3 秒後に GitHub Releases の `latest.json` を確認し、新バージョンがあればヘッダー直下に青いバナーを表示します。
+「今すぐ更新」をクリックするとダウンロード・インストールが実行され、完了後にアプリが自動再起動します。
+
+### 初回セットアップ手順
+
+#### 1. 署名キーペアの生成
+
+```bash
+npx tauri signer generate -w ~/.tauri/wbs.key
+```
+
+出力例：
+```
+Your public key: dW50cnVzdGVkIGNvbW1lbnQ...（長い文字列）
+Your private key was saved to ~/.tauri/wbs.key
+```
+
+#### 2. tauri.conf.json を更新
+
+`src-tauri/tauri.conf.json` の以下 2 か所をプロジェクトの情報に書き換えてください。
+
+| プレースホルダー | 設定値 |
+|----------------|--------|
+| `REPLACE_WITH_YOUR_PUBLIC_KEY` | 手順 1 で生成した公開鍵 |
+| `YOUR_GITHUB_USERNAME` | GitHub のユーザー名 |
+| `YOUR_REPO_NAME` | リポジトリ名 |
+
+```json
+"plugins": {
+  "updater": {
+    "pubkey": "ここに公開鍵",
+    "endpoints": [
+      "https://github.com/ユーザー名/リポジトリ名/releases/latest/download/latest.json"
+    ],
+    "dialog": false
+  }
+}
+```
+
+#### 3. GitHub Secrets の登録
+
+リポジトリの **Settings → Secrets and variables → Actions** に以下を追加します。
+
+| Secret 名 | 値 |
+|-----------|---|
+| `TAURI_SIGNING_PRIVATE_KEY` | `~/.tauri/wbs.key` の内容 |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 生成時に設定したパスワード（なければ空文字） |
+
+#### 4. リリースの発行
+
+```bash
+# バージョンを上げてタグをプッシュ
+# （tauri.conf.json と package.json の version も合わせて更新）
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+GitHub Actions が自動で以下を実行します：
+1. フロントエンドビルド（`npm run build`）
+2. Rust バックエンドビルド（`cargo build --release`）
+3. インストーラーへの署名
+4. GitHub Release（Draft）の作成
+5. インストーラー（`*_x64-setup.exe`）と `latest.json` のアップロード
+
+Draft を確認したら **Publish release** をクリックして公開します。
+
+### 更新時のプロキシについて
+
+| 接続方法 | 更新チェック | ダウンロード |
+|---------|------------|------------|
+| OS 環境変数（`HTTPS_PROXY` 等） | ✅ 自動適用 | ✅ 自動適用 |
+| アプリ内プロキシ設定（`proxy.json`） | ❌ 未対応 | ❌ 未対応 |
+
+> アプリ内プロキシ設定は祝日データ取得専用です。自動更新には OS のプロキシ環境変数を設定してください。
+
+---
+
 ## 開発・ビルド
 
 ```bash

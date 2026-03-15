@@ -21,6 +21,14 @@
       "csp": null
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc4Q0VBMzlFMjgzQzhDNjUKUldSbGpEd29ucVBPZUp1MUZiOE5ndjNWTnZBQXZnRTFhR24zS2dIZXpxZHlEbXFSYmI5Szk3cUcK",
+      "endpoints": [
+        "https://github.com/hina0118/wbs/releases/latest/download/latest.json"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

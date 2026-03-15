@@ -996,6 +996,112 @@
 }
 
 /* ハイライト */
+/* ══════════════════════════════════════════
+   自動更新バナー
+══════════════════════════════════════════ */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  background: #1e40af;
+  color: #fff;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.update-banner-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.update-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.update-banner-notes {
+  color: #bfdbfe;
+  font-size: 0.78rem;
+}
+
+.update-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.update-btn-install {
+  padding: 4px 14px;
+  background: #fff;
+  color: #1e40af;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.update-btn-install:hover {
+  background: #dbeafe;
+}
+
+.update-btn-dismiss {
+  padding: 4px 10px;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.update-btn-dismiss:hover {
+  background: rgba(255,255,255,0.28);
+}
+
+.update-banner-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.update-progress-label {
+  font-size: 0.78rem;
+  color: #bfdbfe;
+  white-space: nowrap;
+}
+
+.update-progress-bar {
+  width: 120px;
+  height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.update-progress-fill {
+  height: 100%;
+  background: #fff;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.update-banner-done {
+  font-size: 0.8rem;
+  color: #bfdbfe;
+}
+
+.update-banner-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #fca5a5;
+}
+
 .search-highlight {
   background: #fef08a;
   color: #78350f;

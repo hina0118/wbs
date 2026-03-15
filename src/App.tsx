@@ -3,6 +3,7 @@ import GanttChart        from "./components/GanttChart";
 import KanbanBoard       from "./components/KanbanBoard";
 import SearchView        from "./components/SearchView";
 import ProxySettingModal from "./components/ProxySettingModal";
+import UpdateNotifier    from "./components/UpdateNotifier";
 import { Task }       from "./types/task";
 import { loadTasks, saveTasks } from "./utils/taskStorage";
 import { loadHolidays }         from "./utils/holidays";
@@ -117,6 +118,8 @@ function App() {
       </header>
 
       {showProxy && <ProxySettingModal onClose={() => setShowProxy(false)} />}
+
+      <UpdateNotifier />
 
       <main className="app-main">
         {loading && <div className="app-loading">読み込み中...</div>}

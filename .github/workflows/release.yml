@@ -1,0 +1,77 @@
+name: Release
+
+# v で始まるタグをプッシュするとリリースビルドが走る
+# 例: git tag v1.0.0 && git push origin v1.0.0
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    permissions:
+      contents: write   # GitHub Release の作成・アップロードに必要
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            target:   x86_64-pc-windows-msvc
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      # ── ソースチェックアウト ──────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Node.js セットアップ ──────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      # ── Rust セットアップ ─────────────────────────────────
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      # Rust ビルドキャッシュ（CI 高速化）
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # ── npm 依存インストール ───────────────────────────────
+      - name: Install npm dependencies
+        run: npm ci
+
+      # ── Tauri ビルド & GitHub Release 作成 ───────────────
+      # tauri-action が以下を自動で行う:
+      #   1. npm run build (フロントエンド)
+      #   2. cargo build --release (Rust バックエンド)
+      #   3. インストーラーへの署名
+      #   4. GitHub Release (Draft) の作成
+      #   5. インストーラー + latest.json のアップロード
+      - name: Build and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN:                          ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY:             ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD:    ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName:       ${{ github.ref_name }}
+          releaseName:   "WBS 進捗管理 ${{ github.ref_name }}"
+          releaseBody:   |
+            ## 変更内容
+            このリリースの変更内容は [CHANGELOG](../../blob/main/CHANGELOG.md) を参照してください。
+
+            ## インストール
+            下記アセットから `*_x64-setup.exe` をダウンロードしてインストールしてください。
+            既にインストール済みの場合はアプリ起動時に自動更新通知が表示されます。
+          releaseDraft:  true
+          prerelease:    false
+          args:          --target ${{ matrix.target }}
