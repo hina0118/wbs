@@ -675,3 +675,217 @@
 .btn-save:hover {
   filter: brightness(0.92);
 }
+
+/* ══════════════════════════════════════════
+   ビュー切替ボタン（ヘッダー右端）
+══════════════════════════════════════════ */
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.view-toggle-btn {
+  padding: 5px 14px;
+  border: 1.5px solid #cbd5e1;
+  background: transparent;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.view-toggle-btn:hover {
+  border-color: #4a90d9;
+  color: #4a90d9;
+  background: #f0f7ff;
+}
+
+.view-toggle-btn--active {
+  background: #4a90d9;
+  border-color: #4a90d9;
+  color: #fff;
+}
+
+.view-toggle-btn--active:hover {
+  background: #2c6fad;
+  border-color: #2c6fad;
+  color: #fff;
+}
+
+/* ══════════════════════════════════════════
+   カンバンボード
+══════════════════════════════════════════ */
+.kanban-wrapper {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  height: calc(100vh - 80px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  align-items: flex-start;
+  box-sizing: border-box;
+}
+
+/* ── 列 ── */
+.kanban-column {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 300px;
+  height: 100%;
+  background: #f4f6fb;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: background 0.15s;
+}
+
+.kanban-column--dragover {
+  background: #e8f0fb;
+  outline: 2px dashed #4a90d9;
+}
+
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 10px;
+  border-top: 3px solid #ccc;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.kanban-col-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex: 1;
+}
+
+.kanban-col-count {
+  font-size: 0.8rem;
+  color: #888;
+  background: #eef1f6;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-weight: 600;
+}
+
+.kanban-add-btn {
+  padding: 2px 7px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #888;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.kanban-add-btn:hover {
+  color: #4a90d9;
+  border-color: #4a90d9;
+  background: #f0f7ff;
+}
+
+/* ── カード一覧 ── */
+.kanban-cards {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 10px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanban-empty {
+  text-align: center;
+  color: #bbb;
+  font-size: 0.82rem;
+  margin-top: 20px;
+}
+
+/* ── カード ── */
+.kanban-card {
+  background: #fff;
+  border-radius: 8px;
+  border-left: 4px solid #4a90d9;
+  padding: 10px 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  cursor: grab;
+  transition: box-shadow 0.15s, transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kanban-card:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.14);
+  transform: translateY(-1px);
+}
+
+.kanban-card--dragging {
+  opacity: 0.45;
+  cursor: grabbing;
+  transform: rotate(1.5deg);
+}
+
+.kanban-card-path {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kanban-card-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+/* ── 進捗バー ── */
+.kanban-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.kanban-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+/* ── フッター ── */
+.kanban-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.kanban-card-dates {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  flex: 1;
+}
+
+.kanban-card-assignee {
+  font-size: 0.72rem;
+  background: #e8f0fb;
+  color: #4a90d9;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.kanban-card-pct {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 600;
+}
