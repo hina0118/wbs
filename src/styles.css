@@ -288,6 +288,12 @@
   background: #f0f7ff;
 }
 
+.day-holiday {
+  color: #e53935;
+  background: #fff0f0;
+  font-weight: 700;
+}
+
 .day-month-start {
   border-left: 2px solid #aaa;
 }
@@ -315,6 +321,10 @@
 
 .grid-weekend {
   background: rgba(200, 210, 230, 0.18);
+}
+
+.grid-holiday {
+  background: rgba(229, 57, 53, 0.08);
 }
 
 .grid-month-start {

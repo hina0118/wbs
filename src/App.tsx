@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import GanttChart from "./components/GanttChart";
 import { sampleTasks } from "./data/sampleData";
 import { Task } from "./types/task";
+import { loadHolidays } from "./utils/holidays";
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>(sampleTasks);
+  const [holidays, setHolidays] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    loadHolidays().then(setHolidays);
+  }, []);
 
   const totalTasks = tasks.length;
   const avgProgress = Math.round(
@@ -24,7 +30,7 @@ function App() {
         </div>
       </header>
       <main className="app-main">
-        <GanttChart tasks={tasks} onTasksChange={setTasks} />
+        <GanttChart tasks={tasks} onTasksChange={setTasks} holidays={holidays} />
       </main>
     </div>
   );

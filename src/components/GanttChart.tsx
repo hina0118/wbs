@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Task } from "../types/task";
+import { toHolidayKey } from "../utils/holidays";
 
 interface Props {
   tasks: Task[];
   onTasksChange: (tasks: Task[]) => void;
+  holidays?: Map<string, string>;
 }
 
 const DAY_WIDTH = 28;
@@ -54,6 +56,8 @@ function formatMonth(d: Date): string {
 function isSunday(d: Date) { return d.getDay() === 0; }
 function isSaturday(d: Date) { return d.getDay() === 6; }
 function isMonthStart(d: Date) { return d.getDate() === 1; }
+function isHoliday(d: Date, holidays: Map<string, string>) { return holidays.has(toHolidayKey(d)); }
+function getHolidayName(d: Date, holidays: Map<string, string>) { return holidays.get(toHolidayKey(d)) ?? ""; }
 
 /** タスクの深さを返す（ルート = 0） */
 function getDepth(taskId: string, tasks: Task[]): number {
@@ -126,7 +130,7 @@ function barOpacity(depth: number): string {
   return opacities[Math.min(depth, opacities.length - 1)];
 }
 
-export default function GanttChart({ tasks, onTasksChange }: Props) {
+export default function GanttChart({ tasks, onTasksChange, holidays = new Map() }: Props) {
   const timelineRef = useRef<HTMLDivElement>(null);
   const leftScrollRef = useRef<HTMLDivElement>(null);
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
@@ -396,15 +400,20 @@ export default function GanttChart({ tasks, onTasksChange }: Props) {
             ))}
           </div>
           <div className="gantt-day-row">
-            {days.map((d, i) => (
-              <div
-                key={i}
-                className={`gantt-day-cell ${isSunday(d) ? "day-sunday" : ""} ${isSaturday(d) ? "day-saturday" : ""} ${isMonthStart(d) ? "day-month-start" : ""}`}
-                style={{ width: DAY_WIDTH }}
-              >
-                {formatDate(d)}
-              </div>
-            ))}
+            {days.map((d, i) => {
+              const holiday = isHoliday(d, holidays);
+              const holidayName = holiday ? getHolidayName(d, holidays) : "";
+              return (
+                <div
+                  key={i}
+                  className={`gantt-day-cell ${isSunday(d) ? "day-sunday" : ""} ${isSaturday(d) ? "day-saturday" : ""} ${isMonthStart(d) ? "day-month-start" : ""} ${holiday ? "day-holiday" : ""}`}
+                  style={{ width: DAY_WIDTH }}
+                  title={holidayName}
+                >
+                  {formatDate(d)}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -442,13 +451,18 @@ export default function GanttChart({ tasks, onTasksChange }: Props) {
                 className="gantt-timeline-row"
                 style={{ height: ROW_HEIGHT }}
               >
-                {days.map((d, i) => (
-                  <div
-                    key={i}
-                    className={`gantt-grid-cell ${isSunday(d) || isSaturday(d) ? "grid-weekend" : ""} ${isMonthStart(d) ? "grid-month-start" : ""}`}
-                    style={{ left: i * DAY_WIDTH, width: DAY_WIDTH }}
-                  />
-                ))}
+                {days.map((d, i) => {
+                  const holiday = isHoliday(d, holidays);
+                  const holidayName = holiday ? getHolidayName(d, holidays) : "";
+                  return (
+                    <div
+                      key={i}
+                      className={`gantt-grid-cell ${isSunday(d) || isSaturday(d) ? "grid-weekend" : ""} ${isMonthStart(d) ? "grid-month-start" : ""} ${holiday ? "grid-holiday" : ""}`}
+                      style={{ left: i * DAY_WIDTH, width: DAY_WIDTH }}
+                      title={holidayName}
+                    />
+                  );
+                })}
 
                 {todayOffset >= 0 && todayOffset < totalDays && (
                   <div
