@@ -1,5 +1,50 @@
 use std::fs;
 use tauri::Manager;
+use serde::{Deserialize, Serialize};
+
+// ── プロキシ設定 ──────────────────────────────────────────
+
+#[derive(Serialize, Deserialize, Default)]
+struct ProxyConfig {
+    url: Option<String>,
+}
+
+fn proxy_config_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map(|d| d.join("proxy.json"))
+        .map_err(|e| e.to_string())
+}
+
+/// 保存済みのプロキシ URL を返す（未設定なら None）
+#[tauri::command]
+fn get_proxy_setting(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let path = proxy_config_path(&app)?;
+    if !path.exists() {
+        return Ok(None);
+    }
+    let json = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let config: ProxyConfig = serde_json::from_str(&json).map_err(|e| e.to_string())?;
+    Ok(config.url)
+}
+
+/// プロキシ URL を保存する（None または空文字でプロキシ無効化）
+#[tauri::command]
+fn save_proxy_setting(app: tauri::AppHandle, url: Option<String>) -> Result<(), String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+
+    // 空文字は None として扱う
+    let url = url.filter(|s| !s.trim().is_empty());
+    let config = ProxyConfig { url };
+    let json = serde_json::to_string(&config).map_err(|e| e.to_string())?;
+    fs::write(dir.join("proxy.json"), json).map_err(|e| e.to_string())
+}
+
+// ── タスク保存 ────────────────────────────────────────────
 
 /// アプリデータディレクトリの tasks.json を読む。
 /// ファイルがなければ None を返す（初回起動 = デフォルトデータをフロントで使う）。
@@ -32,14 +77,22 @@ fn save_tasks(app: tauri::AppHandle, json: String) -> Result<(), String> {
     fs::write(dir.join("tasks.json"), json).map_err(|e| e.to_string())
 }
 
+// ── 祝日取得 ──────────────────────────────────────────────
+
 /// 内閣府が公開している祝日CSVを取得してパースする。
 /// URL: https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv
 /// エンコーディング: Shift-JIS
+/// 保存済みのプロキシ設定があれば自動適用する。
 #[tauri::command]
-async fn fetch_holidays() -> Result<Vec<(String, String)>, String> {
-    let url = "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv";
+async fn fetch_holidays(app: tauri::AppHandle) -> Result<Vec<(String, String)>, String> {
+    // プロキシ設定を読み込んで reqwest クライアントを構築
+    let proxy_url = get_proxy_setting(app)?;
+    let client = build_client(proxy_url)?;
 
-    let bytes = reqwest::get(url)
+    let url = "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv";
+    let bytes = client
+        .get(url)
+        .send()
         .await
         .map_err(|e| format!("取得エラー: {e}"))?
         .bytes()
@@ -64,6 +117,19 @@ async fn fetch_holidays() -> Result<Vec<(String, String)>, String> {
     Ok(holidays)
 }
 
+/// プロキシ URL を受け取って reqwest クライアントを構築する
+fn build_client(proxy_url: Option<String>) -> Result<reqwest::Client, String> {
+    let mut builder = reqwest::Client::builder();
+    if let Some(url) = proxy_url {
+        let proxy = reqwest::Proxy::all(&url)
+            .map_err(|e| format!("プロキシ設定エラー: {e}"))?;
+        builder = builder.proxy(proxy);
+    }
+    builder.build().map_err(|e| e.to_string())
+}
+
+// ── エントリポイント ──────────────────────────────────────
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -71,7 +137,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             load_saved_tasks,
             save_tasks,
-            fetch_holidays
+            fetch_holidays,
+            get_proxy_setting,
+            save_proxy_setting,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

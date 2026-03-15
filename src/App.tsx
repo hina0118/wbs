@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import GanttChart  from "./components/GanttChart";
-import KanbanBoard from "./components/KanbanBoard";
-import SearchView  from "./components/SearchView";
+import GanttChart        from "./components/GanttChart";
+import KanbanBoard       from "./components/KanbanBoard";
+import SearchView        from "./components/SearchView";
+import ProxySettingModal from "./components/ProxySettingModal";
 import { Task }       from "./types/task";
 import { loadTasks, saveTasks } from "./utils/taskStorage";
 import { loadHolidays }         from "./utils/holidays";
@@ -13,8 +14,9 @@ function App() {
   const [holidays, setHolidays] = useState<Map<string, string>>(new Map());
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("gantt");
+  const [viewMode,    setViewMode]    = useState<ViewMode>("gantt");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showProxy,   setShowProxy]   = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // 起動時: タスク（保存済み or デフォルト）と祝日を並列ロード
@@ -103,7 +105,18 @@ function App() {
             🗂 カンバン
           </button>
         </div>
+
+        {/* 設定ボタン */}
+        <button
+          className="app-settings-btn"
+          onClick={() => setShowProxy(true)}
+          title="プロキシ設定"
+        >
+          ⚙
+        </button>
       </header>
+
+      {showProxy && <ProxySettingModal onClose={() => setShowProxy(false)} />}
 
       <main className="app-main">
         {loading && <div className="app-loading">読み込み中...</div>}

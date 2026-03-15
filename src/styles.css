@@ -29,6 +29,23 @@
   flex-shrink: 0;
 }
 
+.app-settings-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.app-settings-btn:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
+
 .app-header h1 {
   font-size: 1.2rem;
   font-weight: 700;
@@ -568,6 +585,36 @@
 .gantt-modal h3 {
   font-size: 1rem;
   color: #1a1a2e;
+}
+
+/* プロキシ設定モーダル */
+.proxy-modal {
+  min-width: 420px;
+  max-width: 520px;
+}
+.proxy-modal-desc {
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+.proxy-modal-hint {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+.proxy-modal-hint code {
+  background: #f1f5f9;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+.proxy-modal-error {
+  font-size: 0.8rem;
+  color: #e53935;
+}
+.proxy-modal-ok {
+  font-size: 0.8rem;
+  color: #43a047;
+  font-weight: 600;
 }
 
 .modal-label {
