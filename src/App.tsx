@@ -1,21 +1,39 @@
 import { useEffect, useState } from "react";
 import GanttChart from "./components/GanttChart";
-import { sampleTasks } from "./data/sampleData";
 import { Task } from "./types/task";
+import { loadTasks, saveTasks } from "./utils/taskStorage";
 import { loadHolidays } from "./utils/holidays";
 
 function App() {
-  const [tasks, setTasks] = useState<Task[]>(sampleTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [holidays, setHolidays] = useState<Map<string, string>>(new Map());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // 起動時: タスク（保存済み or デフォルト）と祝日を並列ロード
   useEffect(() => {
-    loadHolidays().then(setHolidays);
+    Promise.all([loadTasks(), loadHolidays()])
+      .then(([loadedTasks, loadedHolidays]) => {
+        setTasks(loadedTasks);
+        setHolidays(loadedHolidays);
+      })
+      .catch((e) => setError(String(e)))
+      .finally(() => setLoading(false));
   }, []);
 
+  // タスク変更時: アプリデータに自動保存
+  function handleTasksChange(updated: Task[]) {
+    setTasks(updated);
+    saveTasks(updated).catch((e) =>
+      console.error("タスクの保存に失敗:", e)
+    );
+  }
+
   const totalTasks = tasks.length;
-  const avgProgress = Math.round(
-    tasks.reduce((sum, t) => sum + t.progress, 0) / totalTasks
-  );
+  const avgProgress =
+    totalTasks > 0
+      ? Math.round(tasks.reduce((sum, t) => sum + t.progress, 0) / totalTasks)
+      : 0;
 
   return (
     <div className="app">
@@ -30,7 +48,15 @@ function App() {
         </div>
       </header>
       <main className="app-main">
-        <GanttChart tasks={tasks} onTasksChange={setTasks} holidays={holidays} />
+        {loading && <div className="app-loading">読み込み中...</div>}
+        {error && <div className="app-error">エラー: {error}</div>}
+        {!loading && !error && (
+          <GanttChart
+            tasks={tasks}
+            onTasksChange={handleTasksChange}
+            holidays={holidays}
+          />
+        )}
       </main>
     </div>
   );

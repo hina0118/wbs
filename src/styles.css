@@ -64,6 +64,20 @@
   display: flex;
 }
 
+.app-loading,
+.app-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-size: 1rem;
+  color: #888;
+}
+
+.app-error {
+  color: #e53935;
+}
+
 /* ── Gantt wrapper ── */
 .gantt-wrapper {
   display: flex;
@@ -382,6 +396,129 @@
 
 .gantt-bar-handle:hover {
   background: rgba(255, 255, 255, 0.45);
+}
+
+/* ── タスク追加ボタン ── */
+.gantt-add-top-btn {
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #fff;
+  background: #4A90D9;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.gantt-add-top-btn:hover {
+  background: #2c6fad;
+}
+
+/* 各行のサブタスク追加ボタン（ホバー時のみ表示） */
+.gantt-add-subtask-btn {
+  display: none;
+  margin-left: 6px;
+  padding: 0 5px;
+  font-size: 0.75rem;
+  color: #888;
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+  line-height: 1.5;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.gantt-row:hover .gantt-add-subtask-btn {
+  display: inline-block;
+}
+
+.gantt-add-subtask-btn:hover {
+  color: #4A90D9;
+  border-color: #4A90D9;
+  background: #f0f7ff;
+}
+
+/* ── 削除ボタン ── */
+.btn-delete-outline {
+  padding: 6px 14px;
+  border: 1.5px solid #e53935;
+  background: transparent;
+  color: #e53935;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-right: auto;
+}
+
+.btn-delete-outline:hover {
+  background: #fdecea;
+}
+
+.btn-delete {
+  padding: 6px 14px;
+  background: #e53935;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-delete:hover {
+  background: #b71c1c;
+}
+
+.modal-delete-confirm {
+  font-size: 0.82rem;
+  color: #e53935;
+  margin-right: 8px;
+  flex: 1;
+}
+
+/* ── 追加モーダル固有 ── */
+.modal-parent-info {
+  font-size: 0.82rem;
+  color: #666;
+  margin-bottom: 12px;
+  padding: 4px 8px;
+  background: #f5f5f5;
+  border-left: 3px solid #4A90D9;
+  border-radius: 2px;
+}
+
+.modal-required {
+  color: #e53935;
+  font-size: 0.8rem;
+}
+
+.modal-color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.color-input {
+  width: 44px;
+  height: 30px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px;
+  background: none;
+}
+
+.modal-color-preview {
+  width: 60px;
+  height: 16px;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 .gantt-bar-progress {
