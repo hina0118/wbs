@@ -113,7 +113,6 @@ function App() {
           <SearchView
             tasks={tasks}
             query={searchQuery}
-            onTasksChange={handleTasksChange}
           />
         )}
         {!loading && !error && !isSearching && viewMode === "gantt" && (

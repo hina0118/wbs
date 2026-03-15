@@ -1,16 +1,15 @@
 /**
- * SearchView – タスク横断メモ検索ビュー
- * タスク名 / 担当者 / メモ を横断検索して結果一覧を表示する
+ * SearchView – タスク横断検索（リスト表示）
+ * メモにマッチしたタスクは自動展開して内容を表示する
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Task } from "../types/task";
-import TaskEditModal from "./TaskEditModal";
+import MemoWithToggle from "./MemoWithToggle";
 import { computeProgress, getAncestorNames } from "../utils/taskUtils";
 
 interface Props {
-  tasks:          Task[];
-  query:          string;
-  onTasksChange:  (tasks: Task[]) => void;
+  tasks:  Task[];
+  query:  string;
 }
 
 // ── ヘルパー ──────────────────────────────────────────────
@@ -19,7 +18,6 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** クエリに一致する部分を <mark> でハイライトした React ノード列を返す */
 function Highlight({ text, query }: { text: string; query: string }) {
   if (!query || !text) return <>{text}</>;
   const parts = text.split(new RegExp(`(${escapeRegex(query)})`, "gi"));
@@ -34,23 +32,20 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
-
 function formatDate(d: Date): string {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-/** タスクがクエリにマッチするか（大文字小文字無視）*/
 function matchesQuery(task: Task, q: string): boolean {
   const lower = q.toLowerCase();
   return (
     task.name.toLowerCase().includes(lower) ||
     (task.assignee ?? "").toLowerCase().includes(lower) ||
-    (task.memo ?? "").toLowerCase().includes(lower)
+    (task.memo    ?? "").toLowerCase().includes(lower)
   );
 }
 
-/** どのフィールドがマッチしたかを返す */
-function matchFields(task: Task, q: string): { name: boolean; assignee: boolean; memo: boolean } {
+function matchFields(task: Task, q: string) {
   const lower = q.toLowerCase();
   return {
     name:     task.name.toLowerCase().includes(lower),
@@ -61,9 +56,22 @@ function matchFields(task: Task, q: string): { name: boolean; assignee: boolean;
 
 // ── コンポーネント ────────────────────────────────────────
 
-export default function SearchView({ tasks, query, onTasksChange }: Props) {
-  const [editingId,     setEditingId]     = useState<string | null>(null);
+export default function SearchView({ tasks, query }: Props) {
   const [expandedMemos, setExpandedMemos] = useState<Set<string>>(new Set());
+
+  const q       = query.trim();
+  const results = q ? tasks.filter((t) => matchesQuery(t, q)) : [];
+
+  // クエリが変わったら、メモにマッチしたタスクを自動展開
+  useEffect(() => {
+    const lower = q.toLowerCase();
+    const autoIds = q
+      ? tasks
+          .filter((t) => (t.memo ?? "").toLowerCase().includes(lower))
+          .map((t) => t.id)
+      : [];
+    setExpandedMemos(new Set(autoIds));
+  }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleMemo(id: string, e: React.MouseEvent) {
     e.stopPropagation();
@@ -73,9 +81,6 @@ export default function SearchView({ tasks, query, onTasksChange }: Props) {
       return next;
     });
   }
-
-  const q       = query.trim();
-  const results = q ? tasks.filter((t) => matchesQuery(t, q)) : [];
 
   return (
     <div className="search-view">
@@ -90,8 +95,8 @@ export default function SearchView({ tasks, query, onTasksChange }: Props) {
         )}
       </div>
 
-      {/* 結果一覧 */}
-      <div className="search-results">
+      {/* 結果リスト */}
+      <div className="search-list">
         {results.length === 0 && q && (
           <div className="search-no-results">
             <span>🔍</span>
@@ -107,77 +112,61 @@ export default function SearchView({ tasks, query, onTasksChange }: Props) {
           return (
             <div
               key={task.id}
-              className="search-card"
+              className="search-item"
               style={{ borderLeftColor: task.color ?? "#4A90D9" }}
-              onClick={() => setEditingId(task.id)}
             >
-              {/* 祖先パス */}
-              {ancestors.length > 0 && (
-                <div className="search-card-path">{ancestors.join(" › ")}</div>
-              )}
-
-              {/* タスク名 */}
-              <div className="search-card-name">
-                <Highlight text={task.name} query={matched.name ? q : ""} />
-              </div>
-
-              {/* メタ情報行 */}
-              <div className="search-card-meta">
-                {task.assignee && (
-                  <span className="search-card-assignee">
-                    👤 <Highlight text={task.assignee} query={matched.assignee ? q : ""} />
-                  </span>
+              {/* パス + 進捗% */}
+              <div className="search-item-top">
+                {ancestors.length > 0 && (
+                  <span className="search-item-path">{ancestors.join(" › ")}</span>
                 )}
-                <span className="search-card-dates">
-                  📅 {formatDate(task.startDate)} – {formatDate(task.endDate)}
-                </span>
-                <span className="search-card-progress" style={{ color: task.color ?? "#4A90D9" }}>
+                <span className="search-item-pct" style={{ color: task.color ?? "#4A90D9" }}>
                   {progress}%
                 </span>
               </div>
 
+              {/* タスク名 */}
+              <div className="search-item-name">
+                <Highlight text={task.name} query={matched.name ? q : ""} />
+              </div>
+
               {/* 進捗バー */}
-              <div className="search-progress-bar">
+              <div className="search-item-bar">
                 <div
-                  className="search-progress-fill"
+                  className="search-item-bar-fill"
                   style={{ width: `${progress}%`, background: task.color ?? "#4A90D9" }}
                 />
               </div>
 
-              {/* メモ（展開トグル付き） */}
+              {/* メタ情報 */}
+              <div className="search-item-meta">
+                {task.assignee && (
+                  <span className="search-item-assignee">
+                    👤 <Highlight text={task.assignee} query={matched.assignee ? q : ""} />
+                  </span>
+                )}
+                <span className="search-item-dates">
+                  📅 {formatDate(task.startDate)} – {formatDate(task.endDate)}
+                </span>
+                {matched.memo && task.memo && (
+                  <span className="search-item-memo-badge">📝 メモに一致</span>
+                )}
+              </div>
+
+              {/* メモ（Markdown・展開トグル） */}
               {task.memo && (
-                <div className={`search-card-memo${matched.memo ? "" : " search-card-memo--plain"}`}>
-                  {expandedMemos.has(task.id) && (
-                    matched.memo
-                      ? <Highlight text={task.memo} query={q} />
-                      : task.memo
-                  )}
-                  <button
-                    className="memo-toggle-btn memo-toggle-btn--search"
-                    onClick={(e) => toggleMemo(task.id, e)}
-                  >
-                    {expandedMemos.has(task.id) ? "▲ 閉じる" : "▼ メモを見る"}
-                  </button>
-                </div>
+                <MemoWithToggle
+                  memo={task.memo}
+                  expanded={expandedMemos.has(task.id)}
+                  onToggle={(e) => toggleMemo(task.id, e)}
+                  className="search-item-memo"
+                />
               )}
             </div>
           );
         })}
       </div>
 
-      {/* 編集モーダル */}
-      {editingId !== null && (() => {
-        const task = tasks.find((t) => t.id === editingId)!;
-        return (
-          <TaskEditModal
-            task={task}
-            tasks={tasks}
-            onSave={(updated)   => { onTasksChange(updated); setEditingId(null); }}
-            onDelete={(updated) => { onTasksChange(updated); setEditingId(null); }}
-            onClose={() => setEditingId(null)}
-          />
-        );
-      })()}
     </div>
   );
 }
