@@ -8,4 +8,5 @@ export interface Task {
   parentId?: string;
   collapsed?: boolean;
   assignee?: string;
+  memo?: string;
 }

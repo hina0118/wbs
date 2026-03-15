@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Task } from "../types/task";
+import MemoWithToggle from "./MemoWithToggle";
+import TaskEditModal from "./TaskEditModal";
 
 interface Props {
   tasks: Task[];
@@ -19,20 +21,6 @@ function computeProgress(taskId: string, tasks: Task[]): number {
   return Math.round(avg);
 }
 
-function propagateDates(changedId: string, tasks: Task[]): Task[] {
-  const task = tasks.find((t) => t.id === changedId);
-  if (!task?.parentId) return tasks;
-  const siblings  = tasks.filter((t) => t.parentId === task.parentId);
-  const newStart  = siblings.reduce((m, t) => (t.startDate < m ? t.startDate : m), siblings[0].startDate);
-  const newEnd    = siblings.reduce((m, t) => (t.endDate   > m ? t.endDate   : m), siblings[0].endDate);
-  const updated   = tasks.map((t) => t.id === task.parentId ? { ...t, startDate: newStart, endDate: newEnd } : t);
-  return propagateDates(task.parentId, updated);
-}
-
-function getAllDescendantIds(taskId: string, tasks: Task[]): string[] {
-  const children = tasks.filter((t) => t.parentId === taskId);
-  return [taskId, ...children.flatMap((c) => getAllDescendantIds(c.id, tasks))];
-}
 
 /** ルートから対象タスクまでの祖先名を配列で返す（自身は含まない） */
 function getAncestorNames(taskId: string, tasks: Task[]): string[] {
@@ -106,14 +94,19 @@ interface AddState {
 // ── コンポーネント ────────────────────────────────────────
 
 export default function KanbanBoard({ tasks, onTasksChange }: Props) {
-  const [editingId,        setEditingId]        = useState<string | null>(null);
-  const [editingProgress,  setEditingProgress]  = useState(0);
-  const [editingAssignee,  setEditingAssignee]  = useState("");
-  const [editingStartDate, setEditingStartDate] = useState("");
-  const [editingEndDate,   setEditingEndDate]   = useState("");
-  const [confirmDelete,    setConfirmDelete]    = useState(false);
+  const [editingId,    setEditingId]    = useState<string | null>(null);
+  const [expandedMemos, setExpandedMemos] = useState<Set<string>>(new Set());
 
   const [addState, setAddState] = useState<AddState | null>(null);
+
+  function toggleMemo(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setExpandedMemos((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<Column["id"] | null>(null);
@@ -123,34 +116,6 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
   function openEdit(task: Task) {
     setEditingId(task.id);
-    setEditingProgress(task.progress);
-    setEditingAssignee(task.assignee ?? "");
-    setEditingStartDate(toInputDate(task.startDate));
-    setEditingEndDate(toInputDate(task.endDate));
-    setConfirmDelete(false);
-  }
-
-  function saveEdit() {
-    if (!editingId) return;
-    const newStart = new Date(editingStartDate);
-    const newEnd   = new Date(editingEndDate);
-    if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
-
-    const updated = tasks.map((t) =>
-      t.id === editingId
-        ? { ...t, progress: editingProgress, assignee: editingAssignee || undefined, startDate: newStart, endDate: newEnd }
-        : t
-    );
-    onTasksChange(propagateDates(editingId, updated));
-    setEditingId(null);
-  }
-
-  function deleteTask(id: string) {
-    const removeIds = new Set(getAllDescendantIds(id, tasks));
-    const task      = tasks.find((t) => t.id === id);
-    const filtered  = tasks.filter((t) => !removeIds.has(t.id));
-    onTasksChange(task?.parentId ? propagateDates(task.parentId, filtered) : filtered);
-    setEditingId(null);
   }
 
   function openAdd(columnId: Column["id"]) {
@@ -264,6 +229,16 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
                       />
                     </div>
 
+                    {/* メモプレビュー（Markdown・展開可） */}
+                    {task.memo && (
+                      <MemoWithToggle
+                        memo={task.memo}
+                        expanded={expandedMemos.has(task.id)}
+                        onToggle={(e) => toggleMemo(task.id, e)}
+                        className="kanban-card-memo"
+                      />
+                    )}
+
                     {/* フッター */}
                     <div className="kanban-card-footer">
                       <span className="kanban-card-dates">
@@ -288,49 +263,15 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
       {/* ── 編集モーダル ── */}
       {editingId !== null && (() => {
-        const task      = tasks.find((t) => t.id === editingId)!;
-        const hasChildren = tasks.some((t) => t.parentId === task.id);
+        const task = tasks.find((t) => t.id === editingId)!;
         return (
-          <div className="gantt-modal-overlay" onClick={saveEdit}>
-            <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
-              <h3>{task.name}</h3>
-
-              <div className="modal-date-row">
-                <div className="modal-date-field">
-                  <label className="modal-label">開始日</label>
-                  <input type="date" value={editingStartDate} max={editingEndDate} onChange={(e) => setEditingStartDate(e.target.value)} className="date-input" />
-                </div>
-                <div className="modal-date-field">
-                  <label className="modal-label">終了日</label>
-                  <input type="date" value={editingEndDate} min={editingStartDate} onChange={(e) => setEditingEndDate(e.target.value)} className="date-input" />
-                </div>
-              </div>
-
-              <label className="modal-label">担当者</label>
-              <input type="text" value={editingAssignee} onChange={(e) => setEditingAssignee(e.target.value)} placeholder="担当者名を入力" className="assignee-input" />
-
-              <label className="modal-label">進捗: <strong>{editingProgress}%</strong></label>
-              <input type="range" min={0} max={100} value={editingProgress} onChange={(e) => setEditingProgress(Number(e.target.value))} className="progress-slider" />
-
-              <div className="gantt-modal-actions">
-                {confirmDelete ? (
-                  <>
-                    <span className="modal-delete-confirm">
-                      {hasChildren ? "子タスクも全て削除します。よろしいですか？" : "削除しますか？"}
-                    </span>
-                    <button className="btn-cancel" onClick={() => setConfirmDelete(false)}>いいえ</button>
-                    <button className="btn-delete" onClick={() => deleteTask(editingId)}>削除する</button>
-                  </>
-                ) : (
-                  <>
-                    <button className="btn-delete-outline" onClick={() => setConfirmDelete(true)}>削除</button>
-                    <button className="btn-cancel" onClick={() => setEditingId(null)}>キャンセル</button>
-                    <button className="btn-save" onClick={saveEdit}>保存</button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+          <TaskEditModal
+            task={task}
+            tasks={tasks}
+            onSave={(updated)   => { onTasksChange(updated); setEditingId(null); }}
+            onDelete={(updated) => { onTasksChange(updated); setEditingId(null); }}
+            onClose={() => setEditingId(null)}
+          />
         );
       })()}
 

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Task } from "../types/task";
 import { toHolidayKey } from "../utils/holidays";
+import TaskEditModal  from "./TaskEditModal";
+import GanttTooltip  from "./GanttTooltip";
 
 interface Props {
   tasks: Task[];
@@ -130,11 +132,6 @@ function propagateDates(changedId: string, tasks: Task[]): Task[] {
   return propagateDates(parentId, updated);
 }
 
-/** タスクとその全子孫の ID を返す */
-function getAllDescendantIds(taskId: string, tasks: Task[]): string[] {
-  const children = tasks.filter((t) => t.parentId === taskId);
-  return [taskId, ...children.flatMap((c) => getAllDescendantIds(c.id, tasks))];
-}
 
 function barOpacity(depth: number): string {
   const opacities = ["ff", "cc", "99", "77"];
@@ -150,12 +147,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
   // 編集モーダル
-  const [editingId,        setEditingId]        = useState<string | null>(null);
-  const [editingProgress,  setEditingProgress]  = useState(0);
-  const [editingAssignee,  setEditingAssignee]  = useState("");
-  const [editingStartDate, setEditingStartDate] = useState("");
-  const [editingEndDate,   setEditingEndDate]   = useState("");
-  const [confirmDelete,    setConfirmDelete]    = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // 追加モーダル
   const [addState, setAddState] = useState<AddState | null>(null);
@@ -164,6 +156,9 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   const dragRef    = useRef<DragState | null>(null);
   const didDragRef = useRef(false);
   const [dragPreview, setDragPreview] = useState<{ taskId: string; startDate: Date; endDate: Date } | null>(null);
+
+  // ツールチップ
+  const [tooltip, setTooltip] = useState<{ task: Task; progress: number; x: number; y: number } | null>(null);
 
   // ── タイムライン範囲 ──
   const allDates = tasks.flatMap((t) => [t.startDate, t.endDate]);
@@ -203,36 +198,6 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
 
   function openEdit(task: Task) {
     setEditingId(task.id);
-    setEditingProgress(task.progress);
-    setEditingAssignee(task.assignee ?? "");
-    setEditingStartDate(toInputDate(task.startDate));
-    setEditingEndDate(toInputDate(task.endDate));
-    setConfirmDelete(false);
-  }
-
-  function saveEdit() {
-    if (!editingId) return;
-    const newStart = new Date(editingStartDate);
-    const newEnd   = new Date(editingEndDate);
-    if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
-
-    const updated = tasks.map((t) =>
-      t.id === editingId
-        ? { ...t, progress: editingProgress, assignee: editingAssignee || undefined, startDate: newStart, endDate: newEnd }
-        : t
-    );
-    onTasksChange(propagateDates(editingId, updated));
-    setEditingId(null);
-  }
-
-  function deleteTask(id: string) {
-    const removeIds = new Set(getAllDescendantIds(id, tasks));
-    const task = tasks.find((t) => t.id === id);
-    const filtered = tasks.filter((t) => !removeIds.has(t.id));
-    const propagated = task?.parentId ? propagateDates(task.parentId, filtered) : filtered;
-    // 親の子が 0 になった場合は propagate をスキップ（siblings がない場合エラー防止済み）
-    onTasksChange(propagated);
-    setEditingId(null);
   }
 
   function openAdd(parentId?: string) {
@@ -281,6 +246,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   function startDrag(e: React.MouseEvent, task: Task, type: DragState["type"]) {
     e.preventDefault();
     e.stopPropagation();
+    setTooltip(null);
     dragRef.current = { taskId: task.id, type, startX: e.clientX, originalStart: task.startDate, originalEnd: task.endDate };
     didDragRef.current = false;
   }
@@ -499,7 +465,9 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
                   style={{ left: barLeft, width: barWidth, height: barHeight, background: barColor, cursor: "grab", userSelect: "none" }}
                   onMouseDown={(e) => startDrag(e, task, "move")}
                   onClick={() => { if (!didDragRef.current) openEdit(task); }}
-                  title={`${task.name}: ${ep}%${task.assignee ? ` (${task.assignee})` : ""}`}
+                  onMouseEnter={(e) => { if (!dragRef.current) setTooltip({ task, progress: ep, x: e.clientX, y: e.clientY }); }}
+                  onMouseMove={(e)  => { if (!dragRef.current) setTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null); }}
+                  onMouseLeave={() => setTooltip(null)}
                 >
                   <div className="gantt-bar-handle gantt-bar-handle--left" style={{ width: HANDLE_WIDTH }} onMouseDown={(e) => startDrag(e, task, "start")} />
                   <div className="gantt-bar-progress" style={{ width: `${ep}%`, background: baseColor, filter: "brightness(0.75)" }} />
@@ -512,67 +480,20 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
         </div>
       </div>
 
+      {/* ── ツールチップ ── */}
+      {tooltip && <GanttTooltip {...tooltip} />}
+
       {/* ── 編集モーダル ── */}
       {editingId !== null && (() => {
-        const task        = tasks.find((t) => t.id === editingId)!;
-        const leaf        = isLeaf(task.id, tasks);
-        const modalProg   = leaf ? editingProgress : computeProgress(task.id, tasks);
-        const hasChildren = tasks.some((t) => t.parentId === task.id);
-
+        const task = tasks.find((t) => t.id === editingId)!;
         return (
-          <div className="gantt-modal-overlay" onClick={saveEdit}>
-            <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
-              <h3>{task.name}</h3>
-
-              <div className="modal-date-row">
-                <div className="modal-date-field">
-                  <label className="modal-label">開始日</label>
-                  <input type="date" value={editingStartDate} max={editingEndDate} onChange={(e) => setEditingStartDate(e.target.value)} className="date-input" />
-                </div>
-                <div className="modal-date-field">
-                  <label className="modal-label">終了日</label>
-                  <input type="date" value={editingEndDate} min={editingStartDate} onChange={(e) => setEditingEndDate(e.target.value)} className="date-input" />
-                </div>
-              </div>
-
-              {leaf && (
-                <>
-                  <label className="modal-label">担当者</label>
-                  <input type="text" value={editingAssignee} onChange={(e) => setEditingAssignee(e.target.value)} placeholder="担当者名を入力" className="assignee-input" />
-                </>
-              )}
-
-              <label className="modal-label">
-                進捗: <strong>{modalProg}%</strong>
-                {!leaf && <span className="modal-label-sub">（子タスクの平均）</span>}
-              </label>
-              {leaf ? (
-                <input type="range" min={0} max={100} value={editingProgress} onChange={(e) => setEditingProgress(Number(e.target.value))} className="progress-slider" />
-              ) : (
-                <div className="progress-bar-readonly">
-                  <div className="progress-bar-readonly-fill" style={{ width: `${modalProg}%` }} />
-                </div>
-              )}
-
-              <div className="gantt-modal-actions">
-                {confirmDelete ? (
-                  <>
-                    <span className="modal-delete-confirm">
-                      {hasChildren ? "子タスクも全て削除します。よろしいですか？" : "削除しますか？"}
-                    </span>
-                    <button className="btn-cancel" onClick={() => setConfirmDelete(false)}>いいえ</button>
-                    <button className="btn-delete" onClick={() => deleteTask(editingId)}>削除する</button>
-                  </>
-                ) : (
-                  <>
-                    <button className="btn-delete-outline" onClick={() => setConfirmDelete(true)}>削除</button>
-                    <button className="btn-cancel" onClick={() => setEditingId(null)}>キャンセル</button>
-                    <button className="btn-save" onClick={saveEdit}>保存</button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+          <TaskEditModal
+            task={task}
+            tasks={tasks}
+            onSave={(updated)   => { onTasksChange(updated); setEditingId(null); }}
+            onDelete={(updated) => { onTasksChange(updated); setEditingId(null); }}
+            onClose={() => setEditingId(null)}
+          />
         );
       })()}
 

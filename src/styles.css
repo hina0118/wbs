@@ -715,6 +715,246 @@
   color: #fff;
 }
 
+.view-toggle--disabled .view-toggle-btn {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════
+   検索ボックス（ヘッダー内）
+══════════════════════════════════════════ */
+.search-box-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 0 260px;
+}
+
+.search-box-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 0.85rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+.search-box {
+  width: 100%;
+  padding: 6px 32px 6px 32px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  outline: none;
+  background: #f8fafc;
+  color: #1e293b;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.search-box:focus,
+.search-box--active {
+  border-color: #4a90d9;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+}
+
+.search-box-clear {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 50%;
+}
+
+.search-box-clear:hover {
+  color: #e53935;
+  background: #fdecea;
+}
+
+/* ══════════════════════════════════════════
+   SearchView – 検索結果
+══════════════════════════════════════════ */
+.search-view {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 80px);
+  overflow: hidden;
+}
+
+.search-view-header {
+  padding: 12px 24px 8px;
+  font-size: 0.85rem;
+  color: #64748b;
+  border-bottom: 1px solid #e8edf4;
+  flex-shrink: 0;
+}
+
+.search-view-count strong {
+  color: #1e293b;
+}
+
+.search-view-hint {
+  color: #b0b8c8;
+}
+
+.search-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+/* 結果なし */
+.search-no-results {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 60px 0;
+  color: #b0b8c8;
+  font-size: 0.9rem;
+}
+.search-no-results span { font-size: 2.5rem; }
+
+/* ── 検索カード ── */
+.search-card {
+  background: #fff;
+  border-radius: 10px;
+  border-left: 4px solid #4a90d9;
+  padding: 12px 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.search-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  transform: translateY(-1px);
+}
+
+.search-card-path {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-card-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.search-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.75rem;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.search-card-assignee {
+  background: #e8f0fb;
+  color: #4a90d9;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.search-card-progress {
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.search-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.search-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+/* メモスニペット */
+.search-card-memo {
+  font-size: 0.78rem;
+  color: #475569;
+  line-height: 1.55;
+  background: #f8fafc;
+  border-left: 2px solid #cbd5e1;
+  padding: 4px 8px;
+  border-radius: 0 4px 4px 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 4.5em;
+  overflow: hidden;
+}
+
+.search-card-memo--plain {
+  border-left-color: #e2e8f0;
+  color: #94a3b8;
+}
+
+/* ── メモ展開トグルボタン（カンバン・検索共通） ── */
+.memo-toggle-btn {
+  display: block;
+  margin-top: 4px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.72rem;
+  color: #4a90d9;
+  font-weight: 600;
+  line-height: 1.6;
+  transition: color 0.15s;
+}
+
+.memo-toggle-btn:hover {
+  color: #2c6fad;
+  text-decoration: underline;
+}
+
+
+/* 検索カード: 展開時にメモの overflow を解除 */
+.search-card-memo {
+  position: relative;
+}
+
+.memo-toggle-btn--search {
+  margin-top: 6px;
+}
+
+/* ハイライト */
+.search-highlight {
+  background: #fef08a;
+  color: #78350f;
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 600;
+}
+
 /* ══════════════════════════════════════════
    カンバンボード
 ══════════════════════════════════════════ */
@@ -889,3 +1129,303 @@
   color: #64748b;
   font-weight: 600;
 }
+
+/* ── カンバン カードメモプレビュー ── */
+.kanban-card-memo {
+  padding: 4px 6px;
+  background: #f8fafc;
+  border-radius: 4px;
+  border-left: 2px solid #cbd5e1;
+}
+
+/* ── メモ入力欄（モーダル共通） ── */
+.memo-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #dde3ed;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+.memo-input:focus {
+  border-color: #4a90d9;
+}
+
+.memo-input::placeholder {
+  color: #b0b8c8;
+}
+
+/* ══════════════════════════════════════════
+   MemoField – 編集 / プレビュー切替
+══════════════════════════════════════════ */
+.memo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.memo-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.memo-tab-group {
+  display: flex;
+  border: 1px solid #dde3ed;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.memo-tab {
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #64748b;
+  transition: background 0.15s, color 0.15s;
+}
+
+.memo-tab:hover {
+  background: #f0f7ff;
+  color: #4a90d9;
+}
+
+.memo-tab--active {
+  background: #4a90d9;
+  color: #fff;
+}
+
+.memo-tab--active:hover {
+  background: #2c6fad;
+  color: #fff;
+}
+
+.memo-preview {
+  min-height: 80px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  border: 1px solid #dde3ed;
+  border-radius: 6px;
+  background: #fafbfd;
+}
+
+.memo-preview-empty {
+  color: #b0b8c8;
+  font-size: 0.85rem;
+}
+
+/* ══════════════════════════════════════════
+   Markdown レンダリング共通スタイル
+══════════════════════════════════════════ */
+.markdown-body {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: #1e293b;
+  word-break: break-word;
+}
+
+.markdown-body p       { margin: 0 0 0.5em; }
+.markdown-body p:last-child { margin-bottom: 0; }
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+  line-height: 1.3;
+}
+.markdown-body h1 { font-size: 1.1em; }
+.markdown-body h2 { font-size: 1.0em; }
+.markdown-body h3 { font-size: 0.95em; }
+.markdown-body h4 { font-size: 0.9em; color: #555; }
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0.3em 0 0.5em 1.4em;
+  padding: 0;
+}
+.markdown-body li { margin: 0.15em 0; }
+
+/* GFM チェックリスト */
+.markdown-body input[type="checkbox"] {
+  margin-right: 4px;
+  accent-color: #4a90d9;
+}
+
+.markdown-body code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.82em;
+  background: #eef1f6;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #c0392b;
+}
+
+.markdown-body pre {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+.markdown-body pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 0.82em;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid #4a90d9;
+  margin: 0.4em 0;
+  padding: 2px 10px;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 0 4px 4px 0;
+}
+
+.markdown-body a {
+  color: #4a90d9;
+  text-decoration: underline;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 0.6em 0;
+}
+
+/* GFM テーブル */
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+  font-size: 0.82em;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid #dde3ed;
+  padding: 4px 8px;
+  text-align: left;
+}
+.markdown-body th {
+  background: #eef1f6;
+  font-weight: 600;
+}
+.markdown-body tr:nth-child(even) td {
+  background: #fafbfd;
+}
+
+/* カンバンカード用: コンパクト表示（最大3行） */
+.markdown-body--compact {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  max-height: 4.5em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.markdown-body--compact p    { margin: 0; }
+.markdown-body--compact h1,
+.markdown-body--compact h2,
+.markdown-body--compact h3,
+.markdown-body--compact h4   { font-size: 0.75rem; margin: 0; }
+.markdown-body--compact ul,
+.markdown-body--compact ol   { margin: 0 0 0 1em; padding: 0; }
+.markdown-body--compact pre  { padding: 2px 6px; margin: 0; }
+.markdown-body--compact blockquote { padding: 0 6px; margin: 0; }
+
+/* ══════════════════════════════════════════
+   GanttTooltip – ホバーツールチップ（ダークテーマ）
+══════════════════════════════════════════ */
+.gantt-tooltip {
+  position: fixed;
+  z-index: 300;
+  max-width: 320px;
+  min-width: 180px;
+  background: #1e293b;
+  color: #f1f5f9;
+  border-radius: 8px;
+  padding: 10px 13px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: none;   /* マウスイベントを透過させる */
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.gantt-tooltip-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.gantt-tooltip-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gantt-tooltip-pct {
+  font-weight: 700;
+  color: #93c5fd;
+  flex-shrink: 0;
+}
+
+.gantt-tooltip-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-bottom: 2px;
+}
+
+.gantt-tooltip-divider {
+  border: none;
+  border-top: 1px solid #334155;
+  margin: 7px 0;
+}
+
+.gantt-tooltip-memo {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* ダークテーマ用 markdown-body オーバーライド */
+.gantt-tooltip .markdown-body {
+  color: #e2e8f0;
+  font-size: 0.78rem;
+}
+.gantt-tooltip .markdown-body p       { margin: 0 0 0.4em; }
+.gantt-tooltip .markdown-body h1,
+.gantt-tooltip .markdown-body h2,
+.gantt-tooltip .markdown-body h3,
+.gantt-tooltip .markdown-body h4      { color: #f1f5f9; }
+.gantt-tooltip .markdown-body code    { background: #334155; color: #f87171; }
+.gantt-tooltip .markdown-body pre     { background: #0f172a; }
+.gantt-tooltip .markdown-body pre code { color: #e2e8f0; }
+.gantt-tooltip .markdown-body blockquote {
+  border-left-color: #4a90d9;
+  background: #1e3a5f;
+  color: #cbd5e1;
+}
+.gantt-tooltip .markdown-body a       { color: #93c5fd; }
+.gantt-tooltip .markdown-body th      { background: #334155; }
+.gantt-tooltip .markdown-body td,
+.gantt-tooltip .markdown-body th      { border-color: #334155; }
+.gantt-tooltip .markdown-body tr:nth-child(even) td { background: #253447; }
