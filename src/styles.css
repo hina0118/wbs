@@ -1863,6 +1863,43 @@
 .status-signal--yellow { background: #f9a825; box-shadow: 0 0 4px #f9a82580; }
 .status-signal--green  { background: #43a047; box-shadow: 0 0 4px #43a04780; }
 
+/* ── Toast 通知 ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 9999;
+  max-width: 90vw;
+}
+
+.toast--warn {
+  background: #fff8e1;
+  border: 1px solid #f9a825;
+  color: #5d4037;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: inherit;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.toast-close:hover {
+  opacity: 0.6;
+}
+
 /* カンバンカード右上に絶対配置 */
 .kanban-card-signal {
   position: absolute;

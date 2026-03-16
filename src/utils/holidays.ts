@@ -6,13 +6,8 @@ import { invoke } from "@tauri-apps/api/core";
  * value: 祝日名
  */
 export async function loadHolidays(): Promise<Map<string, string>> {
-  try {
-    const entries = await invoke<[string, string][]>("fetch_holidays");
-    return new Map(entries);
-  } catch (e) {
-    console.warn("祝日データの取得に失敗しました:", e);
-    return new Map();
-  }
+  const entries = await invoke<[string, string][]>("fetch_holidays");
+  return new Map(entries);
 }
 
 /** Date オブジェクトを "YYYY/M/D" 形式の文字列に変換（祝日Mapのキーと合わせる） */

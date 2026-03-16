@@ -1,6 +1,25 @@
 use std::fs;
+use std::io::Write;
 use tauri::Manager;
 use serde::{Deserialize, Serialize};
+
+// ── エラーログ ────────────────────────────────────────────
+
+/// エラー内容とスタックトレースを app_data_dir()/app.log に追記する。
+fn write_error_log(app: &tauri::AppHandle, context: &str, error: &str) {
+    let Ok(dir) = app.path().app_data_dir() else { return };
+    let _ = fs::create_dir_all(&dir);
+    let log_path = dir.join("app.log");
+
+    let bt = backtrace::Backtrace::new();
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
+    let entry = format!(
+        "[{timestamp}] ERROR {context}\n  {error}\n{bt:?}\n\n"
+    );
+    if let Ok(mut f) = fs::OpenOptions::new().create(true).append(true).open(&log_path) {
+        let _ = f.write_all(entry.as_bytes());
+    }
+}
 
 // ── プロキシ設定 ──────────────────────────────────────────
 
@@ -86,18 +105,23 @@ fn save_tasks(app: tauri::AppHandle, json: String) -> Result<(), String> {
 #[tauri::command]
 async fn fetch_holidays(app: tauri::AppHandle) -> Result<Vec<(String, String)>, String> {
     // プロキシ設定を読み込んで reqwest クライアントを構築
-    let proxy_url = get_proxy_setting(app)?;
+    let proxy_url = get_proxy_setting(app.clone())?;
     let client = build_client(proxy_url)?;
 
     let url = "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv";
-    let bytes = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|e| format!("取得エラー: {e}"))?
+
+    let send_result = client.get(url).send().await.map_err(|e| format!("取得エラー: {e}"));
+    if let Err(ref e) = send_result {
+        write_error_log(&app, "fetch_holidays", e);
+    }
+    let bytes = send_result?
         .bytes()
         .await
-        .map_err(|e| format!("読み込みエラー: {e}"))?;
+        .map_err(|e| {
+            let msg = format!("読み込みエラー: {e}");
+            write_error_log(&app, "fetch_holidays", &msg);
+            msg
+        })?;
 
     let (decoded, _, _) = encoding_rs::SHIFT_JIS.decode(&bytes);
     let text = decoded.into_owned();
