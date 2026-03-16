@@ -1320,6 +1320,7 @@
 
 /* ── カード ── */
 .kanban-card {
+  position: relative;
   background: #fff;
   border-radius: 8px;
   border-left: 4px solid #4a90d9;
