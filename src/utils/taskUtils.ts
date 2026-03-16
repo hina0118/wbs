@@ -30,6 +30,32 @@ export function getAllDescendantIds(taskId: string, tasks: Task[]): string[] {
   return [taskId, ...children.flatMap((c) => getAllDescendantIds(c.id, tasks))];
 }
 
+/**
+ * タスク配列をツリー構造に従って DFS 順に並び替える。
+ * 兄弟間の相対順序は元の配列の出現順を維持する。
+ * タスクの追加・編集・削除後に呼ぶことで、常に親子関係が正しい順番になる。
+ */
+export function sortByTree(tasks: Task[]): Task[] {
+  const result: Task[] = [];
+  const childrenMap = new Map<string | undefined, Task[]>();
+
+  for (const task of tasks) {
+    const key = task.parentId;
+    if (!childrenMap.has(key)) childrenMap.set(key, []);
+    childrenMap.get(key)!.push(task);
+  }
+
+  function dfs(parentId: string | undefined) {
+    for (const task of childrenMap.get(parentId) ?? []) {
+      result.push(task);
+      dfs(task.id);
+    }
+  }
+  dfs(undefined);
+
+  return result;
+}
+
 /** ルートから対象タスクまでの祖先名（自身を除く） */
 export function getAncestorNames(taskId: string, tasks: Task[]): string[] {
   const task = tasks.find((t) => t.id === taskId);

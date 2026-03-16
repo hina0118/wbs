@@ -8,6 +8,7 @@ import UpdateNotifier    from "./components/UpdateNotifier";
 import { Task }       from "./types/task";
 import { loadTasks, saveTasks } from "./utils/taskStorage";
 import { loadHolidays }         from "./utils/holidays";
+import { sortByTree }           from "./utils/taskUtils";
 
 type ViewMode = "gantt" | "kanban" | "analysis";
 
@@ -32,7 +33,7 @@ function App() {
       }),
     ])
       .then(([loadedTasks, loadedHolidays]) => {
-        setTasks(loadedTasks);
+        setTasks(sortByTree(loadedTasks));
         setHolidays(loadedHolidays);
       })
       .catch((e) => setError(String(e)))
@@ -57,8 +58,9 @@ function App() {
   }, []);
 
   function handleTasksChange(updated: Task[]) {
-    setTasks(updated);
-    saveTasks(updated).catch((e) => console.error("タスクの保存に失敗:", e));
+    const sorted = sortByTree(updated);
+    setTasks(sorted);
+    saveTasks(sorted).catch((e) => console.error("タスクの保存に失敗:", e));
   }
 
   const totalTasks  = tasks.length;
