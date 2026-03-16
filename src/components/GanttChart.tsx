@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Task } from "../types/task";
 import { toHolidayKey } from "../utils/holidays";
+import { getAllDescendantIds } from "../utils/taskUtils";
 import TaskEditModal  from "./TaskEditModal";
 import GanttTooltip  from "./GanttTooltip";
 
@@ -12,7 +13,7 @@ interface Props {
 
 const DAY_WIDTH = 28;
 const ROW_HEIGHT = 40;
-const HEADER_HEIGHT = 60;
+const HEADER_HEIGHT = 90;
 const LEFT_PANEL_WIDTH = 260;
 const ASSIGNEE_COL_WIDTH = 80;
 const PROGRESS_COL_WIDTH = 70;
@@ -145,6 +146,8 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   const leftScrollRef = useRef<HTMLDivElement>(null);
 
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const [filterParentId, setFilterParentId] = useState<string>("all");
+  const [filterAssignee, setFilterAssignee] = useState<string>("all");
 
   // 編集モーダル
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -180,7 +183,29 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
     else last.count++;
   });
 
-  const visibleTasks = tasks.filter((t) => isVisible(t, tasks, collapsedIds));
+  // 親タスクフィルタ
+  const filteredByParent = filterParentId === "all"
+    ? tasks
+    : [
+        tasks.find((t) => t.id === filterParentId)!,
+        ...getAllDescendantIds(filterParentId, tasks)
+          .slice(1)
+          .map((id) => tasks.find((t) => t.id === id)!),
+      ].filter(Boolean);
+
+  // 担当者フィルタ（対象担当者の子を持つ親タスク行も表示）
+  const assignees = [...new Set(tasks.map((t) => t.assignee).filter(Boolean))] as string[];
+  const filteredTasks = filterAssignee === "all"
+    ? filteredByParent
+    : filteredByParent.filter((t) =>
+        t.assignee === filterAssignee ||
+        getAllDescendantIds(t.id, tasks).slice(1).some((id) => {
+          const child = tasks.find((c) => c.id === id);
+          return child?.assignee === filterAssignee;
+        })
+      );
+
+  const visibleTasks = filteredTasks.filter((t) => isVisible(t, filteredTasks, collapsedIds));
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -309,12 +334,45 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
       {/* ── 左パネル ── */}
       <div className="gantt-left" style={{ width: LEFT_PANEL_WIDTH + ASSIGNEE_COL_WIDTH + PROGRESS_COL_WIDTH }}>
         <div className="gantt-left-header" style={{ height: HEADER_HEIGHT }}>
-          <span className="gantt-col-task">
-            タスク名
-            <button className="gantt-add-top-btn" onClick={() => openAdd()} title="ルートタスクを追加">＋</button>
-          </span>
-          <span className="gantt-col-assignee">担当者</span>
-          <span className="gantt-col-progress">進捗</span>
+          <div className="gantt-header-top-row">
+            <span className="gantt-col-task">
+              タスク名
+              <button className="gantt-add-top-btn" onClick={() => openAdd()} title="ルートタスクを追加">＋</button>
+            </span>
+            <span className="gantt-col-assignee">担当者</span>
+            <span className="gantt-col-progress">進捗</span>
+          </div>
+          <div className="gantt-filter-bar">
+            <div className="gantt-filter-item">
+              <span className="gantt-filter-label">親タスク:</span>
+              <select
+                className="gantt-filter-select"
+                value={filterParentId}
+                onChange={(e) => {
+                  setFilterParentId(e.target.value);
+                  setCollapsedIds(new Set());
+                }}
+              >
+                <option value="all">すべて表示</option>
+                {tasks.filter((t) => !t.parentId).map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="gantt-filter-item">
+              <span className="gantt-filter-label">担当者:</span>
+              <select
+                className="gantt-filter-select"
+                value={filterAssignee}
+                onChange={(e) => setFilterAssignee(e.target.value)}
+              >
+                <option value="all">全員</option>
+                {assignees.map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         <div
