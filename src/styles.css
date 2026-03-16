@@ -166,10 +166,17 @@
   padding: 0 8px;
   overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.gantt-task-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .gantt-col-assignee {

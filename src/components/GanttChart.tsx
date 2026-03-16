@@ -421,13 +421,13 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
                     <span className="gantt-leaf-icon">─</span>
                   )}
                   <SignalDot status={getSignalStatus(task.id, tasks)} />
-                  {task.name}
-                  <button
-                    className="gantt-add-subtask-btn"
-                    onClick={(e) => { e.stopPropagation(); openAdd(task.id); }}
-                    title="サブタスクを追加"
-                  >＋</button>
+                  <span className="gantt-task-name" title={task.name}>{task.name}</span>
                 </span>
+                <button
+                  className="gantt-add-subtask-btn"
+                  onClick={(e) => { e.stopPropagation(); openAdd(task.id); }}
+                  title="サブタスクを追加"
+                >＋</button>
 
                 <span
                   className={`gantt-col-assignee${leaf ? " gantt-col-assignee--leaf" : ""}`}
