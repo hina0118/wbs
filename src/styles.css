@@ -113,13 +113,52 @@
 
 .gantt-left-header {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   background: #f7f9fc;
   border-bottom: 2px solid #dde3ed;
   font-weight: 700;
   font-size: 0.8rem;
   color: #555;
   flex-shrink: 0;
+}
+
+.gantt-header-top-row {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+  padding: 4px 0;
+}
+
+.gantt-filter-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 8px;
+  border-top: 1px solid #dde3ed;
+  font-weight: 400;
+}
+
+.gantt-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gantt-filter-label {
+  font-size: 11px;
+  color: #777;
+  white-space: nowrap;
+}
+
+.gantt-filter-select {
+  font-size: 11px;
+  padding: 2px 4px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  max-width: 120px;
 }
 
 .gantt-col-task {
