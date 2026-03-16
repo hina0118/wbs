@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Task } from "../types/task";
 import { toHolidayKey } from "../utils/holidays";
-import { getAllDescendantIds } from "../utils/taskUtils";
+import { getAllDescendantIds, getSignalStatus, SignalStatus } from "../utils/taskUtils";
 import TaskEditModal  from "./TaskEditModal";
 import GanttTooltip  from "./GanttTooltip";
 
@@ -95,6 +95,22 @@ function isVisible(task: Task, tasks: Task[], collapsedIds: Set<string>): boolea
   const parent = tasks.find((t) => t.id === task.parentId);
   if (!parent) return true;
   return isVisible(parent, tasks, collapsedIds);
+}
+
+const SIGNAL_TITLE: Record<string, string> = {
+  red: "遅延",
+  yellow: "着手遅れ",
+  green: "正常",
+};
+
+function SignalDot({ status }: { status: SignalStatus }) {
+  if (status === "none") return null;
+  return (
+    <span
+      className={`status-signal status-signal--${status}`}
+      title={SIGNAL_TITLE[status]}
+    />
+  );
 }
 
 function isLeaf(taskId: string, tasks: Task[]): boolean {
@@ -404,6 +420,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
                   ) : (
                     <span className="gantt-leaf-icon">─</span>
                   )}
+                  <SignalDot status={getSignalStatus(task.id, tasks)} />
                   {task.name}
                   <button
                     className="gantt-add-subtask-btn"

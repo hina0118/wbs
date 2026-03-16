@@ -49,3 +49,17 @@ export function toInputDate(d: Date): string {
 export function genId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
+
+export type SignalStatus = "red" | "yellow" | "green" | "none";
+
+export function getSignalStatus(taskId: string, tasks: Task[]): SignalStatus {
+  const effectiveProgress = computeProgress(taskId, tasks);
+  if (effectiveProgress === 100) return "none";
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task) return "none";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (task.endDate < today) return "red";
+  if (task.startDate < today && effectiveProgress === 0) return "yellow";
+  return "green";
+}
