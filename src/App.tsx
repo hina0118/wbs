@@ -12,10 +12,11 @@ import { loadHolidays }         from "./utils/holidays";
 type ViewMode = "gantt" | "kanban" | "analysis";
 
 function App() {
-  const [tasks,    setTasks]    = useState<Task[]>([]);
-  const [holidays, setHolidays] = useState<Map<string, string>>(new Map());
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
+  const [tasks,        setTasks]        = useState<Task[]>([]);
+  const [holidays,     setHolidays]     = useState<Map<string, string>>(new Map());
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState<string | null>(null);
+  const [holidayError, setHolidayError] = useState<string | null>(null);
   const [viewMode,    setViewMode]    = useState<ViewMode>("gantt");
   const [searchQuery, setSearchQuery] = useState("");
   const [showProxy,   setShowProxy]   = useState(false);
@@ -23,7 +24,13 @@ function App() {
 
   // 起動時: タスク（保存済み or デフォルト）と祝日を並列ロード
   useEffect(() => {
-    Promise.all([loadTasks(), loadHolidays()])
+    Promise.all([
+      loadTasks(),
+      loadHolidays().catch((e) => {
+        setHolidayError(String(e));
+        return new Map<string, string>();
+      }),
+    ])
       .then(([loadedTasks, loadedHolidays]) => {
         setTasks(loadedTasks);
         setHolidays(loadedHolidays);
@@ -126,6 +133,13 @@ function App() {
       </header>
 
       {showProxy && <ProxySettingModal onClose={() => setShowProxy(false)} />}
+
+      {holidayError && (
+        <div className="toast toast--warn">
+          ⚠️ 祝日データの取得に失敗しました（{holidayError}）
+          <button className="toast-close" onClick={() => setHolidayError(null)}>✕</button>
+        </div>
+      )}
 
       <UpdateNotifier />
 
