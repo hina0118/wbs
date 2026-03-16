@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Task } from "../types/task";
+import { getAllDescendantIds } from "../utils/taskUtils";
 import MemoWithToggle from "./MemoWithToggle";
 import TaskEditModal from "./TaskEditModal";
 
@@ -89,6 +90,7 @@ interface AddState {
   startDate: string;
   endDate: string;
   color: string;
+  parentId?: string;
 }
 
 // ── コンポーネント ────────────────────────────────────────
@@ -98,6 +100,9 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
   const [expandedMemos, setExpandedMemos] = useState<Set<string>>(new Set());
 
   const [addState, setAddState] = useState<AddState | null>(null);
+
+  const [filterParentId, setFilterParentId] = useState<string | "all">("all");
+  const [filterAssignee, setFilterAssignee] = useState<string | "all">("all");
 
   function toggleMemo(id: string, e: React.MouseEvent) {
     e.stopPropagation();
@@ -114,6 +119,21 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
   // リーフタスクのみ対象
   const leafTasks = tasks.filter((t) => isLeaf(t.id, tasks));
 
+  // ルートタスク一覧（親タスクフィルタ用）
+  const rootTasks = tasks.filter((t) => !t.parentId);
+
+  // 担当者一覧（重複除去）
+  const assignees = [...new Set(tasks.map((t) => t.assignee).filter(Boolean))] as string[];
+
+  // フィルタ適用
+  const filteredByParent = filterParentId === "all"
+    ? leafTasks
+    : leafTasks.filter((t) => getAllDescendantIds(filterParentId, tasks).includes(t.id));
+
+  const visibleTasks = filteredByParent.filter((t) =>
+    filterAssignee === "all" || t.assignee === filterAssignee
+  );
+
   function openEdit(task: Task) {
     setEditingId(task.id);
   }
@@ -126,6 +146,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
       startDate: toInputDate(today),
       endDate:   toInputDate(new Date(today.getTime() + 6 * 86400000)),
       color:     "#4A90D9",
+      parentId:  filterParentId === "all" ? undefined : filterParentId,
     });
   }
 
@@ -144,6 +165,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
       endDate:   newEnd,
       progress:  initProg,
       color:     addState.color,
+      ...(addState.parentId ? { parentId: addState.parentId } : {}),
     };
     onTasksChange([...tasks, newTask]);
     setAddState(null);
@@ -175,8 +197,39 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
   return (
     <div className="kanban-wrapper">
+      {/* フィルタバー */}
+      <div className="kanban-filter-bar">
+        <div className="kanban-filter-item">
+          <label className="kanban-filter-label">親タスク:</label>
+          <select
+            className="kanban-filter-select"
+            value={filterParentId}
+            onChange={(e) => setFilterParentId(e.target.value)}
+          >
+            <option value="all">全て</option>
+            {rootTasks.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="kanban-filter-item">
+          <label className="kanban-filter-label">担当者:</label>
+          <select
+            className="kanban-filter-select"
+            value={filterAssignee}
+            onChange={(e) => setFilterAssignee(e.target.value)}
+          >
+            <option value="all">全員</option>
+            {assignees.map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="kanban-columns">
       {COLUMNS.map((col) => {
-        const colTasks = leafTasks.filter((t) => col.match(computeProgress(t.id, tasks)));
+        const colTasks = visibleTasks.filter((t) => col.match(computeProgress(t.id, tasks)));
         const isOver   = dragOverCol === col.id;
 
         return (
@@ -260,6 +313,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
           </div>
         );
       })}
+      </div>
 
       {/* ── 編集モーダル ── */}
       {editingId !== null && (() => {
@@ -283,6 +337,20 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
             <p className="modal-parent-info">
               列: {COLUMNS.find((c) => c.id === addState.columnId)?.label}
             </p>
+
+            <label className="modal-label">親タスク</label>
+            <select
+              className="assignee-input"
+              value={addState.parentId ?? ""}
+              onChange={(e) => setAddState({ ...addState, parentId: e.target.value || undefined })}
+            >
+              <option value="">なし（ルートタスク）</option>
+              {tasks
+                .filter((t) => !isLeaf(t.id, tasks))
+                .map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+            </select>
 
             <label className="modal-label">タスク名 <span className="modal-required">*</span></label>
             <input

@@ -1115,13 +1115,53 @@
 ══════════════════════════════════════════ */
 .kanban-wrapper {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 0;
   padding: 20px;
   height: calc(100vh - 80px);
   overflow-x: auto;
   overflow-y: hidden;
-  align-items: flex-start;
   box-sizing: border-box;
+}
+
+.kanban-filter-bar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.kanban-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kanban-filter-label {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.kanban-filter-select {
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  max-width: 200px;
+}
+
+.kanban-columns {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  align-items: flex-start;
+  min-height: 0;
 }
 
 /* ── 列 ── */
