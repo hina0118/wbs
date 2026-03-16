@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import GanttChart        from "./components/GanttChart";
 import KanbanBoard       from "./components/KanbanBoard";
 import SearchView        from "./components/SearchView";
+import AnalysisView      from "./components/AnalysisView";
 import ProxySettingModal from "./components/ProxySettingModal";
 import UpdateNotifier    from "./components/UpdateNotifier";
 import { Task }       from "./types/task";
 import { loadTasks, saveTasks } from "./utils/taskStorage";
 import { loadHolidays }         from "./utils/holidays";
 
-type ViewMode = "gantt" | "kanban";
+type ViewMode = "gantt" | "kanban" | "analysis";
 
 function App() {
   const [tasks,    setTasks]    = useState<Task[]>([]);
@@ -105,6 +106,13 @@ function App() {
           >
             🗂 カンバン
           </button>
+          <button
+            className={`view-toggle-btn${viewMode === "analysis" ? " view-toggle-btn--active" : ""}`}
+            onClick={() => { setViewMode("analysis"); setSearchQuery(""); }}
+            title="分析"
+          >
+            📊 分析
+          </button>
         </div>
 
         {/* 設定ボタン */}
@@ -136,6 +144,9 @@ function App() {
         )}
         {!loading && !error && !isSearching && viewMode === "kanban" && (
           <KanbanBoard tasks={tasks} onTasksChange={handleTasksChange} />
+        )}
+        {!loading && !error && !isSearching && viewMode === "analysis" && (
+          <AnalysisView tasks={tasks} />
         )}
       </main>
     </div>
