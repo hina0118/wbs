@@ -164,7 +164,7 @@
 .gantt-col-task {
   flex: 1;
   padding: 0 8px;
-  overflow: visible;
+  overflow: hidden;
   white-space: nowrap;
   display: flex;
   align-items: center;
