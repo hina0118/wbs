@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Task } from "../types/task";
 import { loadSampleTasks } from "../data/sampleData";
+import { toInputDate } from "./taskUtils";
 
 // ── JSON ↔ Task 変換 ──────────────────────────────────────
 
@@ -29,10 +30,7 @@ function toTask(raw: TaskRaw): Task {
 }
 
 function toRaw(task: Task): TaskRaw {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const fmt = (d: Date) =>
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  return { ...task, startDate: fmt(task.startDate), endDate: fmt(task.endDate) };
+  return { ...task, startDate: toInputDate(task.startDate), endDate: toInputDate(task.endDate) };
 }
 
 // ── 読み込み ────────────────────────────────────────────────

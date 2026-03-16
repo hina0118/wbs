@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Task } from "../types/task";
-import { getAllDescendantIds, getSignalStatus } from "../utils/taskUtils";
+import { getAllDescendantIds, getSignalStatus, isLeaf, computeProgress, getAncestorNames, toInputDate, genId } from "../utils/taskUtils";
 import MemoWithToggle from "./MemoWithToggle";
 import TaskEditModal from "./TaskEditModal";
 
@@ -11,40 +11,8 @@ interface Props {
 
 // ── ヘルパー ─────────────────────────────────────────────
 
-function isLeaf(taskId: string, tasks: Task[]): boolean {
-  return !tasks.some((t) => t.parentId === taskId);
-}
-
-function computeProgress(taskId: string, tasks: Task[]): number {
-  const children = tasks.filter((t) => t.parentId === taskId);
-  if (children.length === 0) return tasks.find((t) => t.id === taskId)?.progress ?? 0;
-  const avg = children.reduce((sum, c) => sum + computeProgress(c.id, tasks), 0) / children.length;
-  return Math.round(avg);
-}
-
-
-/** ルートから対象タスクまでの祖先名を配列で返す（自身は含まない） */
-function getAncestorNames(taskId: string, tasks: Task[]): string[] {
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task?.parentId) return [];
-  const parent = tasks.find((t) => t.id === task.parentId);
-  if (!parent) return [];
-  return [...getAncestorNames(parent.id, tasks), parent.name];
-}
-
-function toInputDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 function formatDateShort(d: Date): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
-function genId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
 // ── カラム定義 ────────────────────────────────────────────

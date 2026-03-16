@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Task } from "../types/task";
 import { toHolidayKey } from "../utils/holidays";
-import { getAllDescendantIds, getSignalStatus, SignalStatus } from "../utils/taskUtils";
+import { getAllDescendantIds, getSignalStatus, SignalStatus, toInputDate, genId, isLeaf, computeProgress, propagateDates } from "../utils/taskUtils";
 import TaskEditModal  from "./TaskEditModal";
 import GanttTooltip  from "./GanttTooltip";
 
@@ -58,17 +58,6 @@ function addDays(d: Date, n: number): Date {
   return r;
 }
 
-function toInputDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function genId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-}
-
 function formatDate(d: Date): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
@@ -113,19 +102,6 @@ function SignalDot({ status }: { status: SignalStatus }) {
   );
 }
 
-function isLeaf(taskId: string, tasks: Task[]): boolean {
-  return !tasks.some((t) => t.parentId === taskId);
-}
-
-function computeProgress(taskId: string, tasks: Task[]): number {
-  const children = tasks.filter((t) => t.parentId === taskId);
-  if (children.length === 0) {
-    return tasks.find((t) => t.id === taskId)?.progress ?? 0;
-  }
-  const avg = children.reduce((sum, c) => sum + computeProgress(c.id, tasks), 0) / children.length;
-  return Math.round(avg);
-}
-
 function expectedProgress(task: Task, today: Date): number {
   if (today <= task.startDate) return 0;
   if (today >= task.endDate) return 100;
@@ -133,22 +109,6 @@ function expectedProgress(task: Task, today: Date): number {
   const elapsed = diffDays(task.startDate, today);
   return Math.round((elapsed / total) * 100);
 }
-
-function propagateDates(changedId: string, tasks: Task[]): Task[] {
-  const task = tasks.find((t) => t.id === changedId);
-  if (!task?.parentId) return tasks;
-
-  const parentId = task.parentId;
-  const siblings = tasks.filter((t) => t.parentId === parentId);
-  const newStart = siblings.reduce((m, t) => (t.startDate < m ? t.startDate : m), siblings[0].startDate);
-  const newEnd   = siblings.reduce((m, t) => (t.endDate   > m ? t.endDate   : m), siblings[0].endDate);
-
-  const updated = tasks.map((t) =>
-    t.id === parentId ? { ...t, startDate: newStart, endDate: newEnd } : t
-  );
-  return propagateDates(parentId, updated);
-}
-
 
 function barOpacity(depth: number): string {
   const opacities = ["ff", "cc", "99", "77"];
