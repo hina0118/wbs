@@ -1808,3 +1808,28 @@
   font-weight: 600;
 }
 .gantt-tooltip .markdown-body tr:nth-child(even) td { background: #253447; }
+
+/* ── 信号機インジケーター ─────────────────────────────── */
+.status-signal {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.status-signal--red    { background: #e53935; box-shadow: 0 0 4px #e5393580; }
+.status-signal--yellow { background: #f9a825; box-shadow: 0 0 4px #f9a82580; }
+.status-signal--green  { background: #43a047; box-shadow: 0 0 4px #43a04780; }
+
+/* カンバンカード右上に絶対配置 */
+.kanban-card-signal {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 12px;
+  height: 12px;
+  margin-right: 0;
+}

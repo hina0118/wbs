@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Task } from "../types/task";
-import { getAllDescendantIds } from "../utils/taskUtils";
+import { getAllDescendantIds, getSignalStatus } from "../utils/taskUtils";
 import MemoWithToggle from "./MemoWithToggle";
 import TaskEditModal from "./TaskEditModal";
 
@@ -264,6 +264,13 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
                     onClick={() => openEdit(task)}
                     style={{ borderLeftColor: task.color ?? "#4A90D9" }}
                   >
+                    {/* 信号機インジケーター */}
+                    {(() => {
+                      const sig = getSignalStatus(task.id, tasks);
+                      if (sig === "none") return null;
+                      const title = sig === "red" ? "遅延" : sig === "yellow" ? "着手遅れ" : "正常";
+                      return <span className={`status-signal status-signal--${sig} kanban-card-signal`} title={title} />;
+                    })()}
                     {/* 祖先パス */}
                     {ancestors.length > 0 && (
                       <div className="kanban-card-path">
