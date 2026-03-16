@@ -177,6 +177,19 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  cursor: default;
+}
+
+.gantt-task-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: 1px 4px;
+  border: 1px solid #4a90d9;
+  border-radius: 4px;
+  font-size: inherit;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
 }
 
 .gantt-col-assignee {
@@ -631,6 +644,24 @@
 .gantt-modal h3 {
   font-size: 1rem;
   color: #1a1a2e;
+}
+
+.task-name-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #dde3ed;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.task-name-input:focus {
+  border-color: #4a90d9;
 }
 
 /* プロキシ設定モーダル */

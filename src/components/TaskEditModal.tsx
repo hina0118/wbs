@@ -25,6 +25,7 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
   const leaf        = isLeaf(task.id, tasks);
   const hasChildren = tasks.some((t) => t.parentId === task.id);
 
+  const [editName,      setEditName]      = useState(task.name);
   const [editProgress,  setEditProgress]  = useState(task.progress);
   const [editAssignee,  setEditAssignee]  = useState(task.assignee  ?? "");
   const [editStartDate, setEditStartDate] = useState(toInputDate(task.startDate));
@@ -43,6 +44,7 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
       t.id === task.id
         ? {
             ...t,
+            name:      editName.trim() || task.name,
             progress:  editProgress,
             assignee:  editAssignee  || undefined,
             startDate: newStart,
@@ -63,7 +65,13 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
   return (
     <div className="gantt-modal-overlay" onClick={handleSave}>
       <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>{task.name}</h3>
+        <input
+          type="text"
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          className="task-name-input"
+          placeholder="タスク名を入力"
+        />
 
         {/* 期間 */}
         <div className="modal-date-row">

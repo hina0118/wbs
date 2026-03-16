@@ -168,6 +168,9 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   // 編集モーダル
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // インライン名前編集
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+
   // 追加モーダル
   const [addState, setAddState] = useState<AddState | null>(null);
 
@@ -239,6 +242,14 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
 
   function openEdit(task: Task) {
     setEditingId(task.id);
+  }
+
+  function commitRename(taskId: string, newName: string) {
+    const trimmed = newName.trim();
+    if (trimmed) {
+      onTasksChange(tasks.map((t) => t.id === taskId ? { ...t, name: trimmed } : t));
+    }
+    setEditingNameId(null);
   }
 
   function openAdd(parentId?: string) {
@@ -421,7 +432,24 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
                     <span className="gantt-leaf-icon">─</span>
                   )}
                   <SignalDot status={getSignalStatus(task.id, tasks)} />
-                  <span className="gantt-task-name" title={task.name}>{task.name}</span>
+                  {editingNameId === task.id ? (
+                    <input
+                      className="gantt-task-name-input"
+                      defaultValue={task.name}
+                      autoFocus
+                      onBlur={(e) => commitRename(task.id, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitRename(task.id, e.currentTarget.value);
+                        if (e.key === "Escape") setEditingNameId(null);
+                      }}
+                    />
+                  ) : (
+                    <span
+                      className="gantt-task-name"
+                      title={task.name}
+                      onDoubleClick={() => setEditingNameId(task.id)}
+                    >{task.name}</span>
+                  )}
                 </span>
                 <button
                   className="gantt-add-subtask-btn"
