@@ -421,7 +421,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
                     <span className="gantt-leaf-icon">─</span>
                   )}
                   <SignalDot status={getSignalStatus(task.id, tasks)} />
-                  {task.name}
+                  <span className="gantt-task-name" title={task.name}>{task.name}</span>
                   <button
                     className="gantt-add-subtask-btn"
                     onClick={(e) => { e.stopPropagation(); openAdd(task.id); }}
