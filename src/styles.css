@@ -1662,4 +1662,149 @@
 .gantt-tooltip .markdown-body th      { background: #334155; }
 .gantt-tooltip .markdown-body td,
 .gantt-tooltip .markdown-body th      { border-color: #334155; }
+
+/* ── Analysis View ── */
+.analysis-view {
+  padding: 24px;
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.analysis-section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.analysis-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 16px;
+}
+
+.analysis-icon {
+  font-size: 1.1rem;
+}
+
+.analysis-count {
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #475569;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 4px;
+}
+
+.analysis-empty {
+  color: #64748b;
+  font-size: 0.9rem;
+  padding: 8px 0;
+}
+
+.analysis-table-wrapper {
+  overflow-x: auto;
+}
+
+.analysis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.analysis-table thead th {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.analysis-table tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.analysis-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.analysis-table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.analysis-row--not-started td {
+  background: #fef9f0 !important;
+}
+
+.analysis-task-name {
+  font-weight: 600;
+  color: #1e293b;
+  max-width: 220px;
+}
+
+.analysis-delay {
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.analysis-path {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  max-width: 260px;
+}
+
+.analysis-progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.analysis-progress-bar > div {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.analysis-progress-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 3px;
+}
+
+.analysis-progress-bar > span {
+  font-size: 0.78rem;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.analysis-idle-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.analysis-member-chip {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
 .gantt-tooltip .markdown-body tr:nth-child(even) td { background: #253447; }
