@@ -1,0 +1,9 @@
+[build]
+# リンカのメモリ不足(LNK1102)対策: 並列ジョブ数を制限する
+jobs = 2
+
+[profile.release]
+# コードを分割してリンク時のメモリ消費を抑える
+codegen-units = 1
+# PDBファイル生成を無効化 (LNK1318対策)
+debug = false

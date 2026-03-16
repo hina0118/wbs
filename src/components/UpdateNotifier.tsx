@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { check, Update } from "@tauri-apps/plugin-updater";
 import { relaunch }        from "@tauri-apps/plugin-process";
+import { warn, error }     from "@tauri-apps/plugin-log";
 
 type Phase = "idle" | "downloading" | "done" | "error";
 
@@ -23,8 +24,8 @@ export default function UpdateNotifier() {
       try {
         const u = await check();
         if (u) setUpdate(u);
-      } catch {
-        // ネットワーク未接続・設定未完了時は無視
+      } catch (e) {
+        await warn(`[UpdateNotifier] アップデートチェック失敗: ${e}`);
       }
     }, 3000);
     return () => clearTimeout(timer);
@@ -60,6 +61,7 @@ export default function UpdateNotifier() {
 
       await relaunch();
     } catch (e) {
+      await error(`[UpdateNotifier] インストール失敗: ${e}`);
       setErrMsg(String(e));
       setPhase("error");
     }
