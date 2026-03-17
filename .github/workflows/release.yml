@@ -69,7 +69,7 @@ jobs:
       #   4. GitHub Release (Draft) の作成
       #   5. インストーラー + latest.json のアップロード
       - name: Build and publish
-        uses: tauri-apps/tauri-action@v0.5.25
+        uses: tauri-apps/tauri-action@v0.6.2
         env:
           GITHUB_TOKEN:                          ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY:             ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
