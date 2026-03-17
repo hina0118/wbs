@@ -56,6 +56,14 @@ jobs:
       #   3. インストーラーへの署名
       #   4. GitHub Release (Draft) の作成
       #   5. インストーラー + latest.json のアップロード
+      - name: Debug signing key
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          echo "Key length: ${#TAURI_SIGNING_PRIVATE_KEY}"
+          echo "Key first 20 chars: ${TAURI_SIGNING_PRIVATE_KEY:0:20}"
+
       - name: Build and publish
         uses: tauri-apps/tauri-action@v0.5.16
         env:
