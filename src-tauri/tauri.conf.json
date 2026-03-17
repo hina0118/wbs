@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "WBS進捗管理",
+  "productName": "WBS",
   "version": "1.0.9",
   "identifier": "com.wbs.app",
   "build": {
