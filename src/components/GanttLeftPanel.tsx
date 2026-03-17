@@ -1,5 +1,5 @@
 import { Task } from "../types/task";
-import { getSignalStatus, computeProgress } from "../utils/taskUtils";
+import { getSignalStatus, computeProgress, SignalStatus } from "../utils/taskUtils";
 
 const ROW_HEIGHT = 40;
 const HEADER_HEIGHT = 90;
