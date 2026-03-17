@@ -1,6 +1,6 @@
 import { Task } from "../types/task";
 import { getSignalStatus, isLeaf, computeProgress } from "../utils/taskUtils";
-import { SignalStatus } from "../utils/taskUtils";
+import SignalDot from "./SignalDot";
 
 const ROW_HEIGHT = 40;
 const HEADER_HEIGHT = 90;
@@ -8,22 +8,6 @@ const LEFT_PANEL_WIDTH = 260;
 const ASSIGNEE_COL_WIDTH = 80;
 const PROGRESS_COL_WIDTH = 70;
 const INDENT_PER_LEVEL = 16;
-
-const SIGNAL_TITLE: Record<string, string> = {
-  red: "遅延",
-  yellow: "着手遅れ",
-  green: "正常",
-};
-
-function SignalDot({ status }: { status: SignalStatus }) {
-  if (status === "none") return null;
-  return (
-    <span
-      className={`status-signal status-signal--${status}`}
-      title={SIGNAL_TITLE[status]}
-    />
-  );
-}
 
 function diffDays(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));

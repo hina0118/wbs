@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Task } from "../types/task";
-import { getAllDescendantIds, getSignalStatus, isLeaf, computeProgress, getAncestorNames, toInputDate, genId } from "../utils/taskUtils";
+import { getAllDescendantIds, getSignalStatus, isLeaf, computeProgress, getAncestorNames } from "../utils/taskUtils";
 import MemoWithToggle from "./MemoWithToggle";
 import TaskEditModal from "./TaskEditModal";
+import TaskAddModal from "./TaskAddModal";
+import SignalDot from "./SignalDot";
 
 interface Props {
   tasks: Task[];
@@ -52,13 +54,9 @@ const COLUMNS: Column[] = [
 
 // ── 追加用ステート型 ──────────────────────────────────────
 
-interface AddState {
-  columnId: Column["id"];
-  name: string;
-  startDate: string;
-  endDate: string;
-  color: string;
-  parentId?: string;
+interface AddColumnState {
+  initialProgress: number;
+  defaultParentId?: string;
 }
 
 // ── コンポーネント ────────────────────────────────────────
@@ -67,7 +65,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
   const [editingId,    setEditingId]    = useState<string | null>(null);
   const [expandedMemos, setExpandedMemos] = useState<Set<string>>(new Set());
 
-  const [addState, setAddState] = useState<AddState | null>(null);
+  const [addColumn, setAddColumn] = useState<AddColumnState | null>(null);
 
   const [filterParentId, setFilterParentId] = useState<string | "all">("all");
   const [filterAssignee, setFilterAssignee] = useState<string | "all">("all");
@@ -107,36 +105,11 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
   }
 
   function openAdd(columnId: Column["id"]) {
-    const today = new Date();
-    setAddState({
-      columnId,
-      name:      "",
-      startDate: toInputDate(today),
-      endDate:   toInputDate(new Date(today.getTime() + 6 * 86400000)),
-      color:     "#4A90D9",
-      parentId:  filterParentId === "all" ? undefined : filterParentId,
+    const col = COLUMNS.find((c) => c.id === columnId)!;
+    setAddColumn({
+      initialProgress: col.dropProgress(0),
+      defaultParentId: filterParentId === "all" ? undefined : filterParentId,
     });
-  }
-
-  function confirmAdd() {
-    if (!addState || !addState.name.trim()) return;
-    const newStart = new Date(addState.startDate);
-    const newEnd   = new Date(addState.endDate);
-    if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
-
-    const col      = COLUMNS.find((c) => c.id === addState.columnId)!;
-    const initProg = col.dropProgress(0);
-    const newTask: Task = {
-      id:        genId(),
-      name:      addState.name.trim(),
-      startDate: newStart,
-      endDate:   newEnd,
-      progress:  initProg,
-      color:     addState.color,
-      ...(addState.parentId ? { parentId: addState.parentId } : {}),
-    };
-    onTasksChange([...tasks, newTask]);
-    setAddState(null);
   }
 
   // ── ドラッグ & ドロップ（列間移動 → 進捗更新）──
@@ -233,12 +206,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
                     style={{ borderLeftColor: task.color ?? "#4A90D9" }}
                   >
                     {/* 信号機インジケーター */}
-                    {(() => {
-                      const sig = getSignalStatus(task.id, tasks);
-                      if (sig === "none") return null;
-                      const title = sig === "red" ? "遅延" : sig === "yellow" ? "着手遅れ" : "正常";
-                      return <span className={`status-signal status-signal--${sig} kanban-card-signal`} title={title} />;
-                    })()}
+                    <SignalDot status={getSignalStatus(task.id, tasks)} className="kanban-card-signal" />
                     {/* 祖先パス */}
                     {ancestors.length > 0 && (
                       <div className="kanban-card-path">
@@ -305,62 +273,17 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
       })()}
 
       {/* ── 追加モーダル ── */}
-      {addState !== null && (
-        <div className="gantt-modal-overlay" onClick={() => setAddState(null)}>
-          <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>タスクを追加</h3>
-            <p className="modal-parent-info">
-              列: {COLUMNS.find((c) => c.id === addState.columnId)?.label}
-            </p>
-
-            <label className="modal-label">親タスク</label>
-            <select
-              className="assignee-input"
-              value={addState.parentId ?? ""}
-              onChange={(e) => setAddState({ ...addState, parentId: e.target.value || undefined })}
-            >
-              <option value="">なし（ルートタスク）</option>
-              {tasks
-                .filter((t) => !isLeaf(t.id, tasks))
-                .map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-            </select>
-
-            <label className="modal-label">タスク名 <span className="modal-required">*</span></label>
-            <input
-              type="text"
-              value={addState.name}
-              onChange={(e) => setAddState({ ...addState, name: e.target.value })}
-              placeholder="タスク名を入力"
-              className="assignee-input"
-              autoFocus
-              onKeyDown={(e) => { if (e.key === "Enter") confirmAdd(); }}
-            />
-
-            <div className="modal-date-row">
-              <div className="modal-date-field">
-                <label className="modal-label">開始日</label>
-                <input type="date" value={addState.startDate} max={addState.endDate} onChange={(e) => setAddState({ ...addState, startDate: e.target.value })} className="date-input" />
-              </div>
-              <div className="modal-date-field">
-                <label className="modal-label">終了日</label>
-                <input type="date" value={addState.endDate} min={addState.startDate} onChange={(e) => setAddState({ ...addState, endDate: e.target.value })} className="date-input" />
-              </div>
-            </div>
-
-            <div className="modal-color-row">
-              <label className="modal-label">カラー</label>
-              <input type="color" value={addState.color} onChange={(e) => setAddState({ ...addState, color: e.target.value })} className="color-input" />
-              <span className="modal-color-preview" style={{ background: addState.color }} />
-            </div>
-
-            <div className="gantt-modal-actions">
-              <button className="btn-cancel" onClick={() => setAddState(null)}>キャンセル</button>
-              <button className="btn-save" onClick={confirmAdd} disabled={!addState.name.trim()}>追加</button>
-            </div>
-          </div>
-        </div>
+      {addColumn !== null && (
+        <TaskAddModal
+          initialProgress={addColumn.initialProgress}
+          defaultParentId={addColumn.defaultParentId}
+          allTasks={tasks}
+          onConfirm={(newTask) => {
+            onTasksChange([...tasks, newTask]);
+            setAddColumn(null);
+          }}
+          onClose={() => setAddColumn(null)}
+        />
       )}
     </div>
   );

@@ -1,31 +1,18 @@
 import { useRef, useState } from "react";
 import { Task } from "../types/task";
-import { toInputDate, genId, propagateDates } from "../utils/taskUtils";
+import { propagateDates } from "../utils/taskUtils";
 import { useDragHandler } from "../hooks/useDragHandler";
 import { useGanttFilter } from "../hooks/useGanttFilter";
 import GanttLeftPanel from "./GanttLeftPanel";
 import GanttTimeline  from "./GanttTimeline";
 import TaskEditModal  from "./TaskEditModal";
+import TaskAddModal   from "./TaskAddModal";
 import GanttTooltip   from "./GanttTooltip";
 
 interface Props {
   tasks: Task[];
   onTasksChange: (tasks: Task[]) => void;
   holidays?: Map<string, string>;
-}
-
-interface AddState {
-  parentId?: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  color: string;
-}
-
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
 }
 
 function isVisible(task: Task, tasks: Task[], collapsedIds: Set<string>): boolean {
@@ -43,11 +30,8 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   const [collapsedIds,   setCollapsedIds]   = useState<Set<string>>(new Set());
   const [editingId,      setEditingId]      = useState<string | null>(null);
   const [editingNameId,  setEditingNameId]  = useState<string | null>(null);
-  const [addState,       setAddState]       = useState<AddState | null>(null);
+  const [addParentId,    setAddParentId]    = useState<string | null | undefined>(undefined);
   const [tooltip, setTooltip] = useState<{ task: Task; progress: number; x: number; y: number } | null>(null);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   // カスタムフック
   const { didDragRef, dragPreview, startDrag } = useDragHandler(tasks, onTasksChange, () => setTooltip(null));
@@ -81,37 +65,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   }
 
   function openAdd(parentId?: string) {
-    const parent       = parentId ? tasks.find((t) => t.id === parentId) : undefined;
-    const defaultColor = parent?.color ?? "#4A90D9";
-    setAddState({
-      parentId,
-      name: "",
-      startDate: toInputDate(today),
-      endDate:   toInputDate(addDays(today, 6)),
-      color:     defaultColor,
-    });
-  }
-
-  function confirmAdd() {
-    if (!addState || !addState.name.trim()) return;
-    const newStart = new Date(addState.startDate);
-    const newEnd   = new Date(addState.endDate);
-    if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
-
-    const newTask: Task = {
-      id:        genId(),
-      name:      addState.name.trim(),
-      startDate: newStart,
-      endDate:   newEnd,
-      progress:  0,
-      color:     addState.color,
-      parentId:  addState.parentId,
-    };
-
-    const appended   = [...tasks, newTask];
-    const propagated = newTask.parentId ? propagateDates(newTask.id, appended) : appended;
-    onTasksChange(propagated);
-    setAddState(null);
+    setAddParentId(parentId ?? null);
   }
 
   // ── スクロール同期 ──
@@ -191,50 +145,19 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
       })()}
 
       {/* 追加モーダル */}
-      {addState !== null && (() => {
-        const parent = addState.parentId ? tasks.find((t) => t.id === addState.parentId) : undefined;
-        return (
-          <div className="gantt-modal-overlay" onClick={() => setAddState(null)}>
-            <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
-              <h3>{parent ? "サブタスクを追加" : "タスクを追加"}</h3>
-              {parent && <p className="modal-parent-info">親タスク: {parent.name}</p>}
-
-              <label className="modal-label">タスク名 <span className="modal-required">*</span></label>
-              <input
-                type="text"
-                value={addState.name}
-                onChange={(e) => setAddState({ ...addState, name: e.target.value })}
-                placeholder="タスク名を入力"
-                className="assignee-input"
-                autoFocus
-                onKeyDown={(e) => { if (e.key === "Enter") confirmAdd(); }}
-              />
-
-              <div className="modal-date-row">
-                <div className="modal-date-field">
-                  <label className="modal-label">開始日</label>
-                  <input type="date" value={addState.startDate} max={addState.endDate} onChange={(e) => setAddState({ ...addState, startDate: e.target.value })} className="date-input" />
-                </div>
-                <div className="modal-date-field">
-                  <label className="modal-label">終了日</label>
-                  <input type="date" value={addState.endDate} min={addState.startDate} onChange={(e) => setAddState({ ...addState, endDate: e.target.value })} className="date-input" />
-                </div>
-              </div>
-
-              <div className="modal-color-row">
-                <label className="modal-label">カラー</label>
-                <input type="color" value={addState.color} onChange={(e) => setAddState({ ...addState, color: e.target.value })} className="color-input" />
-                <span className="modal-color-preview" style={{ background: addState.color }} />
-              </div>
-
-              <div className="gantt-modal-actions">
-                <button className="btn-cancel" onClick={() => setAddState(null)}>キャンセル</button>
-                <button className="btn-save" onClick={confirmAdd} disabled={!addState.name.trim()}>追加</button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {addParentId !== undefined && (
+        <TaskAddModal
+          parentTask={addParentId ? tasks.find((t) => t.id === addParentId) : undefined}
+          allTasks={tasks}
+          onConfirm={(newTask) => {
+            const appended   = [...tasks, newTask];
+            const propagated = newTask.parentId ? propagateDates(newTask.id, appended) : appended;
+            onTasksChange(propagated);
+            setAddParentId(undefined);
+          }}
+          onClose={() => setAddParentId(undefined)}
+        />
+      )}
     </div>
   );
 }
