@@ -1,6 +1,5 @@
 import { Task } from "../types/task";
-import { getSignalStatus, isLeaf, computeProgress } from "../utils/taskUtils";
-import { SignalStatus } from "../utils/taskUtils";
+import { getSignalStatus, computeProgress } from "../utils/taskUtils";
 
 const ROW_HEIGHT = 40;
 const HEADER_HEIGHT = 90;
@@ -133,7 +132,6 @@ export default function GanttLeftPanel({
           const depth         = getDepth(task.id, tasks);
           const hasChildren   = tasks.some((t) => t.parentId === task.id);
           const isCollapsed   = collapsedIds.has(task.id);
-          const leaf          = isLeaf(task.id, tasks);
           const effectiveProg = computeProgress(task.id, tasks);
           const expected      = expectedProgress(task, today);
           const isBehind      = effectiveProg < expected;
@@ -179,11 +177,11 @@ export default function GanttLeftPanel({
               >＋</button>
 
               <span
-                className={`gantt-col-assignee${leaf ? " gantt-col-assignee--leaf" : ""}`}
-                onClick={leaf ? () => onOpenEdit(task) : undefined}
-                title={leaf ? (task.assignee ? `担当: ${task.assignee}` : "クリックで担当者を設定") : undefined}
+                className={`gantt-col-assignee${!hasChildren ? " gantt-col-assignee--leaf" : ""}`}
+                onClick={!hasChildren ? () => onOpenEdit(task) : undefined}
+                title={!hasChildren ? (task.assignee ? `担当: ${task.assignee}` : "クリックで担当者を設定") : undefined}
               >
-                {leaf ? (
+                {!hasChildren ? (
                   task.assignee
                     ? <span className="assignee-badge">{task.assignee}</span>
                     : <span className="assignee-empty">未設定</span>

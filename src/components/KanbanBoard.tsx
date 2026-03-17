@@ -15,6 +15,12 @@ function formatDateShort(d: Date): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+function addDays(d: Date, n: number): Date {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
 // ── カラム定義 ────────────────────────────────────────────
 
 interface Column {
@@ -112,7 +118,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
       columnId,
       name:      "",
       startDate: toInputDate(today),
-      endDate:   toInputDate(new Date(today.getTime() + 6 * 86400000)),
+      endDate:   toInputDate(addDays(today, 6)),
       color:     "#4A90D9",
       parentId:  filterParentId === "all" ? undefined : filterParentId,
     });

@@ -150,8 +150,8 @@ export default function GanttTimeline({
 
           const barLeft  = diffDays(rangeStart, barStart) * DAY_WIDTH;
           const barWidth = Math.max((diffDays(barStart, barEnd) + 1) * DAY_WIDTH, DAY_WIDTH);
-          const ep        = computeProgress(task.id, tasks);
-          const done      = ep === 100;
+          const effectiveProg = computeProgress(task.id, tasks);
+          const done          = effectiveProg === 100;
           const baseColor = done ? "#999" : (task.color ?? "#4A90D9");
           const barColor  = `${baseColor}${barOpacity(depth)}`;
           const barHeight = Math.max(14, ROW_HEIGHT - depth * 4 - 18);
@@ -185,12 +185,12 @@ export default function GanttTimeline({
                 style={{ left: barLeft, width: barWidth, height: barHeight, background: barColor, cursor: "grab", userSelect: "none" }}
                 onMouseDown={(e) => onStartDrag(e, task, "move")}
                 onClick={() => { if (!didDragRef.current) onOpenEdit(task); }}
-                onMouseEnter={(e) => { if (!dragPreview) onSetTooltip({ task, progress: ep, x: e.clientX, y: e.clientY }); }}
-                onMouseMove={(e)  => { if (!dragPreview) onSetTooltip({ task, progress: ep, x: e.clientX, y: e.clientY }); }}
+                onMouseEnter={(e) => { if (!dragPreview) onSetTooltip({ task, progress: effectiveProg, x: e.clientX, y: e.clientY }); }}
+                onMouseMove={(e)  => { if (!dragPreview) onSetTooltip({ task, progress: effectiveProg, x: e.clientX, y: e.clientY }); }}
                 onMouseLeave={() => onSetTooltip(null)}
               >
                 <div className="gantt-bar-handle gantt-bar-handle--left" style={{ width: HANDLE_WIDTH }} onMouseDown={(e) => onStartDrag(e, task, "start")} />
-                <div className="gantt-bar-progress" style={{ width: `${ep}%`, background: baseColor, filter: "brightness(0.75)" }} />
+                <div className="gantt-bar-progress" style={{ width: `${effectiveProg}%`, background: baseColor, filter: "brightness(0.75)" }} />
                 <span className="gantt-bar-label">{task.name}</span>
                 <div className="gantt-bar-handle gantt-bar-handle--right" style={{ width: HANDLE_WIDTH }} onMouseDown={(e) => onStartDrag(e, task, "end")} />
               </div>
