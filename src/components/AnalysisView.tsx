@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Task } from "../types/task";
-import { isLeaf, computeProgress, getAncestorNames } from "../utils/taskUtils";
+import { isLeaf, computeProgress, getAncestorNames, diffDays } from "../utils/taskUtils";
 
 interface Props {
   tasks: Task[];
@@ -47,10 +47,6 @@ export default function AnalysisView({ tasks }: Props) {
     return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
   }
 
-  function delayDays(endDate: Date): number {
-    return Math.floor((today.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
-  }
-
   return (
     <div className="analysis-view">
       {/* 遅延タスク */}
@@ -80,7 +76,7 @@ export default function AnalysisView({ tasks }: Props) {
                 {delayedTasks.map((t) => {
                   const ancestors = getAncestorNames(t.id, tasks);
                   const progress = computeProgress(t.id, tasks);
-                  const late = delayDays(t.endDate);
+                  const late = diffDays(t.endDate, today);
                   const isNotStarted = progress === 0;
                   return (
                     <tr key={t.id} className={isNotStarted ? "analysis-row--not-started" : ""}>

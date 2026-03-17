@@ -57,9 +57,14 @@ function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  function handleTasksChange(updated: Task[]) {
+  function applyTaskUpdate(updated: Task[]): Task[] {
     const sorted = sortByTree(updated);
     setTasks(sorted);
+    return sorted;
+  }
+
+  function handleTasksChange(updated: Task[]) {
+    const sorted = applyTaskUpdate(updated);
     saveTasks(sorted).catch((e) => console.error("タスクの保存に失敗:", e));
   }
 

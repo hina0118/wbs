@@ -78,14 +78,18 @@ export function genId(): string {
 
 export type SignalStatus = "red" | "yellow" | "green" | "none";
 
-export function getSignalStatus(taskId: string, tasks: Task[]): SignalStatus {
+export function diffDays(a: Date, b: Date): number {
+  return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+export function getSignalStatus(taskId: string, tasks: Task[], today = new Date()): SignalStatus {
   const effectiveProgress = computeProgress(taskId, tasks);
   if (effectiveProgress === 100) return "none";
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return "none";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (task.endDate < today) return "red";
-  if (task.startDate < today && effectiveProgress === 0) return "yellow";
+  const d = new Date(today);
+  d.setHours(0, 0, 0, 0);
+  if (task.endDate < d) return "red";
+  if (task.startDate < d && effectiveProgress === 0) return "yellow";
   return "green";
 }
