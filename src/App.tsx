@@ -149,20 +149,13 @@ function App() {
         {loading && <div className="app-loading">読み込み中...</div>}
         {error   && <div className="app-error">エラー: {error}</div>}
 
-        {!loading && !error && isSearching && (
-          <SearchView
-            tasks={tasks}
-            query={searchQuery}
-          />
-        )}
-        {!loading && !error && !isSearching && viewMode === "gantt" && (
-          <GanttChart tasks={tasks} onTasksChange={handleTasksChange} holidays={holidays} />
-        )}
-        {!loading && !error && !isSearching && viewMode === "kanban" && (
-          <KanbanBoard tasks={tasks} onTasksChange={handleTasksChange} />
-        )}
-        {!loading && !error && !isSearching && viewMode === "analysis" && (
-          <AnalysisView tasks={tasks} />
+        {!loading && !error && (
+          <>
+            {isSearching && <SearchView tasks={tasks} query={searchQuery} />}
+            {!isSearching && viewMode === "gantt"     && <GanttChart tasks={tasks} onTasksChange={handleTasksChange} holidays={holidays} />}
+            {!isSearching && viewMode === "kanban"    && <KanbanBoard tasks={tasks} onTasksChange={handleTasksChange} />}
+            {!isSearching && viewMode === "analysis"  && <AnalysisView tasks={tasks} />}
+          </>
         )}
       </main>
     </div>

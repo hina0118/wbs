@@ -22,8 +22,7 @@ interface Props {
 }
 
 export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }: Props) {
-  const leaf        = isLeaf(task.id, tasks);
-  const hasChildren = tasks.some((t) => t.parentId === task.id);
+  const leaf = isLeaf(task.id, tasks);
 
   const [editName,      setEditName]      = useState(task.name);
   const [editProgress,  setEditProgress]  = useState(task.progress);
@@ -63,7 +62,7 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
   }
 
   return (
-    <div className="gantt-modal-overlay" onClick={handleSave}>
+    <div className="gantt-modal-overlay" onClick={onClose}>
       <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
         <input
           type="text"
@@ -126,7 +125,7 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
           {confirmDelete ? (
             <>
               <span className="modal-delete-confirm">
-                {hasChildren ? "子タスクも全て削除します。よろしいですか？" : "削除しますか？"}
+                {!leaf ? "子タスクも全て削除します。よろしいですか？" : "削除しますか？"}
               </span>
               <button className="btn-cancel" onClick={() => setConfirmDelete(false)}>いいえ</button>
               <button className="btn-delete" onClick={handleDelete}>削除する</button>
