@@ -191,6 +191,7 @@ src-tauri/WixTools/
 ### Tauri Signing Keys ###
 # NEVER commit private keys — store them in GitHub Secrets or a password manager
 *.key
+*.key.pub
 *.pem
 
 ### Claude Code ###
