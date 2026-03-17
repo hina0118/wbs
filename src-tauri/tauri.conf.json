@@ -23,7 +23,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc4Q0VBMzlFMjgzQzhDNjUKUldSbGpEd29ucVBPZUp1MUZiOE5ndjNWTnZBQXZnRTFhR24zS2dIZXpxZHlEbXFSYmI5Szk3cUcK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIyRTc4NTVGOEQ2NTdBN0QKUldSOWVtV05YNFhuc3VhWnJyWDUzQVV6Nkxka09SblFodlFKQ0k5TWtzTDRDdVpzYXBpUUtmK08K",
       "endpoints": [
         "https://github.com/hina0118/wbs/releases/latest/download/latest.json"
       ]
@@ -31,7 +31,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "updater"],
+    "targets": ["nsis"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
