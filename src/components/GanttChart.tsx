@@ -1,31 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Task } from "../types/task";
-import { toHolidayKey } from "../utils/holidays";
-import { getAllDescendantIds, getSignalStatus, SignalStatus, toInputDate, genId, isLeaf, computeProgress, propagateDates } from "../utils/taskUtils";
+import { toInputDate, genId, propagateDates } from "../utils/taskUtils";
+import { useDragHandler } from "../hooks/useDragHandler";
+import { useGanttFilter } from "../hooks/useGanttFilter";
+import GanttLeftPanel from "./GanttLeftPanel";
+import GanttTimeline  from "./GanttTimeline";
 import TaskEditModal  from "./TaskEditModal";
-import GanttTooltip  from "./GanttTooltip";
+import GanttTooltip   from "./GanttTooltip";
 
 interface Props {
   tasks: Task[];
   onTasksChange: (tasks: Task[]) => void;
   holidays?: Map<string, string>;
-}
-
-const DAY_WIDTH = 28;
-const ROW_HEIGHT = 40;
-const HEADER_HEIGHT = 90;
-const LEFT_PANEL_WIDTH = 260;
-const ASSIGNEE_COL_WIDTH = 80;
-const PROGRESS_COL_WIDTH = 70;
-const INDENT_PER_LEVEL = 16;
-const HANDLE_WIDTH = 6;
-
-interface DragState {
-  taskId: string;
-  type: "start" | "end" | "move";
-  startX: number;
-  originalStart: Date;
-  originalEnd: Date;
 }
 
 interface AddState {
@@ -36,46 +22,10 @@ interface AddState {
   color: string;
 }
 
-// ── ヘルパー関数 ────────────────────────────────────────────
-
-function getDaysArray(start: Date, end: Date): Date[] {
-  const days: Date[] = [];
-  const cur = new Date(start);
-  while (cur <= end) {
-    days.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
-  return days;
-}
-
-function diffDays(a: Date, b: Date): number {
-  return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
-}
-
 function addDays(d: Date, n: number): Date {
   const r = new Date(d);
   r.setDate(r.getDate() + n);
   return r;
-}
-
-function formatDate(d: Date): string {
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
-function formatMonth(d: Date): string {
-  return `${d.getFullYear()}年${d.getMonth() + 1}月`;
-}
-
-function isSunday(d: Date) { return d.getDay() === 0; }
-function isSaturday(d: Date) { return d.getDay() === 6; }
-function isMonthStart(d: Date) { return d.getDate() === 1; }
-function isHoliday(d: Date, holidays: Map<string, string>) { return holidays.has(toHolidayKey(d)); }
-function getHolidayName(d: Date, holidays: Map<string, string>) { return holidays.get(toHolidayKey(d)) ?? ""; }
-
-function getDepth(taskId: string, tasks: Task[]): number {
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task?.parentId) return 0;
-  return 1 + getDepth(task.parentId, tasks);
 }
 
 function isVisible(task: Task, tasks: Task[], collapsedIds: Set<string>): boolean {
@@ -86,109 +36,31 @@ function isVisible(task: Task, tasks: Task[], collapsedIds: Set<string>): boolea
   return isVisible(parent, tasks, collapsedIds);
 }
 
-const SIGNAL_TITLE: Record<string, string> = {
-  red: "遅延",
-  yellow: "着手遅れ",
-  green: "正常",
-};
-
-function SignalDot({ status }: { status: SignalStatus }) {
-  if (status === "none") return null;
-  return (
-    <span
-      className={`status-signal status-signal--${status}`}
-      title={SIGNAL_TITLE[status]}
-    />
-  );
-}
-
-function expectedProgress(task: Task, today: Date): number {
-  if (today <= task.startDate) return 0;
-  if (today >= task.endDate) return 100;
-  const total = diffDays(task.startDate, task.endDate);
-  const elapsed = diffDays(task.startDate, today);
-  return Math.round((elapsed / total) * 100);
-}
-
-function barOpacity(depth: number): string {
-  const opacities = ["ff", "cc", "99", "77"];
-  return opacities[Math.min(depth, opacities.length - 1)];
-}
-
-// ── コンポーネント ──────────────────────────────────────────
-
 export default function GanttChart({ tasks, onTasksChange, holidays = new Map() }: Props) {
   const timelineRef   = useRef<HTMLDivElement>(null);
   const leftScrollRef = useRef<HTMLDivElement>(null);
 
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
-  const [filterParentId, setFilterParentId] = useState<string>("all");
-  const [filterAssignee, setFilterAssignee] = useState<string>("all");
-
-  // 編集モーダル
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  // インライン名前編集
-  const [editingNameId, setEditingNameId] = useState<string | null>(null);
-
-  // 追加モーダル
-  const [addState, setAddState] = useState<AddState | null>(null);
-
-  // ドラッグ
-  const dragRef    = useRef<DragState | null>(null);
-  const didDragRef = useRef(false);
-  const [dragPreview, setDragPreview] = useState<{ taskId: string; startDate: Date; endDate: Date } | null>(null);
-
-  // ツールチップ
+  const [collapsedIds,   setCollapsedIds]   = useState<Set<string>>(new Set());
+  const [editingId,      setEditingId]      = useState<string | null>(null);
+  const [editingNameId,  setEditingNameId]  = useState<string | null>(null);
+  const [addState,       setAddState]       = useState<AddState | null>(null);
   const [tooltip, setTooltip] = useState<{ task: Task; progress: number; x: number; y: number } | null>(null);
-
-  // ── タイムライン範囲 ──
-  const allDates = tasks.flatMap((t) => [t.startDate, t.endDate]);
-  if (dragPreview) allDates.push(dragPreview.startDate, dragPreview.endDate);
-
-  const minDate = allDates.reduce((m, d) => (d < m ? d : m));
-  const maxDate = allDates.reduce((m, d) => (d > m ? d : m));
-  const rangeStart = addDays(minDate, -1);
-  const rangeEnd   = addDays(maxDate,  1);
-
-  const days      = getDaysArray(rangeStart, rangeEnd);
-  const totalDays = days.length;
-
-  const monthGroups: { label: string; count: number }[] = [];
-  days.forEach((d) => {
-    const label = formatMonth(d);
-    const last  = monthGroups[monthGroups.length - 1];
-    if (!last || last.label !== label) monthGroups.push({ label, count: 1 });
-    else last.count++;
-  });
-
-  // 親タスクフィルタ
-  const filteredByParent = filterParentId === "all"
-    ? tasks
-    : [
-        tasks.find((t) => t.id === filterParentId)!,
-        ...getAllDescendantIds(filterParentId, tasks)
-          .slice(1)
-          .map((id) => tasks.find((t) => t.id === id)!),
-      ].filter(Boolean);
-
-  // 担当者フィルタ（対象担当者の子を持つ親タスク行も表示）
-  const assignees = [...new Set(tasks.map((t) => t.assignee).filter(Boolean))] as string[];
-  const filteredTasks = filterAssignee === "all"
-    ? filteredByParent
-    : filteredByParent.filter((t) =>
-        t.assignee === filterAssignee ||
-        getAllDescendantIds(t.id, tasks).slice(1).some((id) => {
-          const child = tasks.find((c) => c.id === id);
-          return child?.assignee === filterAssignee;
-        })
-      );
-
-  const visibleTasks = filteredTasks.filter((t) => isVisible(t, filteredTasks, collapsedIds));
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayOffset = diffDays(rangeStart, today);
+
+  // カスタムフック
+  const { didDragRef, dragPreview, startDrag } = useDragHandler(tasks, onTasksChange, () => setTooltip(null));
+  const {
+    filterParentId,
+    filterAssignee,
+    assignees,
+    filteredTasks,
+    setFilterParentId,
+    setFilterAssignee,
+  } = useGanttFilter(tasks);
+
+  const visibleTasks = filteredTasks.filter((t) => isVisible(t, filteredTasks, collapsedIds));
 
   // ── 操作 ──
 
@@ -200,10 +72,6 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
     });
   }
 
-  function openEdit(task: Task) {
-    setEditingId(task.id);
-  }
-
   function commitRename(taskId: string, newName: string) {
     const trimmed = newName.trim();
     if (trimmed) {
@@ -213,11 +81,15 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   }
 
   function openAdd(parentId?: string) {
-    const parent = parentId ? tasks.find((t) => t.id === parentId) : undefined;
+    const parent       = parentId ? tasks.find((t) => t.id === parentId) : undefined;
     const defaultColor = parent?.color ?? "#4A90D9";
-    const start = toInputDate(today);
-    const end   = toInputDate(addDays(today, 6));
-    setAddState({ parentId, name: "", startDate: start, endDate: end, color: defaultColor });
+    setAddState({
+      parentId,
+      name: "",
+      startDate: toInputDate(today),
+      endDate:   toInputDate(addDays(today, 6)),
+      color:     defaultColor,
+    });
   }
 
   function confirmAdd() {
@@ -236,7 +108,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
       parentId:  addState.parentId,
     };
 
-    const appended = [...tasks, newTask];
+    const appended   = [...tasks, newTask];
     const propagated = newTask.parentId ? propagateDates(newTask.id, appended) : appended;
     onTasksChange(propagated);
     setAddState(null);
@@ -248,305 +120,63 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
     if (leftScrollRef.current && timelineRef.current)
       leftScrollRef.current.scrollTop = timelineRef.current.scrollTop;
   }
+
   function handleLeftScroll() {
     if (leftScrollRef.current && timelineRef.current)
       timelineRef.current.scrollTop = leftScrollRef.current.scrollTop;
   }
 
-  // ── ドラッグ ──
+  // ── 親タスクフィルタ変更（折りたたみリセット付き） ──
 
-  function startDrag(e: React.MouseEvent, task: Task, type: DragState["type"]) {
-    e.preventDefault();
-    e.stopPropagation();
-    setTooltip(null);
-    dragRef.current = { taskId: task.id, type, startX: e.clientX, originalStart: task.startDate, originalEnd: task.endDate };
-    didDragRef.current = false;
+  function handleFilterParentChange(value: string) {
+    setFilterParentId(value);
+    setCollapsedIds(new Set());
   }
 
-  useEffect(() => {
-    function onMouseMove(e: MouseEvent) {
-      const drag = dragRef.current;
-      if (!drag) return;
-
-      const delta = Math.round((e.clientX - drag.startX) / DAY_WIDTH);
-      if (delta !== 0) didDragRef.current = true;
-
-      let newStart = drag.originalStart;
-      let newEnd   = drag.originalEnd;
-
-      if (drag.type === "move") {
-        newStart = addDays(drag.originalStart, delta);
-        newEnd   = addDays(drag.originalEnd,   delta);
-      } else if (drag.type === "start") {
-        newStart = addDays(drag.originalStart, delta);
-        if (newStart >= drag.originalEnd) newStart = addDays(drag.originalEnd, -1);
-      } else {
-        newEnd = addDays(drag.originalEnd, delta);
-        if (newEnd <= drag.originalStart) newEnd = addDays(drag.originalStart, 1);
-      }
-
-      setDragPreview({ taskId: drag.taskId, startDate: newStart, endDate: newEnd });
-    }
-
-    function onMouseUp() {
-      const drag    = dragRef.current;
-      const preview = dragPreview;
-      dragRef.current = null;
-
-      if (!drag || !preview || !didDragRef.current) {
-        setDragPreview(null);
-        return;
-      }
-
-      const updated = tasks.map((t) =>
-        t.id === drag.taskId ? { ...t, startDate: preview.startDate, endDate: preview.endDate } : t
-      );
-      onTasksChange(propagateDates(drag.taskId, updated));
-      setDragPreview(null);
-    }
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup",   onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup",   onMouseUp);
-    };
-  }, [tasks, dragPreview, onTasksChange]);
-
-  // ── レンダリング ──────────────────────────────────────────
+  // ── レンダリング ──
 
   return (
     <div className="gantt-wrapper">
 
-      {/* ── 左パネル ── */}
-      <div className="gantt-left" style={{ width: LEFT_PANEL_WIDTH + ASSIGNEE_COL_WIDTH + PROGRESS_COL_WIDTH }}>
-        <div className="gantt-left-header" style={{ height: HEADER_HEIGHT }}>
-          <div className="gantt-header-top-row">
-            <span className="gantt-col-task">
-              タスク名
-              <button className="gantt-add-top-btn" onClick={() => openAdd()} title="ルートタスクを追加">＋</button>
-            </span>
-            <span className="gantt-col-assignee">担当者</span>
-            <span className="gantt-col-progress">進捗</span>
-          </div>
-          <div className="gantt-filter-bar">
-            <div className="gantt-filter-item">
-              <span className="gantt-filter-label">親タスク:</span>
-              <select
-                className="gantt-filter-select"
-                value={filterParentId}
-                onChange={(e) => {
-                  setFilterParentId(e.target.value);
-                  setCollapsedIds(new Set());
-                }}
-              >
-                <option value="all">すべて表示</option>
-                {tasks.filter((t) => !t.parentId).map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="gantt-filter-item">
-              <span className="gantt-filter-label">担当者:</span>
-              <select
-                className="gantt-filter-select"
-                value={filterAssignee}
-                onChange={(e) => setFilterAssignee(e.target.value)}
-              >
-                <option value="all">全員</option>
-                {assignees.map((a) => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
+      {/* 左パネル */}
+      <GanttLeftPanel
+        tasks={tasks}
+        visibleTasks={visibleTasks}
+        collapsedIds={collapsedIds}
+        filterParentId={filterParentId}
+        filterAssignee={filterAssignee}
+        assignees={assignees}
+        today={today}
+        editingNameId={editingNameId}
+        leftScrollRef={leftScrollRef}
+        onToggleCollapse={toggleCollapse}
+        onOpenEdit={(task) => setEditingId(task.id)}
+        onOpenAdd={openAdd}
+        onCommitRename={commitRename}
+        onSetEditingNameId={setEditingNameId}
+        onFilterParentChange={handleFilterParentChange}
+        onFilterAssigneeChange={setFilterAssignee}
+        onLeftScroll={handleLeftScroll}
+      />
 
-        <div
-          className="gantt-left-body"
-          ref={leftScrollRef}
-          onScroll={handleLeftScroll}
-          style={{ maxHeight: `calc(100vh - ${HEADER_HEIGHT + 80}px)`, overflowY: "auto" }}
-        >
-          {visibleTasks.map((task) => {
-            const depth     = getDepth(task.id, tasks);
-            const hasChildren   = tasks.some((t) => t.parentId === task.id);
-            const isCollapsed   = collapsedIds.has(task.id);
-            const leaf          = isLeaf(task.id, tasks);
-            const effectiveProg = computeProgress(task.id, tasks);
-            const expected      = expectedProgress(task, today);
-            const isBehind      = effectiveProg < expected;
+      {/* 右タイムラインパネル */}
+      <GanttTimeline
+        tasks={tasks}
+        visibleTasks={visibleTasks}
+        dragPreview={dragPreview}
+        holidays={holidays}
+        timelineRef={timelineRef}
+        didDragRef={didDragRef}
+        onTimelineScroll={handleTimelineScroll}
+        onStartDrag={startDrag}
+        onOpenEdit={(task) => setEditingId(task.id)}
+        onSetTooltip={setTooltip}
+      />
 
-            return (
-              <div
-                key={task.id}
-                className={`gantt-row gantt-row-depth-${Math.min(depth, 3)}${effectiveProg === 100 ? " gantt-row--done" : ""}`}
-                style={{ height: ROW_HEIGHT }}
-              >
-                <span className="gantt-col-task" style={{ paddingLeft: depth * INDENT_PER_LEVEL + 8 }}>
-                  {hasChildren ? (
-                    <button className="gantt-collapse-btn" onClick={() => toggleCollapse(task.id)}>
-                      {isCollapsed ? "▶" : "▼"}
-                    </button>
-                  ) : (
-                    <span className="gantt-leaf-icon">─</span>
-                  )}
-                  <SignalDot status={getSignalStatus(task.id, tasks)} />
-                  {editingNameId === task.id ? (
-                    <input
-                      className="gantt-task-name-input"
-                      defaultValue={task.name}
-                      autoFocus
-                      onBlur={(e) => commitRename(task.id, e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") commitRename(task.id, e.currentTarget.value);
-                        if (e.key === "Escape") setEditingNameId(null);
-                      }}
-                    />
-                  ) : (
-                    <span
-                      className="gantt-task-name"
-                      title={task.name}
-                      onDoubleClick={() => setEditingNameId(task.id)}
-                    >{task.name}</span>
-                  )}
-                </span>
-                <button
-                  className="gantt-add-subtask-btn"
-                  onClick={(e) => { e.stopPropagation(); openAdd(task.id); }}
-                  title="サブタスクを追加"
-                >＋</button>
-
-                <span
-                  className={`gantt-col-assignee${leaf ? " gantt-col-assignee--leaf" : ""}`}
-                  onClick={leaf ? () => openEdit(task) : undefined}
-                  title={leaf ? (task.assignee ? `担当: ${task.assignee}` : "クリックで担当者を設定") : undefined}
-                >
-                  {leaf ? (
-                    task.assignee
-                      ? <span className="assignee-badge">{task.assignee}</span>
-                      : <span className="assignee-empty">未設定</span>
-                  ) : (
-                    <span className="assignee-empty">─</span>
-                  )}
-                </span>
-
-                <span className="gantt-col-progress" style={{ cursor: "pointer" }} onClick={() => openEdit(task)} title="クリックで編集">
-                  <span
-                    className={`progress-badge${isBehind ? " progress-badge--behind" : ""}`}
-                    style={{ background: isBehind ? "#e53935" : (task.color || "#4A90D9") }}
-                  >
-                    {effectiveProg}%
-                  </span>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── 右タイムラインパネル ── */}
-      <div className="gantt-timeline-wrapper">
-        <div className="gantt-timeline-header" style={{ height: HEADER_HEIGHT, width: totalDays * DAY_WIDTH }}>
-          <div className="gantt-month-row">
-            {monthGroups.map((m) => (
-              <div key={m.label} className="gantt-month-cell" style={{ width: m.count * DAY_WIDTH }}>
-                {m.label}
-              </div>
-            ))}
-          </div>
-          <div className="gantt-day-row">
-            {days.map((d, i) => {
-              const holiday     = isHoliday(d, holidays);
-              const holidayName = holiday ? getHolidayName(d, holidays) : "";
-              return (
-                <div
-                  key={i}
-                  className={[
-                    "gantt-day-cell",
-                    isSunday(d)   ? "day-sunday"      : "",
-                    isSaturday(d) ? "day-saturday"    : "",
-                    isMonthStart(d) ? "day-month-start" : "",
-                    holiday       ? "day-holiday"     : "",
-                  ].join(" ")}
-                  style={{ width: DAY_WIDTH }}
-                  title={holidayName}
-                >
-                  {formatDate(d)}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div
-          className="gantt-timeline-body"
-          ref={timelineRef}
-          onScroll={handleTimelineScroll}
-          style={{ width: totalDays * DAY_WIDTH, maxHeight: `calc(100vh - ${HEADER_HEIGHT + 80}px)`, overflowY: "auto" }}
-        >
-          {visibleTasks.map((task) => {
-            const depth    = getDepth(task.id, tasks);
-            const preview  = dragPreview?.taskId === task.id ? dragPreview : null;
-            const barStart = preview ? preview.startDate : task.startDate;
-            const barEnd   = preview ? preview.endDate   : task.endDate;
-
-            const barLeft  = diffDays(rangeStart, barStart) * DAY_WIDTH;
-            const barWidth = Math.max((diffDays(barStart, barEnd) + 1) * DAY_WIDTH, DAY_WIDTH);
-            const ep        = computeProgress(task.id, tasks);
-            const done      = ep === 100;
-            const baseColor = done ? "#999" : (task.color ?? "#4A90D9");
-            const barColor  = `${baseColor}${barOpacity(depth)}`;
-            const barHeight = Math.max(14, ROW_HEIGHT - depth * 4 - 18);
-
-            return (
-              <div key={task.id} className="gantt-timeline-row" style={{ height: ROW_HEIGHT }}>
-                {days.map((d, i) => {
-                  const holiday     = isHoliday(d, holidays);
-                  const holidayName = holiday ? getHolidayName(d, holidays) : "";
-                  return (
-                    <div
-                      key={i}
-                      className={[
-                        "gantt-grid-cell",
-                        isSunday(d) || isSaturday(d) ? "grid-weekend"    : "",
-                        isMonthStart(d)              ? "grid-month-start" : "",
-                        holiday                      ? "grid-holiday"     : "",
-                      ].join(" ")}
-                      style={{ left: i * DAY_WIDTH, width: DAY_WIDTH }}
-                      title={holidayName}
-                    />
-                  );
-                })}
-
-                {todayOffset >= 0 && todayOffset < totalDays && (
-                  <div className="gantt-today-line" style={{ left: todayOffset * DAY_WIDTH + DAY_WIDTH / 2 }} />
-                )}
-
-                <div
-                  className="gantt-bar"
-                  style={{ left: barLeft, width: barWidth, height: barHeight, background: barColor, cursor: "grab", userSelect: "none" }}
-                  onMouseDown={(e) => startDrag(e, task, "move")}
-                  onClick={() => { if (!didDragRef.current) openEdit(task); }}
-                  onMouseEnter={(e) => { if (!dragRef.current) setTooltip({ task, progress: ep, x: e.clientX, y: e.clientY }); }}
-                  onMouseMove={(e)  => { if (!dragRef.current) setTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null); }}
-                  onMouseLeave={() => setTooltip(null)}
-                >
-                  <div className="gantt-bar-handle gantt-bar-handle--left" style={{ width: HANDLE_WIDTH }} onMouseDown={(e) => startDrag(e, task, "start")} />
-                  <div className="gantt-bar-progress" style={{ width: `${ep}%`, background: baseColor, filter: "brightness(0.75)" }} />
-                  <span className="gantt-bar-label">{task.name}</span>
-                  <div className="gantt-bar-handle gantt-bar-handle--right" style={{ width: HANDLE_WIDTH }} onMouseDown={(e) => startDrag(e, task, "end")} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── ツールチップ ── */}
+      {/* ツールチップ */}
       {tooltip && <GanttTooltip {...tooltip} />}
 
-      {/* ── 編集モーダル ── */}
+      {/* 編集モーダル */}
       {editingId !== null && (() => {
         const task = tasks.find((t) => t.id === editingId)!;
         return (
@@ -560,7 +190,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
         );
       })()}
 
-      {/* ── 追加モーダル ── */}
+      {/* 追加モーダル */}
       {addState !== null && (() => {
         const parent = addState.parentId ? tasks.find((t) => t.id === addState.parentId) : undefined;
         return (
