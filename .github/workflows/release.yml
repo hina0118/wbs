@@ -51,6 +51,7 @@ jobs:
 
       # ── Draft リリースを事前作成 ────────────────────────────
       - name: Create draft release
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
