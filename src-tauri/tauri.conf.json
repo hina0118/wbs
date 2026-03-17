@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "WBS進捗管理",
-  "version": "0.1.0",
+  "version": "1.0.6",
   "identifier": "com.wbs.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -23,6 +23,7 @@
   },
   "plugins": {
     "updater": {
+      "active": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIyRTc4NTVGOEQ2NTdBN0QKUldSOWVtV05YNFhuc3VhWnJyWDUzQVV6Nkxka09SblFodlFKQ0k5TWtzTDRDdVpzYXBpUUtmK08K",
       "endpoints": [
         "https://github.com/hina0118/wbs/releases/latest/download/latest.json"
