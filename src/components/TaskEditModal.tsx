@@ -24,12 +24,14 @@ interface Props {
 export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }: Props) {
   const leaf = isLeaf(task.id, tasks);
 
-  const [editName,      setEditName]      = useState(task.name);
-  const [editProgress,  setEditProgress]  = useState(task.progress);
-  const [editAssignee,  setEditAssignee]  = useState(task.assignee  ?? "");
-  const [editStartDate, setEditStartDate] = useState(toInputDate(task.startDate));
-  const [editEndDate,   setEditEndDate]   = useState(toInputDate(task.endDate));
-  const [editMemo,      setEditMemo]      = useState(task.memo ?? "");
+  const [editName,        setEditName]        = useState(task.name);
+  const [editProgress,    setEditProgress]    = useState(task.progress);
+  const [editAssignee,    setEditAssignee]    = useState(task.assignee    ?? "");
+  const [editSubMembers,  setEditSubMembers]  = useState<string[]>(task.subMembers ?? []);
+  const [newSubMember,    setNewSubMember]    = useState("");
+  const [editStartDate,   setEditStartDate]   = useState(toInputDate(task.startDate));
+  const [editEndDate,     setEditEndDate]     = useState(toInputDate(task.endDate));
+  const [editMemo,        setEditMemo]        = useState(task.memo ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const initialMode = task.progressCount ? "count" : "percent";
   const [progressMode,  setProgressMode]  = useState<"percent" | "count">(initialMode);
@@ -79,6 +81,7 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
             name:          editName.trim() || task.name,
             progress:      editProgress,
             assignee:      editAssignee  || undefined,
+            subMembers:    editSubMembers.length > 0 ? editSubMembers : undefined,
             startDate:     newStart,
             endDate:       newEnd,
             memo:          editMemo      || undefined,
@@ -121,7 +124,7 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
         {/* 担当者（リーフのみ） */}
         {leaf && (
           <>
-            <label className="modal-label">担当者</label>
+            <label className="modal-label">担当者（主）</label>
             <input
               type="text"
               value={editAssignee}
@@ -129,6 +132,47 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
               placeholder="担当者名を入力"
               className="assignee-input"
             />
+
+            <label className="modal-label">サブメンバー</label>
+            {editSubMembers.length > 0 && (
+              <div className="sub-members-list">
+                {editSubMembers.map((member, idx) => (
+                  <div key={idx} className="sub-member-item">
+                    <span className="sub-member-name">{member}</span>
+                    <button
+                      className="sub-member-remove"
+                      onClick={() => setEditSubMembers(editSubMembers.filter((_, i) => i !== idx))}
+                      title="削除"
+                    >×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="sub-member-add-row">
+              <input
+                type="text"
+                value={newSubMember}
+                onChange={(e) => setNewSubMember(e.target.value)}
+                placeholder="メンバー名を入力"
+                className="assignee-input sub-member-input"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newSubMember.trim()) {
+                    setEditSubMembers([...editSubMembers, newSubMember.trim()]);
+                    setNewSubMember("");
+                  }
+                }}
+              />
+              <button
+                className="btn-add-member"
+                onClick={() => {
+                  if (newSubMember.trim()) {
+                    setEditSubMembers([...editSubMembers, newSubMember.trim()]);
+                    setNewSubMember("");
+                  }
+                }}
+                disabled={!newSubMember.trim()}
+              >＋ 追加</button>
+            </div>
           </>
         )}
 

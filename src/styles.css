@@ -1999,3 +1999,81 @@
   height: 12px;
   margin-right: 0;
 }
+
+/* ── サブメンバー ───────────────────────────────────── */
+
+.sub-members-count {
+  font-size: 0.68rem;
+  color: #7b97c2;
+  font-weight: 400;
+}
+
+.sub-members-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.sub-member-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f0f4fb;
+  border: 1px solid #c8d6ea;
+  border-radius: 12px;
+  padding: 2px 8px 2px 10px;
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.sub-member-name {
+  white-space: nowrap;
+}
+
+.sub-member-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.sub-member-remove:hover {
+  color: #ef4444;
+}
+
+.sub-member-add-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.sub-member-input {
+  flex: 1;
+}
+
+.btn-add-member {
+  background: #4a90d9;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-add-member:hover:not(:disabled) {
+  background: #3070b8;
+}
+
+.btn-add-member:disabled {
+  background: #b0c4de;
+  cursor: not-allowed;
+}
