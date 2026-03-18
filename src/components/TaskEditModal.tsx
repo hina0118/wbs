@@ -31,8 +31,37 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
   const [editEndDate,   setEditEndDate]   = useState(toInputDate(task.endDate));
   const [editMemo,      setEditMemo]      = useState(task.memo ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [progressMode,  setProgressMode]  = useState<"percent" | "count">("percent");
+  const [doneCount,     setDoneCount]     = useState(0);
+  const [totalCount,    setTotalCount]    = useState(0);
 
   const effectiveProgress = leaf ? editProgress : computeProgress(task.id, tasks);
+
+  function switchToCount() {
+    setDoneCount(0);
+    setTotalCount(0);
+    setProgressMode("count");
+  }
+
+  function switchToPercent() {
+    setProgressMode("percent");
+  }
+
+  function handleDoneChange(val: number) {
+    const done  = Math.max(0, val);
+    const total = Math.max(done, totalCount);
+    setDoneCount(done);
+    setTotalCount(total);
+    setEditProgress(total > 0 ? Math.round((done / total) * 100) : 0);
+  }
+
+  function handleTotalChange(val: number) {
+    const total = Math.max(0, val);
+    const done  = Math.min(doneCount, total);
+    setTotalCount(total);
+    setDoneCount(done);
+    setEditProgress(total > 0 ? Math.round((done / total) * 100) : 0);
+  }
 
   function handleSave() {
     const newStart = new Date(editStartDate);
@@ -99,18 +128,54 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
         )}
 
         {/* 進捗 */}
-        <label className="modal-label">
-          進捗: <strong>{effectiveProgress}%</strong>
-          {!leaf && <span className="modal-label-sub">（子タスクの平均）</span>}
-        </label>
+        <div className="modal-progress-header">
+          <label className="modal-label">
+            進捗: <strong>{effectiveProgress}%</strong>
+            {!leaf && <span className="modal-label-sub">（子タスクの平均）</span>}
+          </label>
+          {leaf && (
+            <div className="progress-mode-toggle">
+              <button
+                className={progressMode === "percent" ? "toggle-btn active" : "toggle-btn"}
+                onClick={switchToPercent}
+              >％</button>
+              <button
+                className={progressMode === "count" ? "toggle-btn active" : "toggle-btn"}
+                onClick={switchToCount}
+              >実施数</button>
+            </div>
+          )}
+        </div>
         {leaf ? (
-          <input
-            type="range"
-            min={0} max={100}
-            value={editProgress}
-            onChange={(e) => setEditProgress(Number(e.target.value))}
-            className="progress-slider"
-          />
+          progressMode === "percent" ? (
+            <input
+              type="range"
+              min={0} max={100}
+              value={editProgress}
+              onChange={(e) => setEditProgress(Number(e.target.value))}
+              className="progress-slider"
+            />
+          ) : (
+            <div className="progress-count-row">
+              <input
+                type="number"
+                min={0}
+                value={doneCount}
+                onChange={(e) => handleDoneChange(Number(e.target.value))}
+                className="count-input"
+                placeholder="実施数"
+              />
+              <span className="count-separator">/</span>
+              <input
+                type="number"
+                min={0}
+                value={totalCount}
+                onChange={(e) => handleTotalChange(Number(e.target.value))}
+                className="count-input"
+                placeholder="全体数"
+              />
+            </div>
+          )
         ) : (
           <div className="progress-bar-readonly">
             <div className="progress-bar-readonly-fill" style={{ width: `${effectiveProgress}%` }} />

@@ -797,6 +797,55 @@
   transition: width 0.3s;
 }
 
+.modal-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.progress-mode-toggle {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.toggle-btn {
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.toggle-btn.active {
+  background: #4a90d9;
+  color: #fff;
+  border-color: #4a90d9;
+}
+
+.progress-count-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.count-input {
+  width: 80px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.count-separator {
+  font-size: 1.2rem;
+  color: #555;
+}
+
 .modal-label-sub {
   margin-left: 6px;
   font-size: 0.75rem;
