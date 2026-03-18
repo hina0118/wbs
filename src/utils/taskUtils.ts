@@ -86,6 +86,18 @@ export function getSignalStatus(taskId: string, tasks: Task[]): SignalStatus {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   if (task.endDate < today) return "red";
-  if (task.startDate < today && effectiveProgress === 0) return "yellow";
+
+  // 計画進捗率との比較（開始日〜終了日における本日の位置から期待進捗を算出）
+  const startTime = task.startDate.getTime();
+  const endTime = task.endDate.getTime();
+  const todayTime = today.getTime();
+  if (todayTime >= startTime) {
+    const totalDuration = endTime - startTime;
+    const expectedProgress = totalDuration > 0
+      ? Math.min((todayTime - startTime) / totalDuration * 100, 100)
+      : 100;
+    if (effectiveProgress < expectedProgress - 10) return "yellow";
+  }
+
   return "green";
 }
