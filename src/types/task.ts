@@ -9,4 +9,5 @@ export interface Task {
   collapsed?: boolean;
   assignee?: string;
   memo?: string;
+  progressCount?: { done: number; total: number };
 }
