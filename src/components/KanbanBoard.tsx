@@ -97,7 +97,11 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
   const rootTasks = tasks.filter((t) => !t.parentId);
 
   // 担当者一覧（重複除去）
-  const assignees = [...new Set(tasks.map((t) => t.assignee).filter(Boolean))] as string[];
+  const assignees = [
+    ...new Set(
+      tasks.flatMap((t) => [t.assignee, ...(t.subMembers ?? [])]).filter(Boolean)
+    ),
+  ] as string[];
 
   // フィルタ適用
   const filteredByParent = filterParentId === "all"
@@ -105,7 +109,9 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
     : leafTasks.filter((t) => getAllDescendantIds(filterParentId, tasks).includes(t.id));
 
   const visibleTasks = filteredByParent.filter((t) =>
-    filterAssignee === "all" || t.assignee === filterAssignee
+    filterAssignee === "all" ||
+    t.assignee === filterAssignee ||
+    (t.subMembers ?? []).includes(filterAssignee)
   );
 
   function openEdit(task: Task) {
@@ -114,12 +120,16 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
   function openAdd(columnId: Column["id"]) {
     const today = new Date();
+    const parent = filterParentId !== "all"
+      ? tasks.find((t) => t.id === filterParentId)
+      : undefined;
+    const defaultColor = parent?.color ?? "#4A90D9";
     setAddState({
       columnId,
       name:      "",
       startDate: toInputDate(today),
       endDate:   toInputDate(addDays(today, 6)),
-      color:     "#4A90D9",
+      color:     defaultColor,
       parentId:  filterParentId === "all" ? undefined : filterParentId,
     });
   }
@@ -279,7 +289,17 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
                         {formatDateShort(task.startDate)} – {formatDateShort(task.endDate)}
                       </span>
                       {task.assignee && (
-                        <span className="kanban-card-assignee">{task.assignee}</span>
+                        <span
+                          className="kanban-card-assignee"
+                          title={task.subMembers && task.subMembers.length > 0
+                            ? `${task.assignee} / ${task.subMembers.join(", ")}`
+                            : task.assignee}
+                        >
+                          {task.assignee}
+                          {task.subMembers && task.subMembers.length > 0 && (
+                            <span className="sub-members-count"> +{task.subMembers.length}</span>
+                          )}
+                        </span>
                       )}
                       <span className="kanban-card-pct">{progress}%</span>
                     </div>
@@ -323,7 +343,11 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
             <select
               className="assignee-input"
               value={addState.parentId ?? ""}
-              onChange={(e) => setAddState({ ...addState, parentId: e.target.value || undefined })}
+              onChange={(e) => {
+                const parentId = e.target.value || undefined;
+                const parent = parentId ? tasks.find((t) => t.id === parentId) : undefined;
+                setAddState({ ...addState, parentId, color: parent?.color ?? "#4A90D9" });
+              }}
             >
               <option value="">なし（ルートタスク）</option>
               {tasks

@@ -8,6 +8,7 @@ export interface Task {
   parentId?: string;
   collapsed?: boolean;
   assignee?: string;
+  subMembers?: string[];
   memo?: string;
   progressCount?: { done: number; total: number };
 }

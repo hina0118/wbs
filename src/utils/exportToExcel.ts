@@ -164,7 +164,12 @@ export async function exportToExcel(tasks: Task[], filename?: string): Promise<s
 
     // 担当者
     const ac = exRow.getCell(2);
-    ac.value     = task.assignee ?? "";
+    const subMembersStr = task.subMembers && task.subMembers.length > 0
+      ? task.subMembers.join(", ")
+      : "";
+    ac.value     = task.assignee
+      ? (subMembersStr ? `${task.assignee} / ${subMembersStr}` : task.assignee)
+      : subMembersStr;
     ac.font      = { size: 9 };
     ac.fill      = solidFill(rowBg);
     ac.alignment = { horizontal: "center", vertical: "middle" };
@@ -202,8 +207,10 @@ export async function exportToExcel(tasks: Task[], filename?: string): Promise<s
     sc2.border    = { bottom: THIN_BORDER, right: { style: "medium", color: { argb: "FFB0BEC5" } } };
 
     // ── ガントバー ─────────────────────────────────────
-    const tStart  = task.startDate.getTime();
-    const tEnd    = task.endDate.getTime();
+    const _tS = new Date(task.startDate); _tS.setHours(0, 0, 0, 0);
+    const _tE = new Date(task.endDate);   _tE.setHours(0, 0, 0, 0);
+    const tStart  = _tS.getTime();
+    const tEnd    = _tE.getTime();
     const doneMs  = (tEnd - tStart) * (progress / 100);
     const barDone = colorArgb;                           // 完了部分 = タスク色
     const barTodo = lightenHex("#" + colorHex, 0.55);   // 未完了 = 薄い色

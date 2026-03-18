@@ -184,12 +184,21 @@ export default function GanttLeftPanel({
               <span
                 className={`gantt-col-assignee${!hasChildren ? " gantt-col-assignee--leaf" : ""}`}
                 onClick={!hasChildren ? () => onOpenEdit(task) : undefined}
-                title={!hasChildren ? (task.assignee ? `担当: ${task.assignee}` : "クリックで担当者を設定") : undefined}
+                title={!hasChildren
+                  ? [task.assignee, ...(task.subMembers ?? [])].filter(Boolean).join(", ") || "クリックで担当者を設定"
+                  : undefined}
               >
                 {!hasChildren ? (
-                  task.assignee
-                    ? <span className="assignee-badge">{task.assignee}</span>
-                    : <span className="assignee-empty">未設定</span>
+                  task.assignee ? (
+                    <span className="assignee-badge">
+                      {task.assignee}
+                      {task.subMembers && task.subMembers.length > 0 && (
+                        <span className="sub-members-count"> +{task.subMembers.length}</span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="assignee-empty">未設定</span>
+                  )
                 ) : (
                   <span className="assignee-empty">─</span>
                 )}

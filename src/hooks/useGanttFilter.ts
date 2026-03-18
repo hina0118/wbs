@@ -6,7 +6,11 @@ export function useGanttFilter(tasks: Task[]) {
   const [filterParentId, setFilterParentId] = useState<string>("all");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
 
-  const assignees = [...new Set(tasks.map((t) => t.assignee).filter(Boolean))] as string[];
+  const assignees = [
+    ...new Set(
+      tasks.flatMap((t) => [t.assignee, ...(t.subMembers ?? [])]).filter(Boolean)
+    ),
+  ] as string[];
 
   const filteredByParent =
     filterParentId === "all"
@@ -24,9 +28,13 @@ export function useGanttFilter(tasks: Task[]) {
       : filteredByParent.filter(
           (t) =>
             t.assignee === filterAssignee ||
+            (t.subMembers ?? []).includes(filterAssignee) ||
             getAllDescendantIds(t.id, tasks)
               .slice(1)
-              .some((id) => tasks.find((c) => c.id === id)?.assignee === filterAssignee)
+              .some((id) => {
+                const c = tasks.find((c) => c.id === id);
+                return c?.assignee === filterAssignee || (c?.subMembers ?? []).includes(filterAssignee);
+              })
         );
 
   function resetParentFilter(value: string) {
