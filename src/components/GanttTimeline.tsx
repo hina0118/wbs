@@ -82,6 +82,14 @@ export default function GanttTimeline({
   const allDates = tasks.flatMap((t) => [t.startDate, t.endDate]);
   if (dragPreview) allDates.push(dragPreview.startDate, dragPreview.endDate);
 
+  if (allDates.length === 0) {
+    return (
+      <div className="gantt-timeline-wrapper gantt-timeline-empty">
+        <span>表示するタスクがありません</span>
+      </div>
+    );
+  }
+
   const minDate    = allDates.reduce((m, d) => (d < m ? d : m));
   const maxDate    = allDates.reduce((m, d) => (d > m ? d : m));
   const rangeStart = addDays(minDate, -1);
