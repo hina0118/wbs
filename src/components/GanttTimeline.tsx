@@ -9,6 +9,36 @@ const ROW_HEIGHT = 40;
 const HEADER_HEIGHT = 90;
 const HANDLE_WIDTH = 6;
 
+function getLuminance(hexColor: string): number {
+  const r = parseInt(hexColor.slice(1, 3), 16) / 255;
+  const g = parseInt(hexColor.slice(3, 5), 16) / 255;
+  const b = parseInt(hexColor.slice(5, 7), 16) / 255;
+  const toLinear = (c: number) =>
+    c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+}
+
+/** CSS brightness(factor) フィルターを近似してRGB各チャンネルを乗算した16進カラーを返す */
+function applyBrightness(hexColor: string, factor: number): string {
+  const clamp = (v: number) => Math.min(255, Math.max(0, Math.round(v)));
+  const r = clamp(parseInt(hexColor.slice(1, 3), 16) * factor);
+  const g = clamp(parseInt(hexColor.slice(3, 5), 16) * factor);
+  const b = clamp(parseInt(hexColor.slice(5, 7), 16) * factor);
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+/**
+ * バー上のテキスト色を返す。
+ * 進捗オーバーレイ（brightness 0.75）と素のバー背景の
+ * 両方に対してコントラストが取れるよう、暗い方の色で判定する。
+ */
+function getContrastTextColor(baseColor: string): string {
+  const progressColor = applyBrightness(baseColor, 0.75);
+  // 進捗部分の方が常に暗いため、そちらで判定すれば非進捗部分も担保される
+  const luminance = getLuminance(progressColor);
+  return luminance > 0.179 ? "#000000" : "#ffffff";
+}
+
 function diffDays(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
@@ -162,6 +192,7 @@ export default function GanttTimeline({
           const done          = effectiveProg === 100;
           const baseColor = done ? "#999" : (task.color ?? "#4A90D9");
           const barColor  = `${baseColor}${barOpacity(depth)}`;
+          const textColor = getContrastTextColor(baseColor);
           const barHeight = Math.max(14, ROW_HEIGHT - depth * 4 - 18);
 
           return (
@@ -199,7 +230,7 @@ export default function GanttTimeline({
               >
                 <div className="gantt-bar-handle gantt-bar-handle--left" style={{ width: HANDLE_WIDTH }} onMouseDown={(e) => onStartDrag(e, task, "start")} />
                 <div className="gantt-bar-progress" style={{ width: `${effectiveProg}%`, background: baseColor, filter: "brightness(0.75)" }} />
-                <span className="gantt-bar-label">{task.name}</span>
+                <span className="gantt-bar-label" style={{ color: textColor }}>{task.name}</span>
                 <div className="gantt-bar-handle gantt-bar-handle--right" style={{ width: HANDLE_WIDTH }} onMouseDown={(e) => onStartDrag(e, task, "end")} />
               </div>
             </div>

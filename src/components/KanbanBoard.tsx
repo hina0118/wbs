@@ -157,7 +157,8 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
   // ── ドラッグ & ドロップ（列間移動 → 進捗更新）──
 
-  function handleDragStart(taskId: string) {
+  function handleDragStart(e: React.DragEvent, taskId: string) {
+    e.dataTransfer.setData('text/plain', taskId);
     setDraggingId(taskId);
   }
 
@@ -221,8 +222,8 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
             key={col.id}
             className={`kanban-column${isOver ? " kanban-column--dragover" : ""}`}
             onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.id); }}
-            onDragLeave={() => setDragOverCol(null)}
-            onDrop={() => handleDrop(col)}
+            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverCol(null); }}
+            onDrop={(e) => { e.preventDefault(); handleDrop(col); }}
           >
             {/* 列ヘッダー */}
             <div className="kanban-col-header" style={{ borderTopColor: col.accentColor }}>
@@ -232,7 +233,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
             </div>
 
             {/* カード一覧 */}
-            <div className="kanban-cards">
+            <div className="kanban-cards" onDragOver={(e) => e.preventDefault()}>
               {colTasks.map((task) => {
                 const progress    = computeProgress(task.id, tasks);
                 const ancestors   = getAncestorNames(task.id, tasks);
@@ -243,7 +244,8 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
                     key={task.id}
                     className={`kanban-card${isDragging ? " kanban-card--dragging" : ""}`}
                     draggable
-                    onDragStart={() => handleDragStart(task.id)}
+                    onDragStart={(e) => handleDragStart(e, task.id)}
+                    onDragOver={(e) => e.preventDefault()}
                     onDragEnd={() => { setDraggingId(null); setDragOverCol(null); }}
                     onClick={() => openEdit(task)}
                     style={{ borderLeftColor: task.color ?? "#4A90D9" }}
