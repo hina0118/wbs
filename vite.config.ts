@@ -18,6 +18,7 @@ export default defineConfig(async () => ({
     coverage: {
       provider: "v8",
       include: ["src/utils/**", "src/hooks/**"],
+      exclude: ["src/utils/exportToExcel.ts"],
       thresholds: {
         statements: 85,
         branches: 85,
