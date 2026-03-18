@@ -8,6 +8,9 @@
     "opener:default",
     "updater:default",
     "process:allow-restart",
-    "log:default"
+    "log:default",
+    "window-state:allow-filename",
+    "window-state:allow-restore-state",
+    "window-state:allow-save-window-state"
   ]
 }
