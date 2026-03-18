@@ -128,6 +128,11 @@ export default function GanttLeftPanel({
         onScroll={onLeftScroll}
         style={{ maxHeight: `calc(100vh - ${HEADER_HEIGHT + 80}px)`, overflowY: "auto" }}
       >
+        {visibleTasks.length === 0 && (
+          <div className="gantt-empty">
+            {tasks.length === 0 ? "タスクがありません。「＋」ボタンから追加してください。" : "条件に一致するタスクがありません。"}
+          </div>
+        )}
         {visibleTasks.map((task) => {
           const depth         = getDepth(task.id, tasks);
           const hasChildren   = tasks.some((t) => t.parentId === task.id);
