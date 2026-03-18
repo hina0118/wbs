@@ -9,6 +9,7 @@ import { Task }       from "./types/task";
 import { loadTasks, saveTasks } from "./utils/taskStorage";
 import { loadHolidays }         from "./utils/holidays";
 import { sortByTree }           from "./utils/taskUtils";
+import { exportToExcel }        from "./utils/exportToExcel";
 
 type ViewMode = "gantt" | "kanban" | "analysis";
 
@@ -20,7 +21,8 @@ function App() {
   const [holidayError, setHolidayError] = useState<string | null>(null);
   const [viewMode,    setViewMode]    = useState<ViewMode>("gantt");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showProxy,   setShowProxy]   = useState(false);
+  const [showProxy,    setShowProxy]    = useState(false);
+  const [exportMsg,    setExportMsg]    = useState<{ text: string; isError: boolean } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // 起動時: タスク（保存済み or デフォルト）と祝日を並列ロード
@@ -124,6 +126,27 @@ function App() {
           </button>
         </div>
 
+        {/* Excel エクスポートボタン */}
+        <button
+          className="app-excel-btn"
+          onClick={() => {
+            exportToExcel(tasks)
+              .then((path) => {
+                if (path === null) return; // キャンセル
+                setExportMsg({ text: `保存しました: ${path}`, isError: false });
+                setTimeout(() => setExportMsg(null), 5000);
+              })
+              .catch((e) => {
+                setExportMsg({ text: `エクスポート失敗: ${e}`, isError: true });
+                setTimeout(() => setExportMsg(null), 6000);
+              });
+          }}
+          title="Excelにエクスポート"
+          disabled={tasks.length === 0}
+        >
+          📥 Excel
+        </button>
+
         {/* 設定ボタン */}
         <button
           className="app-settings-btn"
@@ -135,6 +158,13 @@ function App() {
       </header>
 
       {showProxy && <ProxySettingModal onClose={() => setShowProxy(false)} />}
+
+      {exportMsg && (
+        <div className={`toast ${exportMsg.isError ? "toast--warn" : "toast--ok"}`}>
+          {exportMsg.isError ? "⚠️" : "✅"} {exportMsg.text}
+          <button className="toast-close" onClick={() => setExportMsg(null)}>✕</button>
+        </div>
+      )}
 
       {holidayError && (
         <div className="toast toast--warn">
