@@ -29,6 +29,23 @@
   flex-shrink: 0;
 }
 
+.app-import-btn {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #ccc;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.app-import-btn:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.45);
+}
 .app-excel-btn {
   margin-left: auto;
   background: none;

@@ -53,6 +53,19 @@ export async function loadTasks(): Promise<Task[]> {
   return loadSampleTasks();
 }
 
+// ── インポート ──────────────────────────────────────────────
+
+/**
+ * ファイル選択ダイアログを開き、選択された tasks.json を読み込んで Task[] を返す。
+ * キャンセル時は null を返す。
+ */
+export async function importTasksFromFile(): Promise<Task[] | null> {
+  const json = await invoke<string | null>("import_tasks_file");
+  if (json === null) return null;
+  const raws: TaskRaw[] = JSON.parse(json);
+  return raws.map(toTask);
+}
+
 // ── 保存 ────────────────────────────────────────────────────
 
 /**

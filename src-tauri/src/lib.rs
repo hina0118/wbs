@@ -152,6 +152,31 @@ fn build_client(proxy_url: Option<String>) -> Result<reqwest::Client, String> {
     builder.build().map_err(|e| e.to_string())
 }
 
+// ── タスク JSON インポート ────────────────────────────────
+
+/// ファイル選択ダイアログを表示し、選択された JSON ファイルの内容を返す。
+/// キャンセル時は Ok(None) を返す。
+#[tauri::command]
+async fn import_tasks_file(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let path = app
+        .dialog()
+        .file()
+        .add_filter("JSON ファイル", &["json"])
+        .blocking_pick_file();
+
+    match path {
+        None => Ok(None),
+        Some(p) => {
+            let path_str = p.to_string();
+            fs::read_to_string(&path_str)
+                .map(Some)
+                .map_err(|e| format!("ファイルの読み込みに失敗: {e}"))
+        }
+    }
+}
+
 // ── Excel ファイル保存 ────────────────────────────────────
 
 /// 名前を付けて保存ダイアログを表示し、選択されたパスに Excel バイト列を書き込む。
@@ -207,6 +232,7 @@ pub fn run() {
             get_proxy_setting,
             save_proxy_setting,
             save_excel_file,
+            import_tasks_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

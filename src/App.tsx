@@ -6,7 +6,7 @@ import AnalysisView      from "./components/AnalysisView";
 import ProxySettingModal from "./components/ProxySettingModal";
 import UpdateNotifier    from "./components/UpdateNotifier";
 import { Task }       from "./types/task";
-import { loadTasks, saveTasks } from "./utils/taskStorage";
+import { loadTasks, saveTasks, importTasksFromFile } from "./utils/taskStorage";
 import { loadHolidays }         from "./utils/holidays";
 import { sortByTree }           from "./utils/taskUtils";
 import { exportToExcel }        from "./utils/exportToExcel";
@@ -23,6 +23,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showProxy,    setShowProxy]    = useState(false);
   const [exportMsg,    setExportMsg]    = useState<{ text: string; isError: boolean } | null>(null);
+  const [importMsg,    setImportMsg]    = useState<{ text: string; isError: boolean } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // 起動時: タスク（保存済み or デフォルト）と祝日を並列ロード
@@ -126,6 +127,33 @@ function App() {
           </button>
         </div>
 
+        {/* JSON インポートボタン */}
+        <button
+          className="app-import-btn"
+          onClick={() => {
+            importTasksFromFile()
+              .then((imported) => {
+                if (imported === null) return; // キャンセル
+                const importedMap = new Map(imported.map((t) => [t.id, t]));
+                // 既存タスクを上書き更新 → 新規タスクを末尾に追加
+                const merged = [
+                  ...tasks.map((t) => importedMap.get(t.id) ?? t),
+                  ...imported.filter((t) => !tasks.some((cur) => cur.id === t.id)),
+                ];
+                handleTasksChange(merged);
+                setImportMsg({ text: `${imported.length} 件のタスクをマージしました`, isError: false });
+                setTimeout(() => setImportMsg(null), 5000);
+              })
+              .catch((e) => {
+                setImportMsg({ text: `インポート失敗: ${e}`, isError: true });
+                setTimeout(() => setImportMsg(null), 6000);
+              });
+          }}
+          title="tasks.json を取り込む"
+        >
+          📂 取り込み
+        </button>
+
         {/* Excel エクスポートボタン */}
         <button
           className="app-excel-btn"
@@ -158,6 +186,13 @@ function App() {
       </header>
 
       {showProxy && <ProxySettingModal onClose={() => setShowProxy(false)} />}
+
+      {importMsg && (
+        <div className={`toast ${importMsg.isError ? "toast--warn" : "toast--ok"}`}>
+          {importMsg.isError ? "⚠️" : "✅"} {importMsg.text}
+          <button className="toast-close" onClick={() => setImportMsg(null)}>✕</button>
+        </div>
+      )}
 
       {exportMsg && (
         <div className={`toast ${exportMsg.isError ? "toast--warn" : "toast--ok"}`}>
