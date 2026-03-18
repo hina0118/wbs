@@ -14,6 +14,7 @@ interface TaskRaw {
   color?: string;
   parentId?: string;
   assignee?: string;
+  progressCount?: { done: number; total: number };
 }
 
 function parseLocalDate(s: string): Date {

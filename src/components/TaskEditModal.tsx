@@ -31,15 +31,14 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
   const [editEndDate,   setEditEndDate]   = useState(toInputDate(task.endDate));
   const [editMemo,      setEditMemo]      = useState(task.memo ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [progressMode,  setProgressMode]  = useState<"percent" | "count">("percent");
-  const [doneCount,     setDoneCount]     = useState(0);
-  const [totalCount,    setTotalCount]    = useState(0);
+  const initialMode = task.progressCount ? "count" : "percent";
+  const [progressMode,  setProgressMode]  = useState<"percent" | "count">(initialMode);
+  const [doneCount,     setDoneCount]     = useState(task.progressCount?.done  ?? 0);
+  const [totalCount,    setTotalCount]    = useState(task.progressCount?.total ?? 0);
 
   const effectiveProgress = leaf ? editProgress : computeProgress(task.id, tasks);
 
   function switchToCount() {
-    setDoneCount(0);
-    setTotalCount(0);
     setProgressMode("count");
   }
 
@@ -68,16 +67,22 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
     const newEnd   = new Date(editEndDate);
     if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
 
+    const progressCount =
+      progressMode === "count" && totalCount > 0
+        ? { done: doneCount, total: totalCount }
+        : undefined;
+
     const updated = tasks.map((t) =>
       t.id === task.id
         ? {
             ...t,
-            name:      editName.trim() || task.name,
-            progress:  editProgress,
-            assignee:  editAssignee  || undefined,
-            startDate: newStart,
-            endDate:   newEnd,
-            memo:      editMemo      || undefined,
+            name:          editName.trim() || task.name,
+            progress:      editProgress,
+            assignee:      editAssignee  || undefined,
+            startDate:     newStart,
+            endDate:       newEnd,
+            memo:          editMemo      || undefined,
+            progressCount,
           }
         : t
     );
