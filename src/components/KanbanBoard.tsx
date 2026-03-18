@@ -254,7 +254,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
                     {(() => {
                       const sig = getSignalStatus(task.id, tasks);
                       if (sig === "none") return null;
-                      const title = sig === "red" ? "遅延" : sig === "yellow" ? "着手遅れ" : "正常";
+                      const title = sig === "red" ? "遅延" : sig === "yellow" ? "進捗遅れ" : "正常";
                       return <span className={`status-signal status-signal--${sig} kanban-card-signal`} title={title} />;
                     })()}
                     {/* 祖先パス */}

@@ -10,7 +10,7 @@ const INDENT_PER_LEVEL = 16;
 
 const SIGNAL_TITLE: Record<string, string> = {
   red: "遅延",
-  yellow: "着手遅れ",
+  yellow: "進捗遅れ",
   green: "正常",
 };
 

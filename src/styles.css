@@ -1908,6 +1908,16 @@
   border-radius: 3px;
 }
 
+.analysis-progress-fill--behind {
+  background: #f59e0b;
+}
+
+.analysis-gap {
+  color: #d97706;
+  font-size: 0.8em;
+  font-weight: 600;
+}
+
 .analysis-progress-bar > span {
   font-size: 0.78rem;
   color: #475569;

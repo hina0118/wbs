@@ -145,7 +145,7 @@ export async function exportToExcel(tasks: Task[], filename?: string): Promise<s
     const statusLabel =
       progress === 100       ? "完了" :
       signal === "red"       ? "遅延" :
-      signal === "yellow"    ? "着手遅れ" : "正常";
+      signal === "yellow"    ? "進捗遅れ" : "正常";
 
     const rowBg =
       depth === 0 ? "FFEBF2FA" :
