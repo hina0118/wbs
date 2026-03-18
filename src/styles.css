@@ -243,6 +243,14 @@
   scrollbar-width: thin;
 }
 
+.gantt-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: #bbb;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
 .gantt-row {
   display: flex;
   align-items: center;
