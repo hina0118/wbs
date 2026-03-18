@@ -29,8 +29,29 @@
   flex-shrink: 0;
 }
 
-.app-settings-btn {
+.app-excel-btn {
   margin-left: auto;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #ccc;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.app-excel-btn:hover:not(:disabled) {
+  color: #fff;
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.45);
+}
+.app-excel-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.app-settings-btn {
   background: none;
   border: none;
   color: #aaa;
@@ -1899,6 +1920,11 @@
   background: #fff8e1;
   border: 1px solid #f9a825;
   color: #5d4037;
+}
+.toast--ok {
+  background: #e8f5e9;
+  border: 1px solid #43a047;
+  color: #1b5e20;
 }
 
 .toast-close {

@@ -152,12 +152,51 @@ fn build_client(proxy_url: Option<String>) -> Result<reqwest::Client, String> {
     builder.build().map_err(|e| e.to_string())
 }
 
+// ── Excel ファイル保存 ────────────────────────────────────
+
+/// 名前を付けて保存ダイアログを表示し、選択されたパスに Excel バイト列を書き込む。
+/// キャンセル時は Ok(None) を返す。
+#[tauri::command]
+async fn save_excel_file(
+    app: tauri::AppHandle,
+    filename: String,
+    data: Vec<u8>,
+) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    // デフォルト保存先（デスクトップ）を取得
+    let default_dir = app.path().desktop_dir()
+        .or_else(|_| app.path().document_dir())
+        .ok();
+
+    let mut dialog = app.dialog().file()
+        .set_file_name(&filename)
+        .add_filter("Excel ファイル", &["xlsx"]);
+
+    if let Some(dir) = default_dir {
+        dialog = dialog.set_directory(dir);
+    }
+
+    let path = dialog.blocking_save_file();
+
+    match path {
+        None => Ok(None), // キャンセル
+        Some(p) => {
+            let path_str = p.to_string();
+            fs::write(&path_str, &data)
+                .map_err(|e| format!("ファイルの書き込みに失敗: {e}"))?;
+            Ok(Some(path_str))
+        }
+    }
+}
+
 // ── エントリポイント ──────────────────────────────────────
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -167,6 +206,7 @@ pub fn run() {
             fetch_holidays,
             get_proxy_setting,
             save_proxy_setting,
+            save_excel_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
