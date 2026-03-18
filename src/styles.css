@@ -326,6 +326,13 @@
 }
 
 /* ── Timeline ── */
+.gantt-timeline-wrapper.gantt-timeline-empty {
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 0.95rem;
+}
+
 .gantt-timeline-wrapper {
   flex: 1;
   overflow-x: auto;
