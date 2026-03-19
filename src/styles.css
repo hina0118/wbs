@@ -337,6 +337,28 @@
   opacity: 0.7;
 }
 
+.gantt-row--floating {
+  background: #f9f6ff;
+}
+
+.gantt-row--floating:hover {
+  background: #f0ebff;
+}
+
+.gantt-unscheduled-section {
+  border-top: 2px dashed #c9b8f0;
+  margin-top: 4px;
+}
+
+.gantt-unscheduled-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #7c5cbf;
+  padding: 6px 8px 2px 8px;
+  background: #f3eeff;
+  letter-spacing: 0.03em;
+}
+
 .gantt-leaf-icon {
   color: #bbb;
   font-size: 0.7rem;
@@ -754,6 +776,23 @@
 .modal-label {
   font-size: 0.85rem;
   color: #555;
+}
+
+.modal-floating-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+}
+
+.modal-floating-checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #7c5cbf;
 }
 
 .modal-date-row {

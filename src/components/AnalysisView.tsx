@@ -14,7 +14,7 @@ export default function AnalysisView({ tasks }: Props) {
   }, []);
 
   const leafTasks = useMemo(
-    () => tasks.filter((t) => isLeaf(t.id, tasks)),
+    () => tasks.filter((t) => !t.isFloating && isLeaf(t.id, tasks)),
     [tasks]
   );
 

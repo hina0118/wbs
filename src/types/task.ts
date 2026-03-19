@@ -12,4 +12,5 @@ export interface Task {
   memo?: string;
   progressCount?: { done: number; total: number };
   order?: number;
+  isFloating?: boolean; // 開始時期不明の単発タスク（日付なし）
 }

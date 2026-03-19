@@ -32,6 +32,7 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
   const [editStartDate,   setEditStartDate]   = useState(toInputDate(task.startDate));
   const [editEndDate,     setEditEndDate]     = useState(toInputDate(task.endDate));
   const [editMemo,        setEditMemo]        = useState(task.memo ?? "");
+  const [editIsFloating,  setEditIsFloating]  = useState(task.isFloating ?? false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const initialMode = task.progressCount ? "count" : "percent";
   const [progressMode,  setProgressMode]  = useState<"percent" | "count">(initialMode);
@@ -65,9 +66,16 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
   }
 
   function handleSave() {
-    const newStart = new Date(editStartDate);
-    const newEnd   = new Date(editEndDate);
-    if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let newStart = today;
+    let newEnd   = today;
+    if (!editIsFloating) {
+      newStart = new Date(editStartDate);
+      newEnd   = new Date(editEndDate);
+      if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
+    }
 
     const progressCount =
       progressMode === "count" && totalCount > 0
@@ -86,10 +94,11 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
             endDate:       newEnd,
             memo:          editMemo      || undefined,
             progressCount,
+            isFloating:    editIsFloating || undefined,
           }
         : t
     );
-    onSave(propagateDates(task.id, updated));
+    onSave(editIsFloating ? updated : propagateDates(task.id, updated));
   }
 
   function handleDelete() {
@@ -109,17 +118,30 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
           placeholder="タスク名を入力"
         />
 
+        {/* 単発タスク（日付未定）チェックボックス */}
+        <label className="modal-floating-label">
+          <input
+            type="checkbox"
+            checked={editIsFloating}
+            onChange={(e) => setEditIsFloating(e.target.checked)}
+            className="modal-floating-checkbox"
+          />
+          単発タスク（開始時期未定）
+        </label>
+
         {/* 期間 */}
-        <div className="modal-date-row">
-          <div className="modal-date-field">
-            <label className="modal-label">開始日</label>
-            <input type="date" value={editStartDate} max={editEndDate}   onChange={(e) => setEditStartDate(e.target.value)} className="date-input" />
+        {!editIsFloating && (
+          <div className="modal-date-row">
+            <div className="modal-date-field">
+              <label className="modal-label">開始日</label>
+              <input type="date" value={editStartDate} max={editEndDate}   onChange={(e) => setEditStartDate(e.target.value)} className="date-input" />
+            </div>
+            <div className="modal-date-field">
+              <label className="modal-label">終了日</label>
+              <input type="date" value={editEndDate}   min={editStartDate} onChange={(e) => setEditEndDate(e.target.value)}   className="date-input" />
+            </div>
           </div>
-          <div className="modal-date-field">
-            <label className="modal-label">終了日</label>
-            <input type="date" value={editEndDate}   min={editStartDate} onChange={(e) => setEditEndDate(e.target.value)}   className="date-input" />
-          </div>
-        </div>
+        )}
 
         {/* 担当者（リーフのみ） */}
         {leaf && (
