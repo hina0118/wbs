@@ -6,22 +6,25 @@ export function useGanttFilter(tasks: Task[]) {
   const [filterParentId, setFilterParentId] = useState<string>("all");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
 
+  // アーカイブ済みタスクは常に除外
+  const activeTasks = tasks.filter((t) => !t.archived);
+
   const assignees = [
     ...new Set(
-      tasks.flatMap((t) => [t.assignee, ...(t.subMembers ?? [])]).filter(Boolean)
+      activeTasks.flatMap((t) => [t.assignee, ...(t.subMembers ?? [])]).filter(Boolean)
     ),
   ] as string[];
 
   const filteredByParent =
     filterParentId === "all"
-      ? tasks
+      ? activeTasks
       : filterParentId === "__floating__"
-      ? tasks.filter((t) => t.isFloating)
+      ? activeTasks.filter((t) => t.isFloating)
       : [
-          tasks.find((t) => t.id === filterParentId)!,
-          ...getAllDescendantIds(filterParentId, tasks)
+          activeTasks.find((t) => t.id === filterParentId)!,
+          ...getAllDescendantIds(filterParentId, activeTasks)
             .slice(1)
-            .map((id) => tasks.find((t) => t.id === id)!),
+            .map((id) => activeTasks.find((t) => t.id === id)!),
         ].filter(Boolean);
 
   const filteredTasks =
@@ -31,10 +34,10 @@ export function useGanttFilter(tasks: Task[]) {
           (t) =>
             t.assignee === filterAssignee ||
             (t.subMembers ?? []).includes(filterAssignee) ||
-            getAllDescendantIds(t.id, tasks)
+            getAllDescendantIds(t.id, activeTasks)
               .slice(1)
               .some((id) => {
-                const c = tasks.find((c) => c.id === id);
+                const c = activeTasks.find((c) => c.id === id);
                 return c?.assignee === filterAssignee || (c?.subMembers ?? []).includes(filterAssignee);
               })
         );

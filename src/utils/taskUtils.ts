@@ -132,3 +132,15 @@ export function getSignalStatus(taskId: string, tasks: Task[]): SignalStatus {
 
   return "green";
 }
+
+/** ルートタスク（parentId なし）とその全子孫を archived:true にする */
+export function archiveTask(taskId: string, tasks: Task[]): Task[] {
+  const ids = new Set(getAllDescendantIds(taskId, tasks));
+  return tasks.map((t) => (ids.has(t.id) ? { ...t, archived: true } : t));
+}
+
+/** ルートタスクとその全子孫の archived フラグを解除する */
+export function unarchiveTask(taskId: string, tasks: Task[]): Task[] {
+  const ids = new Set(getAllDescendantIds(taskId, tasks));
+  return tasks.map((t) => (ids.has(t.id) ? { ...t, archived: false } : t));
+}

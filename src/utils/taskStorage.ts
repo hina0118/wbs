@@ -18,6 +18,7 @@ interface TaskRaw {
   progressCount?: { done: number; total: number };
   order?: number;
   isFloating?: boolean;
+  archived?: boolean;
 }
 
 function parseLocalDate(s: string): Date {

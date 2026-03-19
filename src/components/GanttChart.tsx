@@ -228,8 +228,9 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
           <TaskEditModal
             task={task}
             tasks={tasks}
-            onSave={(updated)   => { onTasksChange(updated); setEditingId(null); }}
-            onDelete={(updated) => { onTasksChange(updated); setEditingId(null); }}
+            onSave={(updated)    => { onTasksChange(updated); setEditingId(null); }}
+            onDelete={(updated)  => { onTasksChange(updated); setEditingId(null); }}
+            onArchive={(updated) => { onTasksChange(updated); setEditingId(null); }}
             onClose={() => setEditingId(null)}
           />
         );

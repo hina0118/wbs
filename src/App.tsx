@@ -3,6 +3,7 @@ import GanttChart        from "./components/GanttChart";
 import KanbanBoard       from "./components/KanbanBoard";
 import SearchView        from "./components/SearchView";
 import AnalysisView      from "./components/AnalysisView";
+import ArchiveView       from "./components/ArchiveView";
 import ProxySettingModal from "./components/ProxySettingModal";
 import UpdateNotifier    from "./components/UpdateNotifier";
 import { Task }       from "./types/task";
@@ -11,7 +12,7 @@ import { loadHolidays }         from "./utils/holidays";
 import { sortByTree }           from "./utils/taskUtils";
 import { exportToExcel }        from "./utils/exportToExcel";
 
-type ViewMode = "gantt" | "kanban" | "analysis";
+type ViewMode = "gantt" | "kanban" | "analysis" | "archive";
 
 function App() {
   const [tasks,        setTasks]        = useState<Task[]>([]);
@@ -124,6 +125,18 @@ function App() {
           >
             📊 分析
           </button>
+          <button
+            className={`view-toggle-btn view-toggle-btn--archive${viewMode === "archive" ? " view-toggle-btn--active" : ""}`}
+            onClick={() => { setViewMode("archive"); setSearchQuery(""); }}
+            title="アーカイブ"
+          >
+            🗄 アーカイブ
+            {tasks.filter((t) => t.archived && !t.parentId).length > 0 && (
+              <span className="archive-badge">
+                {tasks.filter((t) => t.archived && !t.parentId).length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Excel エクスポートボタン */}
@@ -182,9 +195,10 @@ function App() {
         {!loading && !error && (
           <>
             {isSearching && <SearchView tasks={tasks} query={searchQuery} />}
-            {!isSearching && viewMode === "gantt"     && <GanttChart tasks={tasks} onTasksChange={handleTasksChange} holidays={holidays} />}
-            {!isSearching && viewMode === "kanban"    && <KanbanBoard tasks={tasks} onTasksChange={handleTasksChange} />}
-            {!isSearching && viewMode === "analysis"  && <AnalysisView tasks={tasks} />}
+            {!isSearching && viewMode === "gantt"    && <GanttChart tasks={tasks} onTasksChange={handleTasksChange} holidays={holidays} />}
+            {!isSearching && viewMode === "kanban"   && <KanbanBoard tasks={tasks} onTasksChange={handleTasksChange} />}
+            {!isSearching && viewMode === "analysis" && <AnalysisView tasks={tasks} />}
+            {!isSearching && viewMode === "archive"  && <ArchiveView tasks={tasks} onTasksChange={handleTasksChange} />}
           </>
         )}
       </main>

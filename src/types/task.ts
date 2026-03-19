@@ -13,4 +13,5 @@ export interface Task {
   progressCount?: { done: number; total: number };
   order?: number;
   isFloating?: boolean; // 開始時期不明の単発タスク（日付なし）
+  archived?: boolean;   // アーカイブ済み（非表示、データは保持）
 }
