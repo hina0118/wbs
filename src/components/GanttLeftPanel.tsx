@@ -268,9 +268,7 @@ export default function GanttLeftPanel({
           );
         })}
 
-      </div>
-
-      {/* 未スケジュールセクション（スクロール領域外） */}
+      {/* 未スケジュールセクション */}
       {floatingTasks.length > 0 && (
         <div className="gantt-unscheduled-section">
           <div className="gantt-unscheduled-header">未スケジュール ({floatingTasks.length})</div>
@@ -304,6 +302,7 @@ export default function GanttLeftPanel({
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

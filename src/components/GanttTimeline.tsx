@@ -238,7 +238,6 @@ export default function GanttTimeline({
             </div>
           );
         })}
-      </div>
 
       {/* 未スケジュールセクション対応の空行（左パネルと高さ合わせ） */}
       {floatingTasks.length > 0 && (
@@ -270,6 +269,7 @@ export default function GanttTimeline({
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
