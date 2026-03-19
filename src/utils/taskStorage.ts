@@ -17,6 +17,7 @@ interface TaskRaw {
   subMembers?: string[];
   progressCount?: { done: number; total: number };
   order?: number;
+  isFloating?: boolean;
 }
 
 function parseLocalDate(s: string): Date {
@@ -25,15 +26,23 @@ function parseLocalDate(s: string): Date {
 }
 
 function toTask(raw: TaskRaw): Task {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   return {
     ...raw,
-    startDate: parseLocalDate(raw.startDate),
-    endDate: parseLocalDate(raw.endDate),
+    startDate: raw.isFloating ? today : parseLocalDate(raw.startDate),
+    endDate:   raw.isFloating ? today : parseLocalDate(raw.endDate),
   };
 }
 
 function toRaw(task: Task): TaskRaw {
-  return { ...task, startDate: toInputDate(task.startDate), endDate: toInputDate(task.endDate) };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return {
+    ...task,
+    startDate: task.isFloating ? toInputDate(today) : toInputDate(task.startDate),
+    endDate:   task.isFloating ? toInputDate(today) : toInputDate(task.endDate),
+  };
 }
 
 // ── 読み込み ────────────────────────────────────────────────

@@ -21,6 +21,7 @@ interface AddState {
   endDate: string;
   color: string;
   copySourceId?: string;
+  isFloating?: boolean;
 }
 
 function addDays(d: Date, n: number): Date {
@@ -61,7 +62,8 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
     setFilterAssignee,
   } = useGanttFilter(tasks);
 
-  const visibleTasks = filteredTasks.filter((t) => isVisible(t, filteredTasks, collapsedIds));
+  const scheduledVisibleTasks = filteredTasks.filter((t) => !t.isFloating && isVisible(t, filteredTasks, collapsedIds));
+  const floatingTasks         = filteredTasks.filter((t) => t.isFloating);
 
   // ── 操作 ──
 
@@ -95,9 +97,14 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
 
   function confirmAdd() {
     if (!addState || !addState.name.trim()) return;
-    const newStart = new Date(addState.startDate);
-    const newEnd   = new Date(addState.endDate);
-    if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
+
+    let newStart = today;
+    let newEnd   = today;
+    if (!addState.isFloating) {
+      newStart = new Date(addState.startDate);
+      newEnd   = new Date(addState.endDate);
+      if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
+    }
 
     const copySource = addState.copySourceId ? tasks.find((t) => t.id === addState.copySourceId) : undefined;
     const copiedFields = copySource
@@ -105,13 +112,14 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
       : undefined;
 
     const newTask: Task = {
-      id:        genId(),
-      name:      addState.name.trim(),
-      startDate: newStart,
-      endDate:   newEnd,
-      progress:  0,
-      color:     addState.color,
-      parentId:  addState.parentId,
+      id:         genId(),
+      name:       addState.name.trim(),
+      startDate:  newStart,
+      endDate:    newEnd,
+      progress:   0,
+      color:      addState.color,
+      parentId:   addState.parentId,
+      isFloating: addState.isFloating || undefined,
       ...(copiedFields ? {
         assignee:      copiedFields.assignee,
         subMembers:    copiedFields.subMembers,
@@ -121,7 +129,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
     };
 
     const appended   = [...tasks, newTask];
-    const propagated = newTask.parentId ? propagateDates(newTask.id, appended) : appended;
+    const propagated = newTask.parentId && !newTask.isFloating ? propagateDates(newTask.id, appended) : appended;
     onTasksChange(propagated);
     setAddState(null);
   }
@@ -175,7 +183,8 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
       {/* 左パネル */}
       <GanttLeftPanel
         tasks={tasks}
-        visibleTasks={visibleTasks}
+        visibleTasks={scheduledVisibleTasks}
+        floatingTasks={floatingTasks}
         collapsedIds={collapsedIds}
         filterParentId={filterParentId}
         filterAssignee={filterAssignee}
@@ -197,7 +206,8 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
       {/* 右タイムラインパネル */}
       <GanttTimeline
         tasks={tasks}
-        visibleTasks={visibleTasks}
+        visibleTasks={scheduledVisibleTasks}
+        floatingTasks={floatingTasks}
         dragPreview={dragPreview}
         holidays={holidays}
         timelineRef={timelineRef}
@@ -268,16 +278,28 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
                 onKeyDown={(e) => { if (e.key === "Enter") confirmAdd(); }}
               />
 
-              <div className="modal-date-row">
-                <div className="modal-date-field">
-                  <label className="modal-label">開始日</label>
-                  <input type="date" value={addState.startDate} max={addState.endDate} onChange={(e) => setAddState({ ...addState, startDate: e.target.value })} className="date-input" />
+              <label className="modal-floating-label">
+                <input
+                  type="checkbox"
+                  checked={addState.isFloating ?? false}
+                  onChange={(e) => setAddState({ ...addState, isFloating: e.target.checked })}
+                  className="modal-floating-checkbox"
+                />
+                単発タスク（開始時期未定）
+              </label>
+
+              {!addState.isFloating && (
+                <div className="modal-date-row">
+                  <div className="modal-date-field">
+                    <label className="modal-label">開始日</label>
+                    <input type="date" value={addState.startDate} max={addState.endDate} onChange={(e) => setAddState({ ...addState, startDate: e.target.value })} className="date-input" />
+                  </div>
+                  <div className="modal-date-field">
+                    <label className="modal-label">終了日</label>
+                    <input type="date" value={addState.endDate} min={addState.startDate} onChange={(e) => setAddState({ ...addState, endDate: e.target.value })} className="date-input" />
+                  </div>
                 </div>
-                <div className="modal-date-field">
-                  <label className="modal-label">終了日</label>
-                  <input type="date" value={addState.endDate} min={addState.startDate} onChange={(e) => setAddState({ ...addState, endDate: e.target.value })} className="date-input" />
-                </div>
-              </div>
+              )}
 
               <div className="modal-color-row">
                 <label className="modal-label">カラー</label>

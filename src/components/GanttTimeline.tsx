@@ -87,6 +87,7 @@ function barOpacity(depth: number): string {
 interface Props {
   tasks: Task[];
   visibleTasks: Task[];
+  floatingTasks: Task[];
   dragPreview: DragPreview | null;
   holidays: Map<string, string>;
   timelineRef: React.RefObject<HTMLDivElement>;
@@ -100,6 +101,7 @@ interface Props {
 export default function GanttTimeline({
   tasks,
   visibleTasks,
+  floatingTasks,
   dragPreview,
   holidays,
   timelineRef,
@@ -109,7 +111,7 @@ export default function GanttTimeline({
   onOpenEdit,
   onSetTooltip,
 }: Props) {
-  const allDates = tasks.flatMap((t) => [t.startDate, t.endDate]);
+  const allDates = tasks.filter((t) => !t.isFloating).flatMap((t) => [t.startDate, t.endDate]);
   if (dragPreview) allDates.push(dragPreview.startDate, dragPreview.endDate);
 
   if (allDates.length === 0) {
@@ -236,6 +238,37 @@ export default function GanttTimeline({
             </div>
           );
         })}
+
+      {/* 未スケジュールセクション対応の空行（左パネルと高さ合わせ） */}
+      {floatingTasks.length > 0 && (
+        <div className="gantt-unscheduled-section gantt-unscheduled-section--timeline" style={{ width: totalDays * DAY_WIDTH }}>
+          <div className="gantt-unscheduled-header" style={{ visibility: "hidden" }}>placeholder</div>
+          {floatingTasks.map((task) => (
+            <div key={task.id} className="gantt-timeline-row gantt-timeline-row--floating" style={{ height: ROW_HEIGHT }}>
+              {days.map((d, i) => {
+                const holiday     = isHoliday(d, holidays);
+                const holidayName = holiday ? getHolidayName(d, holidays) : "";
+                return (
+                  <div
+                    key={i}
+                    className={[
+                      "gantt-grid-cell",
+                      isSunday(d) || isSaturday(d) ? "grid-weekend"    : "",
+                      isMonthStart(d)              ? "grid-month-start" : "",
+                      holiday                      ? "grid-holiday"     : "",
+                    ].join(" ")}
+                    style={{ left: i * DAY_WIDTH, width: DAY_WIDTH }}
+                    title={holidayName}
+                  />
+                );
+              })}
+              {todayOffset >= 0 && todayOffset < totalDays && (
+                <div className="gantt-today-line" style={{ left: todayOffset * DAY_WIDTH + DAY_WIDTH / 2 }} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       </div>
     </div>
   );

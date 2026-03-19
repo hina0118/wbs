@@ -46,6 +46,7 @@ function getDepth(taskId: string, tasks: Task[]): number {
 interface Props {
   tasks: Task[];
   visibleTasks: Task[];
+  floatingTasks: Task[];
   collapsedIds: Set<string>;
   filterParentId: string;
   filterAssignee: string;
@@ -67,6 +68,7 @@ interface Props {
 export default function GanttLeftPanel({
   tasks,
   visibleTasks,
+  floatingTasks,
   collapsedIds,
   filterParentId,
   filterAssignee,
@@ -112,7 +114,7 @@ export default function GanttLeftPanel({
     }
     const dragged = tasks.find((t) => t.id === draggedId);
     const target  = tasks.find((t) => t.id === targetId);
-    if (dragged && target && dragged.parentId === target.parentId) {
+    if (dragged && target && dragged.parentId === target.parentId && !!dragged.isFloating === !!target.isFloating) {
       onReorderTasks(draggedId, targetId);
     }
     draggedIdRef.current = null;
@@ -144,7 +146,8 @@ export default function GanttLeftPanel({
               onChange={(e) => onFilterParentChange(e.target.value)}
             >
               <option value="all">すべて表示</option>
-              {tasks.filter((t) => !t.parentId).map((t) => (
+              <option value="__floating__">未スケジュール</option>
+              {tasks.filter((t) => !t.parentId && !t.isFloating).map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
@@ -171,7 +174,7 @@ export default function GanttLeftPanel({
         onScroll={onLeftScroll}
         style={{ maxHeight: `calc(100vh - ${HEADER_HEIGHT + 80}px)`, overflowY: "auto" }}
       >
-        {visibleTasks.length === 0 && (
+        {visibleTasks.length === 0 && filterParentId !== "__floating__" && (
           <div className="gantt-empty">
             {tasks.length === 0 ? "タスクがありません。「＋」ボタンから追加してください。" : "条件に一致するタスクがありません。"}
           </div>
@@ -265,6 +268,47 @@ export default function GanttLeftPanel({
             </div>
           );
         })}
+
+      {/* 未スケジュールセクション */}
+      {floatingTasks.length > 0 && (
+        <div className="gantt-unscheduled-section">
+          <div className="gantt-unscheduled-header">未スケジュール ({floatingTasks.length})</div>
+          {floatingTasks.map((task) => {
+            const effectiveProg = computeProgress(task.id, tasks);
+            const isDragOver    = dragOverId === task.id;
+            return (
+              <div
+                key={task.id}
+                className={`gantt-row gantt-row-depth-0 gantt-row--floating${effectiveProg === 100 ? " gantt-row--done" : ""}${isDragOver ? " gantt-row--drag-over" : ""}`}
+                style={{ height: ROW_HEIGHT }}
+                draggable
+                onDragStart={(e) => handleDragStart(e, task.id)}
+                onDragOver={(e) => handleDragOver(e, task.id)}
+                onDrop={(e) => handleDrop(e, task.id)}
+                onDragEnd={handleDragEnd}
+              >
+                <span className="gantt-drag-handle" title="ドラッグして並び替え">⠿</span>
+                <span className="gantt-col-task" style={{ paddingLeft: 8 }}>
+                  <span className="gantt-leaf-icon">○</span>
+                  <span className="gantt-task-name" title={task.name}>{task.name}</span>
+                </span>
+                <span className="gantt-col-assignee gantt-col-assignee--leaf" onClick={() => onOpenEdit(task)}>
+                  {task.assignee ? (
+                    <span className="assignee-badge">{task.assignee}</span>
+                  ) : (
+                    <span className="assignee-empty">未設定</span>
+                  )}
+                </span>
+                <span className="gantt-col-progress" style={{ cursor: "pointer" }} onClick={() => onOpenEdit(task)}>
+                  <span className="progress-badge" style={{ background: task.color || "#4A90D9" }}>
+                    {effectiveProg}%
+                  </span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
       </div>
     </div>
   );

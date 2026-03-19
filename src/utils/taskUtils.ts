@@ -18,9 +18,11 @@ export function computeProgress(taskId: string, tasks: Task[]): number {
 export function propagateDates(changedId: string, tasks: Task[]): Task[] {
   const task = tasks.find((t) => t.id === changedId);
   if (!task?.parentId) return tasks;
-  const siblings = tasks.filter((t) => t.parentId === task.parentId);
-  const newStart = siblings.reduce((m, t) => (t.startDate < m ? t.startDate : m), siblings[0].startDate);
-  const newEnd   = siblings.reduce((m, t) => (t.endDate   > m ? t.endDate   : m), siblings[0].endDate);
+  // isFloating タスクの日付は伝播しない
+  const scheduledSiblings = tasks.filter((t) => t.parentId === task.parentId && !t.isFloating);
+  if (scheduledSiblings.length === 0) return tasks;
+  const newStart = scheduledSiblings.reduce((m, t) => (t.startDate < m ? t.startDate : m), scheduledSiblings[0].startDate);
+  const newEnd   = scheduledSiblings.reduce((m, t) => (t.endDate   > m ? t.endDate   : m), scheduledSiblings[0].endDate);
   const updated  = tasks.map((t) => t.id === task.parentId ? { ...t, startDate: newStart, endDate: newEnd } : t);
   return propagateDates(task.parentId, updated);
 }
@@ -98,6 +100,7 @@ export function copyTaskFields(
     progressCount: source.progressCount
       ? { done: 0, total: source.progressCount.total }
       : undefined,
+    isFloating: source.isFloating,
     ...overrides,
   };
 }
@@ -109,6 +112,8 @@ export function getSignalStatus(taskId: string, tasks: Task[]): SignalStatus {
   if (effectiveProgress === 100) return "none";
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return "none";
+  // isFloating タスクは日付によるシグナル判定をしない
+  if (task.isFloating) return "none";
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   if (task.endDate < today) return "red";
