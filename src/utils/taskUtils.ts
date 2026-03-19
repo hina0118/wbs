@@ -79,6 +79,29 @@ export function genId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
+/** タスクのコピー用データを生成する（日付・進捗はリセット） */
+export function copyTaskFields(
+  source: Task,
+  overrides: Partial<Task> = {}
+): Omit<Task, "id"> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return {
+    name: `${source.name} のコピー`,
+    startDate: overrides.startDate ?? today,
+    endDate: overrides.endDate ?? today,
+    progress: 0,
+    color: source.color,
+    assignee: source.assignee,
+    subMembers: source.subMembers ? [...source.subMembers] : undefined,
+    memo: source.memo,
+    progressCount: source.progressCount
+      ? { done: 0, total: source.progressCount.total }
+      : undefined,
+    ...overrides,
+  };
+}
+
 export type SignalStatus = "red" | "yellow" | "green" | "none";
 
 export function getSignalStatus(taskId: string, tasks: Task[]): SignalStatus {
