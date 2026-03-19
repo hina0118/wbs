@@ -11,4 +11,5 @@ export interface Task {
   subMembers?: string[];
   memo?: string;
   progressCount?: { done: number; total: number };
+  order?: number;
 }

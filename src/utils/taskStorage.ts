@@ -16,6 +16,7 @@ interface TaskRaw {
   assignee?: string;
   subMembers?: string[];
   progressCount?: { done: number; total: number };
+  order?: number;
 }
 
 function parseLocalDate(s: string): Date {
@@ -37,6 +38,18 @@ function toRaw(task: Task): TaskRaw {
 
 // ── 読み込み ────────────────────────────────────────────────
 
+/** order未設定のタスクに兄弟内インデックスを自動付与する */
+function migrateOrder(tasks: Task[]): Task[] {
+  const siblingCount = new Map<string | undefined, number>();
+  return tasks.map((task) => {
+    if (task.order !== undefined) return task;
+    const key = task.parentId;
+    const idx = siblingCount.get(key) ?? 0;
+    siblingCount.set(key, idx + 1);
+    return { ...task, order: idx };
+  });
+}
+
 /**
  * 起動時のタスク読み込み。
  * アプリデータに保存済みデータがあればそれを使い、
@@ -47,12 +60,12 @@ export async function loadTasks(): Promise<Task[]> {
     const saved = await invoke<string | null>("load_saved_tasks");
     if (saved) {
       const raws: TaskRaw[] = JSON.parse(saved);
-      return raws.map(toTask);
+      return migrateOrder(raws.map(toTask));
     }
   } catch (e) {
     console.warn("保存済みタスクの読み込みに失敗（デフォルトを使用）:", e);
   }
-  return loadSampleTasks();
+  return migrateOrder(await loadSampleTasks());
 }
 
 // ── 保存 ────────────────────────────────────────────────────
