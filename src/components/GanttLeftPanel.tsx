@@ -146,7 +146,8 @@ export default function GanttLeftPanel({
               onChange={(e) => onFilterParentChange(e.target.value)}
             >
               <option value="all">すべて表示</option>
-              {tasks.filter((t) => !t.parentId).map((t) => (
+              <option value="__floating__">未スケジュール</option>
+              {tasks.filter((t) => !t.parentId && !t.isFloating).map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>

@@ -15,6 +15,8 @@ export function useGanttFilter(tasks: Task[]) {
   const filteredByParent =
     filterParentId === "all"
       ? tasks
+      : filterParentId === "__floating__"
+      ? tasks.filter((t) => t.isFloating)
       : [
           tasks.find((t) => t.id === filterParentId)!,
           ...getAllDescendantIds(filterParentId, tasks)
