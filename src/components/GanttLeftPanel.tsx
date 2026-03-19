@@ -114,7 +114,7 @@ export default function GanttLeftPanel({
     }
     const dragged = tasks.find((t) => t.id === draggedId);
     const target  = tasks.find((t) => t.id === targetId);
-    if (dragged && target && dragged.parentId === target.parentId) {
+    if (dragged && target && dragged.parentId === target.parentId && !!dragged.isFloating === !!target.isFloating) {
       onReorderTasks(draggedId, targetId);
     }
     draggedIdRef.current = null;
@@ -275,13 +275,19 @@ export default function GanttLeftPanel({
           <div className="gantt-unscheduled-header">未スケジュール ({floatingTasks.length})</div>
           {floatingTasks.map((task) => {
             const effectiveProg = computeProgress(task.id, tasks);
+            const isDragOver    = dragOverId === task.id;
             return (
               <div
                 key={task.id}
-                className={`gantt-row gantt-row-depth-0 gantt-row--floating${effectiveProg === 100 ? " gantt-row--done" : ""}`}
+                className={`gantt-row gantt-row-depth-0 gantt-row--floating${effectiveProg === 100 ? " gantt-row--done" : ""}${isDragOver ? " gantt-row--drag-over" : ""}`}
                 style={{ height: ROW_HEIGHT }}
+                draggable
+                onDragStart={(e) => handleDragStart(e, task.id)}
+                onDragOver={(e) => handleDragOver(e, task.id)}
+                onDrop={(e) => handleDrop(e, task.id)}
+                onDragEnd={handleDragEnd}
               >
-                <span className="gantt-drag-handle" />
+                <span className="gantt-drag-handle" title="ドラッグして並び替え">⠿</span>
                 <span className="gantt-col-task" style={{ paddingLeft: 8 }}>
                   <span className="gantt-leaf-icon">○</span>
                   <span className="gantt-task-name" title={task.name}>{task.name}</span>
