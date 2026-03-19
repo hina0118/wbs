@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Task } from "../types/task";
-import { getAllDescendantIds, getSignalStatus, isLeaf, computeProgress, getAncestorNames, toInputDate, genId } from "../utils/taskUtils";
+import { getAllDescendantIds, getSignalStatus, isLeaf, computeProgress, getAncestorNames, toInputDate, genId, copyTaskFields } from "../utils/taskUtils";
 import MemoWithToggle from "./MemoWithToggle";
 import TaskEditModal from "./TaskEditModal";
 
@@ -65,6 +65,7 @@ interface AddState {
   endDate: string;
   color: string;
   parentId?: string;
+  copySourceId?: string;
 }
 
 // ── コンポーネント ────────────────────────────────────────
@@ -142,6 +143,12 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
     const col      = COLUMNS.find((c) => c.id === addState.columnId)!;
     const initProg = col.dropProgress(0);
+
+    const copySource = addState.copySourceId ? tasks.find((t) => t.id === addState.copySourceId) : undefined;
+    const copiedFields = copySource
+      ? copyTaskFields(copySource, { startDate: newStart, endDate: newEnd })
+      : undefined;
+
     const newTask: Task = {
       id:        genId(),
       name:      addState.name.trim(),
@@ -150,6 +157,12 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
       progress:  initProg,
       color:     addState.color,
       ...(addState.parentId ? { parentId: addState.parentId } : {}),
+      ...(copiedFields ? {
+        assignee:      copiedFields.assignee,
+        subMembers:    copiedFields.subMembers,
+        memo:          copiedFields.memo,
+        progressCount: copiedFields.progressCount,
+      } : {}),
     };
     onTasksChange([...tasks, newTask]);
     setAddState(null);
@@ -357,6 +370,29 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
                 .map((t) => (
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
+            </select>
+
+            <label className="modal-label">コピー元タスク</label>
+            <select
+              className="assignee-input"
+              value={addState.copySourceId ?? ""}
+              onChange={(e) => {
+                const copySourceId = e.target.value || undefined;
+                const src = copySourceId ? tasks.find((t) => t.id === copySourceId) : undefined;
+                setAddState({
+                  ...addState,
+                  copySourceId,
+                  name: src ? `${src.name} のコピー` : "",
+                  color: src?.color ?? (addState.parentId ? tasks.find((t) => t.id === addState.parentId)?.color ?? "#4A90D9" : "#4A90D9"),
+                });
+              }}
+            >
+              <option value="">なし（新規作成）</option>
+              {tasks.map((t) => {
+                const ancestors = getAncestorNames(t.id, tasks);
+                const label = ancestors.length > 0 ? `${ancestors.join(" > ")} > ${t.name}` : t.name;
+                return <option key={t.id} value={t.id}>{label}</option>;
+              })}
             </select>
 
             <label className="modal-label">タスク名 <span className="modal-required">*</span></label>

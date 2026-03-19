@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Task } from "../types/task";
-import { toInputDate, genId, propagateDates, sortByTree } from "../utils/taskUtils";
+import { toInputDate, genId, propagateDates, sortByTree, copyTaskFields, getAncestorNames } from "../utils/taskUtils";
 import { useDragHandler } from "../hooks/useDragHandler";
 import { useGanttFilter } from "../hooks/useGanttFilter";
 import GanttLeftPanel from "./GanttLeftPanel";
@@ -20,6 +20,7 @@ interface AddState {
   startDate: string;
   endDate: string;
   color: string;
+  copySourceId?: string;
 }
 
 function addDays(d: Date, n: number): Date {
@@ -98,6 +99,11 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
     const newEnd   = new Date(addState.endDate);
     if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
 
+    const copySource = addState.copySourceId ? tasks.find((t) => t.id === addState.copySourceId) : undefined;
+    const copiedFields = copySource
+      ? copyTaskFields(copySource, { startDate: newStart, endDate: newEnd })
+      : undefined;
+
     const newTask: Task = {
       id:        genId(),
       name:      addState.name.trim(),
@@ -106,6 +112,12 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
       progress:  0,
       color:     addState.color,
       parentId:  addState.parentId,
+      ...(copiedFields ? {
+        assignee:      copiedFields.assignee,
+        subMembers:    copiedFields.subMembers,
+        memo:          copiedFields.memo,
+        progressCount: copiedFields.progressCount,
+      } : {}),
     };
 
     const appended   = [...tasks, newTask];
@@ -221,6 +233,29 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
             <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
               <h3>{parent ? "サブタスクを追加" : "タスクを追加"}</h3>
               {parent && <p className="modal-parent-info">親タスク: {parent.name}</p>}
+
+              <label className="modal-label">コピー元タスク</label>
+              <select
+                className="assignee-input"
+                value={addState.copySourceId ?? ""}
+                onChange={(e) => {
+                  const copySourceId = e.target.value || undefined;
+                  const src = copySourceId ? tasks.find((t) => t.id === copySourceId) : undefined;
+                  setAddState({
+                    ...addState,
+                    copySourceId,
+                    name: src ? `${src.name} のコピー` : "",
+                    color: src?.color ?? (addState.parentId ? tasks.find((t) => t.id === addState.parentId)?.color ?? "#4A90D9" : "#4A90D9"),
+                  });
+                }}
+              >
+                <option value="">なし（新規作成）</option>
+                {tasks.map((t) => {
+                  const ancestors = getAncestorNames(t.id, tasks);
+                  const label = ancestors.length > 0 ? `${ancestors.join(" > ")} > ${t.name}` : t.name;
+                  return <option key={t.id} value={t.id}>{label}</option>;
+                })}
+              </select>
 
               <label className="modal-label">タスク名 <span className="modal-required">*</span></label>
               <input
