@@ -14,6 +14,7 @@ Tauri 2 + React 18 + TypeScript で構築したデスクトップ向け WBS（Wo
 - タスクの追加（ルート・サブタスク）／削除
 - バーホバーで Markdown 対応ツールチップを表示
 - 行の折りたたみ（子タスクの表示/非表示）
+- 担当者・親タスクでフィルタリング
 
 ### カンバンボード
 - リーフタスクを「未着手 / 進行中 / 完了」の 3 列に分類
@@ -30,6 +31,24 @@ Tauri 2 + React 18 + TypeScript で構築したデスクトップ向け WBS（Wo
   - メモは「▼ メモを見る / ▲ 閉じる」で手動トグルも可能
   - タスク名・担当者マッチ箇所をハイライト（黄色）
 
+### 分析ビュー
+- 遅延タスク（終了予定日超過かつ未完了）を一覧表示
+- 進捗遅れタスク（計画進捗より 10% 以上遅れ）を検出
+- 今後 7 日以内に締め切りが近づくタスクのアラート
+
+### アーカイブ
+- 完了・不要になったルートタスクをアーカイブ（非表示化）
+- アーカイブビューで一覧確認・復元
+- アーカイブ済みタスクはガントチャート・カンバン・検索から除外
+
+### フローティングタスク
+- 開始時期不明の単発タスクを「フローティング」として登録
+- 日付なしでカンバン管理し、日程が決まったら通常タスクに変換
+
+### Excel エクスポート
+- ガントチャートのタスク一覧を `.xlsx` 形式でエクスポート
+- 階層の深さに応じた色分け・インデント付きレイアウト
+
 ### プロキシ設定
 - ヘッダー右端の `⚙` ボタンから設定ダイアログを開く
 - プロキシ URL を入力して保存すると、祝日データ取得時に適用される
@@ -37,11 +56,11 @@ Tauri 2 + React 18 + TypeScript で構築したデスクトップ向け WBS（Wo
 - 設定は `%APPDATA%\com.wbs.app\proxy.json` に保存される
 
 ### タスク編集モーダル
-- タスク名・開始日・終了日・担当者の編集
+- タスク名・開始日・終了日・担当者・サブメンバーの編集
 - リーフタスク：進捗スライダー（0〜100%）
 - 親タスク：子タスクから集計した進捗バー（読み取り専用）
 - Markdown メモの編集（編集 / プレビュータブ切り替え）
-- タスク削除（2 ステップ確認）
+- タスク削除・アーカイブ（2 ステップ確認）
 
 ---
 
@@ -61,23 +80,33 @@ Tauri 2 + React 18 + TypeScript で構築したデスクトップ向け WBS（Wo
 ```
 src/
 ├── App.tsx                  # ルートコンポーネント・ビュー切り替え
+├── main.tsx                 # エントリーポイント
+├── styles.css               # 全スタイル
 ├── types/
 │   └── task.ts              # Task インターフェース定義
 ├── utils/
 │   ├── taskUtils.ts         # 共有ヘルパー（進捗計算・日程伝播など）
 │   ├── taskStorage.ts       # Tauri invoke 経由の永続化（tasks.json）
-│   └── holidays.ts          # 祝日データロード
-├── components/
-│   ├── GanttChart.tsx       # ガントチャートビュー
-│   ├── GanttTooltip.tsx     # ガントバーホバーツールチップ
-│   ├── KanbanBoard.tsx      # カンバンボードビュー
-│   ├── SearchView.tsx       # タスク横断検索ビュー（リスト表示）
-│   ├── TaskEditModal.tsx    # タスク編集モーダル（共通）
-│   ├── MemoField.tsx        # メモ入力（編集/プレビュータブ）
-│   ├── MemoView.tsx         # Markdown レンダリング表示
-│   ├── MemoWithToggle.tsx   # メモの展開/折りたたみトグル
-│   └── ProxySettingModal.tsx # HTTP プロキシ設定ダイアログ
-└── styles.css               # 全スタイル
+│   ├── holidays.ts          # 祝日データロード
+│   └── exportToExcel.ts     # Excel エクスポート（ExcelJS）
+├── hooks/
+│   ├── useDragHandler.ts    # ガントバーのドラッグ操作フック
+│   └── useGanttFilter.ts    # ガント絞り込み（担当者・親タスク）フック
+└── components/
+    ├── GanttChart.tsx        # ガントチャートビュー（統合コンポーネント）
+    ├── GanttLeftPanel.tsx    # ガント左ペイン（タスク一覧）
+    ├── GanttTimeline.tsx     # ガント右ペイン（タイムライン・バー）
+    ├── GanttTooltip.tsx      # ガントバーホバーツールチップ
+    ├── KanbanBoard.tsx       # カンバンボードビュー
+    ├── SearchView.tsx        # タスク横断検索ビュー（リスト表示）
+    ├── AnalysisView.tsx      # 分析ビュー（遅延・進捗遅れ・締切アラート）
+    ├── ArchiveView.tsx       # アーカイブ一覧・復元ビュー
+    ├── TaskEditModal.tsx     # タスク編集モーダル（共通）
+    ├── MemoField.tsx         # メモ入力（編集/プレビュータブ）
+    ├── MemoView.tsx          # Markdown レンダリング表示
+    ├── MemoWithToggle.tsx    # メモの展開/折りたたみトグル
+    ├── ProxySettingModal.tsx # HTTP プロキシ設定ダイアログ
+    └── UpdateNotifier.tsx    # 自動更新通知バナー
 ```
 
 ---
@@ -86,16 +115,21 @@ src/
 
 ```typescript
 interface Task {
-  id:         string;
-  name:       string;
-  startDate:  Date;
-  endDate:    Date;
-  progress:   number;    // 0〜100（リーフのみ手動設定、親は自動計算）
-  color?:     string;    // カラーコード（例: "#4A90D9"）
-  parentId?:  string;    // 親タスクの id（ルートは undefined）
-  collapsed?: boolean;   // ガントチャートでの折りたたみ状態
-  assignee?:  string;    // 担当者名
-  memo?:      string;    // Markdown 形式のメモ
+  id:             string;
+  name:           string;
+  startDate:      Date;
+  endDate:        Date;
+  progress:       number;                          // 0〜100（リーフのみ手動設定、親は自動計算）
+  color?:         string;                          // カラーコード（例: "#4A90D9"）
+  parentId?:      string;                          // 親タスクの id（ルートは undefined）
+  collapsed?:     boolean;                         // ガントチャートでの折りたたみ状態
+  assignee?:      string;                          // 担当者名
+  subMembers?:    string[];                        // サブメンバー（複数担当者）
+  memo?:          string;                          // Markdown 形式のメモ
+  progressCount?: { done: number; total: number }; // カンバン用件数カウント
+  order?:         number;                          // 表示順序
+  isFloating?:    boolean;                         // 開始時期不明のフローティングタスク
+  archived?:      boolean;                         // アーカイブ済み（非表示、データは保持）
 }
 ```
 
