@@ -9,6 +9,7 @@ import {
   toInputDate,
   genId,
   getSignalStatus,
+  copyTaskFields,
 } from "../utils/taskUtils";
 import type { Task } from "../types/task";
 
@@ -155,6 +156,63 @@ describe("genId", () => {
 
   it("文字列を返す", () => {
     expect(typeof genId()).toBe("string");
+  });
+});
+
+// ─── copyTaskFields ───────────────────────────────────────────
+describe("copyTaskFields", () => {
+  it("名前に「のコピー」が付く", () => {
+    const src = makeTask({ id: "src", name: "タスクA" });
+    const result = copyTaskFields(src);
+    expect(result.name).toBe("タスクA のコピー");
+  });
+
+  it("進捗は 0 にリセットされる", () => {
+    const src = makeTask({ id: "src", progress: 80 });
+    const result = copyTaskFields(src);
+    expect(result.progress).toBe(0);
+  });
+
+  it("色・担当者・メモがコピーされる", () => {
+    const src = makeTask({ id: "src", color: "#ff0000", assignee: "Alice", memo: "メモ内容" });
+    const result = copyTaskFields(src);
+    expect(result.color).toBe("#ff0000");
+    expect(result.assignee).toBe("Alice");
+    expect(result.memo).toBe("メモ内容");
+  });
+
+  it("subMembers がある場合はコピーされる（元配列とは別インスタンス）", () => {
+    const src = makeTask({ id: "src", subMembers: ["Bob", "Carol"] });
+    const result = copyTaskFields(src);
+    expect(result.subMembers).toEqual(["Bob", "Carol"]);
+    expect(result.subMembers).not.toBe(src.subMembers);
+  });
+
+  it("subMembers がない場合は undefined", () => {
+    const src = makeTask({ id: "src" });
+    const result = copyTaskFields(src);
+    expect(result.subMembers).toBeUndefined();
+  });
+
+  it("progressCount がある場合は done=0 でリセットされ total はコピーされる", () => {
+    const src = makeTask({ id: "src", progressCount: { done: 5, total: 10 } });
+    const result = copyTaskFields(src);
+    expect(result.progressCount).toEqual({ done: 0, total: 10 });
+  });
+
+  it("progressCount がない場合は undefined", () => {
+    const src = makeTask({ id: "src" });
+    const result = copyTaskFields(src);
+    expect(result.progressCount).toBeUndefined();
+  });
+
+  it("overrides で日付を上書きできる", () => {
+    const src = makeTask({ id: "src" });
+    const start = new Date(2026, 0, 1);
+    const end   = new Date(2026, 0, 7);
+    const result = copyTaskFields(src, { startDate: start, endDate: end });
+    expect(result.startDate).toEqual(start);
+    expect(result.endDate).toEqual(end);
   });
 });
 
