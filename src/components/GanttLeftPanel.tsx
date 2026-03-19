@@ -268,47 +268,42 @@ export default function GanttLeftPanel({
           );
         })}
 
-        {/* 未スケジュールセクション */}
-        {floatingTasks.length > 0 && (
-          <div className="gantt-unscheduled-section">
-            <div className="gantt-unscheduled-header">未スケジュール ({floatingTasks.length})</div>
-            {floatingTasks.map((task) => {
-              const effectiveProg = computeProgress(task.id, tasks);
-              return (
-                <div
-                  key={task.id}
-                  className={`gantt-row gantt-row-depth-0 gantt-row--floating${effectiveProg === 100 ? " gantt-row--done" : ""}`}
-                  style={{ height: ROW_HEIGHT }}
-                >
-                  <span className="gantt-drag-handle" />
-                  <span className="gantt-col-task" style={{ paddingLeft: 8 }}>
-                    <span className="gantt-leaf-icon">○</span>
-                    <span
-                      className="gantt-task-name"
-                      title={task.name}
-                    >{task.name}</span>
-                  </span>
-                  <span className="gantt-col-assignee gantt-col-assignee--leaf" onClick={() => onOpenEdit(task)}>
-                    {task.assignee ? (
-                      <span className="assignee-badge">{task.assignee}</span>
-                    ) : (
-                      <span className="assignee-empty">未設定</span>
-                    )}
-                  </span>
-                  <span className="gantt-col-progress" style={{ cursor: "pointer" }} onClick={() => onOpenEdit(task)}>
-                    <span
-                      className="progress-badge"
-                      style={{ background: task.color || "#4A90D9" }}
-                    >
-                      {effectiveProg}%
-                    </span>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
+
+      {/* 未スケジュールセクション（スクロール領域外） */}
+      {floatingTasks.length > 0 && (
+        <div className="gantt-unscheduled-section">
+          <div className="gantt-unscheduled-header">未スケジュール ({floatingTasks.length})</div>
+          {floatingTasks.map((task) => {
+            const effectiveProg = computeProgress(task.id, tasks);
+            return (
+              <div
+                key={task.id}
+                className={`gantt-row gantt-row-depth-0 gantt-row--floating${effectiveProg === 100 ? " gantt-row--done" : ""}`}
+                style={{ height: ROW_HEIGHT }}
+              >
+                <span className="gantt-drag-handle" />
+                <span className="gantt-col-task" style={{ paddingLeft: 8 }}>
+                  <span className="gantt-leaf-icon">○</span>
+                  <span className="gantt-task-name" title={task.name}>{task.name}</span>
+                </span>
+                <span className="gantt-col-assignee gantt-col-assignee--leaf" onClick={() => onOpenEdit(task)}>
+                  {task.assignee ? (
+                    <span className="assignee-badge">{task.assignee}</span>
+                  ) : (
+                    <span className="assignee-empty">未設定</span>
+                  )}
+                </span>
+                <span className="gantt-col-progress" style={{ cursor: "pointer" }} onClick={() => onOpenEdit(task)}>
+                  <span className="progress-badge" style={{ background: task.color || "#4A90D9" }}>
+                    {effectiveProg}%
+                  </span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
