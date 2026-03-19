@@ -10,6 +10,8 @@ import {
   genId,
   getSignalStatus,
   copyTaskFields,
+  archiveTask,
+  unarchiveTask,
 } from "../utils/taskUtils";
 import type { Task } from "../types/task";
 
@@ -213,6 +215,47 @@ describe("copyTaskFields", () => {
     const result = copyTaskFields(src, { startDate: start, endDate: end });
     expect(result.startDate).toEqual(start);
     expect(result.endDate).toEqual(end);
+  });
+});
+
+// ─── archiveTask / unarchiveTask ──────────────────────────────
+describe("archiveTask", () => {
+  it("ルートタスクと全子孫が archived:true になる", () => {
+    const result = archiveTask("root", flatTasks);
+    expect(result.find((t) => t.id === "root")?.archived).toBe(true);
+    expect(result.find((t) => t.id === "child1")?.archived).toBe(true);
+    expect(result.find((t) => t.id === "child2")?.archived).toBe(true);
+    expect(result.find((t) => t.id === "grandchild")?.archived).toBe(true);
+  });
+
+  it("対象外のタスクは変更されない", () => {
+    const other = makeTask({ id: "other" });
+    const result = archiveTask("child2", [root, child1, child2, other]);
+    expect(result.find((t) => t.id === "other")?.archived).toBeUndefined();
+    expect(result.find((t) => t.id === "root")?.archived).toBeUndefined();
+  });
+
+  it("リーフタスク単体もアーカイブできる", () => {
+    const result = archiveTask("grandchild", flatTasks);
+    expect(result.find((t) => t.id === "grandchild")?.archived).toBe(true);
+    expect(result.find((t) => t.id === "child1")?.archived).toBeUndefined();
+  });
+});
+
+describe("unarchiveTask", () => {
+  it("archived:true のタスクと全子孫が archived:false になる", () => {
+    const archived = flatTasks.map((t) => ({ ...t, archived: true as const }));
+    const result = unarchiveTask("root", archived);
+    expect(result.find((t) => t.id === "root")?.archived).toBe(false);
+    expect(result.find((t) => t.id === "child1")?.archived).toBe(false);
+    expect(result.find((t) => t.id === "grandchild")?.archived).toBe(false);
+  });
+
+  it("対象外のタスクは変更されない", () => {
+    const archived = flatTasks.map((t) => ({ ...t, archived: true as const }));
+    const result = unarchiveTask("child2", archived);
+    expect(result.find((t) => t.id === "child2")?.archived).toBe(false);
+    expect(result.find((t) => t.id === "root")?.archived).toBe(true);
   });
 });
 
