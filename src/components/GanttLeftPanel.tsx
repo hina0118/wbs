@@ -174,7 +174,7 @@ export default function GanttLeftPanel({
         onScroll={onLeftScroll}
         style={{ maxHeight: `calc(100vh - ${HEADER_HEIGHT + 80}px)`, overflowY: "auto" }}
       >
-        {visibleTasks.length === 0 && (
+        {visibleTasks.length === 0 && filterParentId !== "__floating__" && (
           <div className="gantt-empty">
             {tasks.length === 0 ? "タスクがありません。「＋」ボタンから追加してください。" : "条件に一致するタスクがありません。"}
           </div>
