@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { Task } from "../types/task";
 import { getSignalStatus, computeProgress, SignalStatus } from "../utils/taskUtils";
 
@@ -60,6 +61,7 @@ interface Props {
   onFilterParentChange: (value: string) => void;
   onFilterAssigneeChange: (value: string) => void;
   onLeftScroll: () => void;
+  onReorderTasks: (draggedId: string, targetId: string) => void;
 }
 
 export default function GanttLeftPanel({
@@ -80,7 +82,48 @@ export default function GanttLeftPanel({
   onFilterParentChange,
   onFilterAssigneeChange,
   onLeftScroll,
+  onReorderTasks,
 }: Props) {
+  const draggedIdRef = useRef<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  function handleDragStart(e: React.DragEvent, taskId: string) {
+    draggedIdRef.current = taskId;
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function handleDragOver(e: React.DragEvent, taskId: string) {
+    e.preventDefault();
+    const draggedId = draggedIdRef.current;
+    if (!draggedId || draggedId === taskId) return;
+    const dragged = tasks.find((t) => t.id === draggedId);
+    const target  = tasks.find((t) => t.id === taskId);
+    if (!dragged || !target || dragged.parentId !== target.parentId) return;
+    e.dataTransfer.dropEffect = "move";
+    setDragOverId(taskId);
+  }
+
+  function handleDrop(e: React.DragEvent, targetId: string) {
+    e.preventDefault();
+    const draggedId = draggedIdRef.current;
+    if (!draggedId || draggedId === targetId) {
+      setDragOverId(null);
+      return;
+    }
+    const dragged = tasks.find((t) => t.id === draggedId);
+    const target  = tasks.find((t) => t.id === targetId);
+    if (dragged && target && dragged.parentId === target.parentId) {
+      onReorderTasks(draggedId, targetId);
+    }
+    draggedIdRef.current = null;
+    setDragOverId(null);
+  }
+
+  function handleDragEnd() {
+    draggedIdRef.current = null;
+    setDragOverId(null);
+  }
+
   return (
     <div className="gantt-left" style={{ width: LEFT_PANEL_WIDTH + ASSIGNEE_COL_WIDTH + PROGRESS_COL_WIDTH }}>
       <div className="gantt-left-header" style={{ height: HEADER_HEIGHT }}>
@@ -140,13 +183,20 @@ export default function GanttLeftPanel({
           const effectiveProg = computeProgress(task.id, tasks);
           const expected      = expectedProgress(task, today);
           const isBehind      = effectiveProg < expected;
+          const isDragOver    = dragOverId === task.id;
 
           return (
             <div
               key={task.id}
-              className={`gantt-row gantt-row-depth-${Math.min(depth, 3)}${effectiveProg === 100 ? " gantt-row--done" : ""}`}
+              className={`gantt-row gantt-row-depth-${Math.min(depth, 3)}${effectiveProg === 100 ? " gantt-row--done" : ""}${isDragOver ? " gantt-row--drag-over" : ""}`}
               style={{ height: ROW_HEIGHT }}
+              draggable
+              onDragStart={(e) => handleDragStart(e, task.id)}
+              onDragOver={(e) => handleDragOver(e, task.id)}
+              onDrop={(e) => handleDrop(e, task.id)}
+              onDragEnd={handleDragEnd}
             >
+              <span className="gantt-drag-handle" title="ドラッグして並び替え">⠿</span>
               <span className="gantt-col-task" style={{ paddingLeft: depth * INDENT_PER_LEVEL + 8 }}>
                 {hasChildren ? (
                   <button className="gantt-collapse-btn" onClick={() => onToggleCollapse(task.id)}>

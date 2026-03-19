@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Task } from "../types/task";
-import { toInputDate, genId, propagateDates } from "../utils/taskUtils";
+import { toInputDate, genId, propagateDates, sortByTree } from "../utils/taskUtils";
 import { useDragHandler } from "../hooks/useDragHandler";
 import { useGanttFilter } from "../hooks/useGanttFilter";
 import GanttLeftPanel from "./GanttLeftPanel";
@@ -126,6 +126,28 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
       timelineRef.current.scrollTop = leftScrollRef.current.scrollTop;
   }
 
+  // ── 行並び替え ──
+
+  function reorderTasks(draggedId: string, targetId: string) {
+    const dragged = tasks.find((t) => t.id === draggedId);
+    const target  = tasks.find((t) => t.id === targetId);
+    if (!dragged || !target || dragged.parentId !== target.parentId) return;
+
+    const siblings = tasks
+      .filter((t) => t.parentId === dragged.parentId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    const without   = siblings.filter((t) => t.id !== draggedId);
+    const targetIdx = without.findIndex((t) => t.id === targetId);
+    without.splice(targetIdx, 0, dragged);
+
+    const updatedOrders = new Map(without.map((t, i) => [t.id, i]));
+    const updated = tasks.map((t) =>
+      updatedOrders.has(t.id) ? { ...t, order: updatedOrders.get(t.id)! } : t
+    );
+    onTasksChange(sortByTree(updated));
+  }
+
   // ── 親タスクフィルタ変更（折りたたみリセット付き） ──
 
   function handleFilterParentChange(value: string) {
@@ -157,6 +179,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
         onFilterParentChange={handleFilterParentChange}
         onFilterAssigneeChange={setFilterAssignee}
         onLeftScroll={handleLeftScroll}
+        onReorderTasks={reorderTasks}
       />
 
       {/* 右タイムラインパネル */}

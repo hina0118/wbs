@@ -46,7 +46,10 @@ export function sortByTree(tasks: Task[]): Task[] {
   }
 
   function dfs(parentId: string | undefined) {
-    for (const task of childrenMap.get(parentId) ?? []) {
+    const siblings = [...(childrenMap.get(parentId) ?? [])].sort(
+      (a, b) => (a.order ?? 0) - (b.order ?? 0)
+    );
+    for (const task of siblings) {
       result.push(task);
       dfs(task.id);
     }
