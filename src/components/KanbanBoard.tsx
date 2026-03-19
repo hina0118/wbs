@@ -367,9 +367,11 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
               <option value="">なし（ルートタスク）</option>
               {tasks
                 .filter((t) => !isLeaf(t.id, tasks))
-                .map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
+                .map((t) => {
+                  const ancestors = getAncestorNames(t.id, tasks);
+                  const label = ancestors.length > 0 ? `${ancestors.join(" > ")} > ${t.name}` : t.name;
+                  return <option key={t.id} value={t.id}>{label}</option>;
+                })}
             </select>
 
             <label className="modal-label">コピー元タスク</label>
