@@ -207,6 +207,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
       <GanttTimeline
         tasks={tasks}
         visibleTasks={scheduledVisibleTasks}
+        floatingTasks={floatingTasks}
         dragPreview={dragPreview}
         holidays={holidays}
         timelineRef={timelineRef}

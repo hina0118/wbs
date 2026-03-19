@@ -350,13 +350,27 @@
   margin-top: 4px;
 }
 
+.gantt-unscheduled-section--timeline {
+  border-top: 2px dashed #c9b8f0;
+  margin-top: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
 .gantt-unscheduled-header {
   font-size: 0.75rem;
   font-weight: 600;
   color: #7c5cbf;
-  padding: 6px 8px 2px 8px;
+  height: 28px;
+  line-height: 28px;
+  padding: 0 8px;
   background: #f3eeff;
   letter-spacing: 0.03em;
+}
+
+.gantt-timeline-row--floating {
+  position: relative;
+  overflow: hidden;
 }
 
 .gantt-leaf-icon {
