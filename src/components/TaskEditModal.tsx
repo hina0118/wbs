@@ -11,17 +11,19 @@ import {
   propagateDates,
   getAllDescendantIds,
   toInputDate,
+  archiveTask,
 } from "../utils/taskUtils";
 
 interface Props {
   task: Task;
   tasks: Task[];
-  onSave:   (updatedTasks: Task[]) => void;
-  onDelete: (updatedTasks: Task[]) => void;
-  onClose:  () => void;
+  onSave:    (updatedTasks: Task[]) => void;
+  onDelete:  (updatedTasks: Task[]) => void;
+  onArchive: (updatedTasks: Task[]) => void;
+  onClose:   () => void;
 }
 
-export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }: Props) {
+export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive, onClose }: Props) {
   const leaf = isLeaf(task.id, tasks);
 
   const [editName,        setEditName]        = useState(task.name);
@@ -105,6 +107,13 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
     const removeIds = new Set(getAllDescendantIds(task.id, tasks));
     const filtered  = tasks.filter((t) => !removeIds.has(t.id));
     onDelete(task.parentId ? propagateDates(task.parentId, filtered) : filtered);
+  }
+
+  // ルートタスク（parentId なし）のみアーカイブ可能
+  const canArchive = !task.parentId;
+
+  function handleArchive() {
+    onArchive(archiveTask(task.id, tasks));
   }
 
   return (
@@ -269,6 +278,9 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onClose }
           ) : (
             <>
               <button className="btn-delete-outline" onClick={() => setConfirmDelete(true)}>削除</button>
+              {canArchive && (
+                <button className="btn-archive-outline" onClick={handleArchive} title="このタスクと配下を全てアーカイブします">🗄 アーカイブ</button>
+              )}
               <button className="btn-cancel" onClick={onClose}>キャンセル</button>
               <button className="btn-save" onClick={handleSave}>保存</button>
             </>

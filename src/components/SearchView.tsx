@@ -60,14 +60,14 @@ export default function SearchView({ tasks, query }: Props) {
   const [expandedMemos, setExpandedMemos] = useState<Set<string>>(new Set());
 
   const q       = query.trim();
-  const results = q ? tasks.filter((t) => matchesQuery(t, q)) : [];
+  const results = q ? tasks.filter((t) => !t.archived && matchesQuery(t, q)) : [];
 
   // クエリが変わったら、メモにマッチしたタスクを自動展開
   useEffect(() => {
     const lower = q.toLowerCase();
     const autoIds = q
       ? tasks
-          .filter((t) => (t.memo ?? "").toLowerCase().includes(lower))
+          .filter((t) => !t.archived && (t.memo ?? "").toLowerCase().includes(lower))
           .map((t) => t.id)
       : [];
     setExpandedMemos(new Set(autoIds));

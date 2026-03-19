@@ -144,3 +144,51 @@ describe("useGanttFilter - assignee なしタスク", () => {
     expect(result.current.assignees).toHaveLength(0);
   });
 });
+
+// ─── アーカイブ除外 ───────────────────────────────────────────
+describe("useGanttFilter - アーカイブ除外", () => {
+  it("archived:true のタスクは filteredTasks に含まれない", () => {
+    const archivedRoot  = { ...root,        archived: true };
+    const archivedChild = { ...child1,      archived: true };
+    const archivedGrand = { ...grandchild,  archived: true };
+    const tasksWithArchived: Task[] = [archivedRoot, archivedChild, child2, archivedGrand];
+
+    const { result } = renderHook(() => useGanttFilter(tasksWithArchived));
+
+    const ids = result.current.filteredTasks.map((t) => t.id);
+    expect(ids).toContain("child2");
+    expect(ids).not.toContain("root");
+    expect(ids).not.toContain("child1");
+    expect(ids).not.toContain("grandchild");
+  });
+
+  it("archived:true のタスクの担当者は assignees に含まれない", () => {
+    const archivedChild = { ...child1, archived: true }; // 担当: Bob
+    const tasksWithArchived: Task[] = [root, archivedChild, child2, grandchild];
+
+    const { result } = renderHook(() => useGanttFilter(tasksWithArchived));
+
+    // Bob(child1) はアーカイブ済みなので担当者一覧から除外される
+    expect(result.current.assignees).not.toContain("Bob");
+  });
+
+  it("全タスクがアーカイブ済みなら filteredTasks は空", () => {
+    const allArchived = tasks.map((t) => ({ ...t, archived: true }));
+    const { result } = renderHook(() => useGanttFilter(allArchived));
+    expect(result.current.filteredTasks).toHaveLength(0);
+  });
+});
+
+// ─── __floating__ フィルター ──────────────────────────────────
+describe("useGanttFilter - __floating__ フィルター", () => {
+  it("filterParentId='__floating__' は isFloating:true のタスクのみ返す", () => {
+    const floating = { ...makeTask("floating"), isFloating: true };
+    const tasksWithFloating: Task[] = [...tasks, floating];
+
+    const { result } = renderHook(() => useGanttFilter(tasksWithFloating));
+    act(() => result.current.setFilterParentId("__floating__"));
+
+    const ids = result.current.filteredTasks.map((t) => t.id);
+    expect(ids).toEqual(["floating"]);
+  });
+});

@@ -91,11 +91,14 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<Column["id"] | null>(null);
 
+  // アーカイブ済みを除外
+  const activeTasks = tasks.filter((t) => !t.archived);
+
   // リーフタスクのみ対象
-  const leafTasks = tasks.filter((t) => isLeaf(t.id, tasks));
+  const leafTasks = activeTasks.filter((t) => isLeaf(t.id, activeTasks));
 
   // ルートタスク一覧（親タスクフィルタ用）
-  const rootTasks = tasks.filter((t) => !t.parentId);
+  const rootTasks = activeTasks.filter((t) => !t.parentId);
 
   // 担当者一覧（重複除去）
   const assignees = [
@@ -107,7 +110,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
   // フィルタ適用
   const filteredByParent = filterParentId === "all"
     ? leafTasks
-    : leafTasks.filter((t) => getAllDescendantIds(filterParentId, tasks).includes(t.id));
+    : leafTasks.filter((t) => getAllDescendantIds(filterParentId, activeTasks).includes(t.id));
 
   const visibleTasks = filteredByParent.filter((t) =>
     filterAssignee === "all" ||
@@ -338,8 +341,9 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
           <TaskEditModal
             task={task}
             tasks={tasks}
-            onSave={(updated)   => { onTasksChange(updated); setEditingId(null); }}
-            onDelete={(updated) => { onTasksChange(updated); setEditingId(null); }}
+            onSave={(updated)    => { onTasksChange(updated); setEditingId(null); }}
+            onDelete={(updated)  => { onTasksChange(updated); setEditingId(null); }}
+            onArchive={(updated) => { onTasksChange(updated); setEditingId(null); }}
             onClose={() => setEditingId(null)}
           />
         );
