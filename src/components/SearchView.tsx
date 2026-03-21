@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { Task } from "../types/task";
 import MemoWithToggle from "./MemoWithToggle";
-import { computeProgress, getAncestorNames } from "../utils/taskUtils";
+import { computeProgress, getAncestorNames, formatDateYMD } from "../utils/taskUtils";
 
 interface Props {
   tasks:  Task[];
@@ -30,10 +30,6 @@ function Highlight({ text, query }: { text: string; query: string }) {
       )}
     </>
   );
-}
-
-function formatDate(d: Date): string {
-  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 function matchesQuery(task: Task, q: string): boolean {
@@ -71,6 +67,7 @@ export default function SearchView({ tasks, query }: Props) {
           .map((t) => t.id)
       : [];
     setExpandedMemos(new Set(autoIds));
+  // tasks を依存配列に含めると「タスク追加時にもメモ展開がリセットされる」副作用が生じるため意図的に除外
   }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleMemo(id: string, e: React.MouseEvent) {
@@ -146,7 +143,7 @@ export default function SearchView({ tasks, query }: Props) {
                   </span>
                 )}
                 <span className="search-item-dates">
-                  📅 {formatDate(task.startDate)} – {formatDate(task.endDate)}
+                  📅 {formatDateYMD(task.startDate)} – {formatDateYMD(task.endDate)}
                 </span>
                 {matched.memo && task.memo && (
                   <span className="search-item-memo-badge">📝 メモに一致</span>

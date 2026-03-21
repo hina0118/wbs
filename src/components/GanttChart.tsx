@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Task } from "../types/task";
-import { toInputDate, genId, propagateDates, sortByTree, copyTaskFields, getAncestorNames } from "../utils/taskUtils";
+import { toInputDate, genId, propagateDates, sortByTree, copyTaskFields, getAncestorNames, addDays } from "../utils/taskUtils";
 import { useDragHandler } from "../hooks/useDragHandler";
 import { useGanttFilter } from "../hooks/useGanttFilter";
 import GanttLeftPanel from "./GanttLeftPanel";
@@ -22,12 +22,6 @@ interface AddState {
   color: string;
   copySourceId?: string;
   isFloating?: boolean;
-}
-
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
 }
 
 function isVisible(task: Task, tasks: Task[], collapsedIds: Set<string>): boolean {

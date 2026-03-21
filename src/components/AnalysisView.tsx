@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Task } from "../types/task";
-import { isLeaf, computeProgress, getAncestorNames, getSignalStatus } from "../utils/taskUtils";
+import { isLeaf, computeProgress, getAncestorNames, getSignalStatus, formatDateYMD } from "../utils/taskUtils";
 
 interface Props {
   tasks: Task[];
@@ -58,10 +58,6 @@ export default function AnalysisView({ tasks }: Props) {
     });
   }, [leafTasks, tasks, today]);
 
-  function formatDate(d: Date): string {
-    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
-  }
-
   function delayDays(endDate: Date): number {
     return Math.floor((today.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
   }
@@ -101,7 +97,7 @@ export default function AnalysisView({ tasks }: Props) {
                     <tr key={t.id} className={isNotStarted ? "analysis-row--not-started" : ""}>
                       <td className="analysis-task-name">{t.name}</td>
                       <td>{t.assignee || "—"}</td>
-                      <td>{formatDate(t.endDate)}</td>
+                      <td>{formatDateYMD(t.endDate)}</td>
                       <td className="analysis-delay">+{late}日</td>
                       <td>
                         <div className="analysis-progress-bar">
@@ -157,7 +153,7 @@ export default function AnalysisView({ tasks }: Props) {
                     <tr key={t.id}>
                       <td className="analysis-task-name">{t.name}</td>
                       <td>{t.assignee || "—"}</td>
-                      <td>{formatDate(t.endDate)}</td>
+                      <td>{formatDateYMD(t.endDate)}</td>
                       <td>{expected}%</td>
                       <td>
                         <div className="analysis-progress-bar">

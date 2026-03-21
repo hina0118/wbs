@@ -168,12 +168,14 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
             {editSubMembers.length > 0 && (
               <div className="sub-members-list">
                 {editSubMembers.map((member, idx) => (
-                  <div key={idx} className="sub-member-item">
+                  // 同名メンバーが複数存在しうるため idx を組み合わせて一意性を確保
+                  <div key={`${member}-${idx}`} className="sub-member-item">
                     <span className="sub-member-name">{member}</span>
                     <button
                       className="sub-member-remove"
                       onClick={() => setEditSubMembers(editSubMembers.filter((_, i) => i !== idx))}
                       title="削除"
+                      aria-label={`${member} を削除`}
                     >×</button>
                   </div>
                 ))}

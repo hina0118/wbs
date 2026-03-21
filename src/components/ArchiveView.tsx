@@ -4,15 +4,11 @@
  */
 import { useState } from "react";
 import { Task } from "../types/task";
-import { computeProgress, getAllDescendantIds, unarchiveTask } from "../utils/taskUtils";
+import { computeProgress, getAllDescendantIds, unarchiveTask, formatDateYMD } from "../utils/taskUtils";
 
 interface Props {
   tasks: Task[];
   onTasksChange: (tasks: Task[]) => void;
-}
-
-function formatDate(d: Date): string {
-  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 export default function ArchiveView({ tasks, onTasksChange }: Props) {
@@ -116,7 +112,7 @@ export default function ArchiveView({ tasks, onTasksChange }: Props) {
                     )}
                     {!task.isFloating && (
                       <span className="archive-item-dates">
-                        📅 {formatDate(task.startDate)} – {formatDate(task.endDate)}
+                        📅 {formatDateYMD(task.startDate)} – {formatDateYMD(task.endDate)}
                       </span>
                     )}
                     {childCount > 0 && (

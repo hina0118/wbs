@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import GanttChart        from "./components/GanttChart";
 import KanbanBoard       from "./components/KanbanBoard";
 import SearchView        from "./components/SearchView";
@@ -24,7 +24,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showProxy,    setShowProxy]    = useState(false);
   const [exportMsg,    setExportMsg]    = useState<{ text: string; isError: boolean } | null>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const searchRef    = useRef<HTMLInputElement>(null);
+  const exportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 起動時: タスク（保存済み or デフォルト）と祝日を並列ロード
   useEffect(() => {
@@ -66,12 +67,25 @@ function App() {
     saveTasks(sorted).catch((e) => console.error("タスクの保存に失敗:", e));
   }
 
-  const totalTasks  = tasks.length;
-  const avgProgress = totalTasks > 0
-    ? Math.round(tasks.reduce((sum, t) => sum + t.progress, 0) / totalTasks)
+  /** エクスポート結果トーストを表示し、指定 ms 後に自動で閉じる */
+  const showExportMsg = useCallback((msg: { text: string; isError: boolean }, durationMs: number) => {
+    if (exportTimerRef.current !== null) clearTimeout(exportTimerRef.current);
+    setExportMsg(msg);
+    exportTimerRef.current = setTimeout(() => {
+      setExportMsg(null);
+      exportTimerRef.current = null;
+    }, durationMs);
+  }, []);
+
+  // アーカイブ済みを除いたアクティブタスクで集計
+  const activeTasks  = tasks.filter((t) => !t.archived);
+  const totalTasks   = activeTasks.length;
+  const avgProgress  = totalTasks > 0
+    ? Math.round(activeTasks.reduce((sum, t) => sum + t.progress, 0) / totalTasks)
     : 0;
 
-  const isSearching = searchQuery.trim().length > 0;
+  const isSearching       = searchQuery.trim().length > 0;
+  const archivedRootCount = tasks.filter((t) => t.archived && !t.parentId).length;
 
   return (
     <div className="app">
@@ -98,7 +112,7 @@ function App() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           {isSearching && (
-            <button className="search-box-clear" onClick={() => setSearchQuery("")} title="クリア">✕</button>
+            <button className="search-box-clear" onClick={() => setSearchQuery("")} title="クリア" aria-label="検索をクリア">✕</button>
           )}
         </div>
 
@@ -131,10 +145,8 @@ function App() {
             title="アーカイブ"
           >
             🗄 アーカイブ
-            {tasks.filter((t) => t.archived && !t.parentId).length > 0 && (
-              <span className="archive-badge">
-                {tasks.filter((t) => t.archived && !t.parentId).length}
-              </span>
+            {archivedRootCount > 0 && (
+              <span className="archive-badge">{archivedRootCount}</span>
             )}
           </button>
         </div>
@@ -146,15 +158,14 @@ function App() {
             exportToExcel(tasks)
               .then((path) => {
                 if (path === null) return; // キャンセル
-                setExportMsg({ text: `保存しました: ${path}`, isError: false });
-                setTimeout(() => setExportMsg(null), 5000);
+                showExportMsg({ text: `保存しました: ${path}`, isError: false }, 5000);
               })
               .catch((e) => {
-                setExportMsg({ text: `エクスポート失敗: ${e}`, isError: true });
-                setTimeout(() => setExportMsg(null), 6000);
+                showExportMsg({ text: `エクスポート失敗: ${e}`, isError: true }, 6000);
               });
           }}
           title="Excelにエクスポート"
+          aria-label="Excelにエクスポート"
           disabled={tasks.length === 0}
         >
           📥 Excel
@@ -165,6 +176,7 @@ function App() {
           className="app-settings-btn"
           onClick={() => setShowProxy(true)}
           title="プロキシ設定"
+          aria-label="プロキシ設定を開く"
         >
           ⚙
         </button>

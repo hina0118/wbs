@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Task } from "../types/task";
-import { propagateDates } from "../utils/taskUtils";
+import { propagateDates, addDays } from "../utils/taskUtils";
 
 const DAY_WIDTH = 28;
 
@@ -16,12 +16,6 @@ export interface DragPreview {
   taskId: string;
   startDate: Date;
   endDate: Date;
-}
-
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
 }
 
 export function useDragHandler(

@@ -1,6 +1,6 @@
 import { Task } from "../types/task";
 import { toHolidayKey } from "../utils/holidays";
-import { computeProgress } from "../utils/taskUtils";
+import { computeProgress, addDays, formatDateShort } from "../utils/taskUtils";
 import { DragPreview } from "../hooks/useDragHandler";
 import React from "react";
 
@@ -51,16 +51,6 @@ function getDaysArray(start: Date, end: Date): Date[] {
     cur.setDate(cur.getDate() + 1);
   }
   return days;
-}
-
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
-}
-
-function formatDate(d: Date): string {
-  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 function formatMonth(d: Date): string {
@@ -169,7 +159,7 @@ export default function GanttTimeline({
                 style={{ width: DAY_WIDTH }}
                 title={holidayName}
               >
-                {formatDate(d)}
+                {formatDateShort(d)}
               </div>
             );
           })}

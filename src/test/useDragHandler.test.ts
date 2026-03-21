@@ -177,7 +177,7 @@ describe("useDragHandler - end ハンドル", () => {
   });
 });
 
-// ─── ドラッグなし状態での mouseup ────────────────────────────
+// ─── ドラッグなし状態での mouseup / mousemove ─────────────────
 describe("useDragHandler - ドラッグ未開始時の mouseup", () => {
   it("dragRef が null のまま mouseup しても onTasksChange は呼ばれない", () => {
     const onTasksChange = vi.fn();
@@ -186,5 +186,85 @@ describe("useDragHandler - ドラッグ未開始時の mouseup", () => {
     act(() => { window.dispatchEvent(makeUpEvent()); });
 
     expect(onTasksChange).not.toHaveBeenCalled();
+  });
+
+  it("dragStart なしで mousemove が発火しても dragPreview は null のまま", () => {
+    const onTasksChange = vi.fn();
+    const { result } = renderHook(() => useDragHandler(tasks, onTasksChange));
+
+    act(() => { window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 5)); });
+
+    expect(result.current.dragPreview).toBeNull();
+    expect(onTasksChange).not.toHaveBeenCalled();
+  });
+});
+
+// ─── delta=0 の mousemove ─────────────────────────────────────
+describe("useDragHandler - delta=0 の mousemove", () => {
+  it("delta=0 の mousemove では didDragRef が false のまま", () => {
+    const onTasksChange = vi.fn();
+    const { result } = renderHook(() => useDragHandler(tasks, onTasksChange));
+
+    act(() => {
+      result.current.startDrag(
+        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        task,
+        "move",
+      );
+    });
+
+    // clientX=0 のまま動かさない → delta=0
+    act(() => { window.dispatchEvent(makeMoveEvent(0)); });
+
+    expect(result.current.didDragRef.current).toBe(false);
+  });
+});
+
+// ─── start ハンドル（クランプなし） ──────────────────────────
+describe("useDragHandler - start ハンドル（クランプなし）", () => {
+  it("start を左に移動してもクランプが発生しない場合は素直に更新される", () => {
+    const onTasksChange = vi.fn();
+    // start=2025-01-10, end=2025-01-20 の余裕あるタスク
+    const wideTask = makeTask("w", new Date(2025, 0, 10), new Date(2025, 0, 20));
+    const { result } = renderHook(() => useDragHandler([wideTask], onTasksChange));
+
+    act(() => {
+      result.current.startDrag(
+        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        wideTask,
+        "start",
+      );
+    });
+
+    // 左へ 3 日分移動（start が前に移動、clamp は発生しない）
+    act(() => { window.dispatchEvent(makeMoveEvent(-DAY_WIDTH * 3)); });
+
+    const preview = result.current.dragPreview!;
+    expect(preview.startDate).toEqual(new Date(2025, 0, 7)); // 10 - 3 = 7
+    expect(preview.endDate).toEqual(new Date(2025, 0, 20)); // 変わらず
+  });
+});
+
+// ─── end ハンドル（クランプなし） ────────────────────────────
+describe("useDragHandler - end ハンドル（クランプなし）", () => {
+  it("end を右に移動してもクランプが発生しない場合は素直に更新される", () => {
+    const onTasksChange = vi.fn();
+    const wideTask = makeTask("w", new Date(2025, 0, 5), new Date(2025, 0, 10));
+    const { result } = renderHook(() => useDragHandler([wideTask], onTasksChange));
+
+    act(() => {
+      result.current.startDrag(
+        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        wideTask,
+        "end",
+      );
+    });
+
+    // 右へ 5 日分移動（end が後ろに移動、clamp は発生しない）
+    act(() => { window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 5)); });
+
+    const preview = result.current.dragPreview!;
+    expect(preview.startDate).toEqual(new Date(2025, 0, 5)); // 変わらず
+    expect(preview.endDate).toEqual(new Date(2025, 0, 15)); // 10 + 5 = 15
   });
 });
