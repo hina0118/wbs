@@ -12,6 +12,9 @@ import {
   copyTaskFields,
   archiveTask,
   unarchiveTask,
+  addDays,
+  formatDateShort,
+  formatDateYMD,
 } from "../utils/taskUtils";
 import type { Task } from "../types/task";
 
@@ -32,6 +35,54 @@ const child2 = makeTask({ id: "child2", parentId: "root", progress: 100 });
 const grandchild = makeTask({ id: "grandchild", parentId: "child1", progress: 80 });
 
 const flatTasks: Task[] = [root, child1, child2, grandchild];
+
+// ─── addDays ──────────────────────────────────────────────────
+describe("addDays", () => {
+  it("正の値で指定日数分加算される", () => {
+    const d = new Date(2025, 0, 1); // 2025-01-01
+    expect(addDays(d, 7)).toEqual(new Date(2025, 0, 8));
+  });
+
+  it("負の値で指定日数分減算される", () => {
+    const d = new Date(2025, 0, 10); // 2025-01-10
+    expect(addDays(d, -3)).toEqual(new Date(2025, 0, 7));
+  });
+
+  it("元の Date オブジェクトを変更しない（immutable）", () => {
+    const d = new Date(2025, 0, 1);
+    addDays(d, 5);
+    expect(d).toEqual(new Date(2025, 0, 1));
+  });
+
+  it("月をまたぐ加算が正しい", () => {
+    const d = new Date(2025, 0, 30); // 2025-01-30
+    expect(addDays(d, 3)).toEqual(new Date(2025, 1, 2)); // 2025-02-02
+  });
+});
+
+// ─── formatDateShort ──────────────────────────────────────────
+describe("formatDateShort", () => {
+  it("M/D 形式で返す（月・日ゼロ埋めなし）", () => {
+    expect(formatDateShort(new Date(2025, 0, 1))).toBe("1/1");
+    expect(formatDateShort(new Date(2025, 11, 31))).toBe("12/31");
+  });
+
+  it("1 桁の月・日はゼロ埋めしない", () => {
+    expect(formatDateShort(new Date(2025, 5, 9))).toBe("6/9");
+  });
+});
+
+// ─── formatDateYMD ────────────────────────────────────────────
+describe("formatDateYMD", () => {
+  it("YYYY/M/D 形式で返す（月・日ゼロ埋めなし）", () => {
+    expect(formatDateYMD(new Date(2025, 0, 1))).toBe("2025/1/1");
+    expect(formatDateYMD(new Date(2025, 11, 31))).toBe("2025/12/31");
+  });
+
+  it("1 桁の月・日はゼロ埋めしない", () => {
+    expect(formatDateYMD(new Date(2025, 5, 9))).toBe("2025/6/9");
+  });
+});
 
 // ─── isLeaf ──────────────────────────────────────────────────
 describe("isLeaf", () => {
