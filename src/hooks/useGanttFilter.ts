@@ -27,31 +27,32 @@ export function useGanttFilter(tasks: Task[]) {
             .map((id) => activeTasks.find((t) => t.id === id)!),
         ].filter(Boolean);
 
-  const filteredTasks =
-    filterAssignee === "all"
-      ? filteredByParent
-      : filteredByParent.filter(
-          (t) =>
-            t.assignee === filterAssignee ||
-            (t.subMembers ?? []).includes(filterAssignee) ||
-            getAllDescendantIds(t.id, activeTasks)
-              .slice(1)
-              .some((id) => {
-                const c = activeTasks.find((c) => c.id === id);
-                return c?.assignee === filterAssignee || (c?.subMembers ?? []).includes(filterAssignee);
-              })
-        );
+  // 担当者フィルタ: 各タスク毎に getAllDescendantIds を呼ぶ O(n²) を避けるため
+  // 「担当者に一致するタスクの祖先を上方向にたどって keep セットを構築」する O(n×depth) 方式を使用。
+  const filteredTasks = (() => {
+    if (filterAssignee === "all") return filteredByParent;
 
-  function resetParentFilter(value: string) {
-    setFilterParentId(value);
-  }
+    // filterAssignee に直接一致するタスクから祖先をたどって "表示すべきタスク" IDのセットを構築
+    const keepIds = new Set<string>();
+    for (const t of activeTasks) {
+      if (t.assignee !== filterAssignee && !(t.subMembers ?? []).includes(filterAssignee)) continue;
+      let cur: Task | undefined = t;
+      while (cur) {
+        if (keepIds.has(cur.id)) break; // 既にたどり済みの祖先パスはスキップ
+        keepIds.add(cur.id);
+        cur = cur.parentId ? activeTasks.find((a) => a.id === cur!.parentId) : undefined;
+      }
+    }
+
+    return filteredByParent.filter((t) => keepIds.has(t.id));
+  })();
 
   return {
     filterParentId,
     filterAssignee,
     assignees,
     filteredTasks,
-    setFilterParentId: resetParentFilter,
+    setFilterParentId,
     setFilterAssignee,
   };
 }

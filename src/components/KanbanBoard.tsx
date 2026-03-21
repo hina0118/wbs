@@ -1,24 +1,12 @@
 import { useState } from "react";
 import { Task } from "../types/task";
-import { getAllDescendantIds, getSignalStatus, isLeaf, computeProgress, getAncestorNames, toInputDate, genId, copyTaskFields } from "../utils/taskUtils";
+import { getAllDescendantIds, getSignalStatus, isLeaf, computeProgress, getAncestorNames, toInputDate, genId, copyTaskFields, addDays, formatDateShort } from "../utils/taskUtils";
 import MemoWithToggle from "./MemoWithToggle";
 import TaskEditModal from "./TaskEditModal";
 
 interface Props {
   tasks: Task[];
   onTasksChange: (tasks: Task[]) => void;
-}
-
-// ── ヘルパー ─────────────────────────────────────────────
-
-function formatDateShort(d: Date): string {
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
 }
 
 // ── カラム定義 ────────────────────────────────────────────
@@ -107,10 +95,13 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
     ),
   ] as string[];
 
-  // フィルタ適用
+  // フィルタ適用（親タスクの子孫IDをSetで事前計算してO(n²)を回避）
   const filteredByParent = filterParentId === "all"
     ? leafTasks
-    : leafTasks.filter((t) => getAllDescendantIds(filterParentId, activeTasks).includes(t.id));
+    : (() => {
+        const descendantSet = new Set(getAllDescendantIds(filterParentId, activeTasks));
+        return leafTasks.filter((t) => descendantSet.has(t.id));
+      })();
 
   const visibleTasks = filteredByParent.filter((t) =>
     filterAssignee === "all" ||

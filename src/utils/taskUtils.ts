@@ -4,6 +4,30 @@
  */
 import { Task } from "../types/task";
 
+// ── 日付ユーティリティ ──────────────────────────────────────
+
+/** 指定日数を加算した新しい Date を返す */
+export function addDays(d: Date, n: number): Date {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+/** "M/D" 形式（ガントチャート・カンバン用短縮表示） */
+export function formatDateShort(d: Date): string {
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+/** "YYYY/M/D" 形式（検索・アーカイブ・分析ビュー用） */
+export function formatDateYMD(d: Date): string {
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+// ── シグナル閾値 ────────────────────────────────────────────
+
+/** 計画進捗との差がこの値（%）以上なら「進捗遅れ」と判定する */
+const BEHIND_THRESHOLD = 10;
+
 export function isLeaf(taskId: string, tasks: Task[]): boolean {
   return !tasks.some((t) => t.parentId === taskId);
 }
@@ -127,7 +151,7 @@ export function getSignalStatus(taskId: string, tasks: Task[]): SignalStatus {
     const expectedProgress = totalDuration > 0
       ? Math.min((todayTime - startTime) / totalDuration * 100, 100)
       : 100;
-    if (effectiveProgress < expectedProgress - 10) return "yellow";
+    if (effectiveProgress < expectedProgress - BEHIND_THRESHOLD) return "yellow";
   }
 
   return "green";
