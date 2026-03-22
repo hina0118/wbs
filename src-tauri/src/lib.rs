@@ -1,22 +1,26 @@
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
 use tauri::Manager;
-use serde::{Deserialize, Serialize};
 
 // ── エラーログ ────────────────────────────────────────────
 
 /// エラー内容とスタックトレースを app_data_dir()/app.log に追記する。
 fn write_error_log(app: &tauri::AppHandle, context: &str, error: &str) {
-    let Ok(dir) = app.path().app_data_dir() else { return };
+    let Ok(dir) = app.path().app_data_dir() else {
+        return;
+    };
     let _ = fs::create_dir_all(&dir);
     let log_path = dir.join("app.log");
 
     let bt = backtrace::Backtrace::new();
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
-    let entry = format!(
-        "[{timestamp}] ERROR {context}\n  {error}\n{bt:?}\n\n"
-    );
-    if let Ok(mut f) = fs::OpenOptions::new().create(true).append(true).open(&log_path) {
+    let entry = format!("[{timestamp}] ERROR {context}\n  {error}\n{bt:?}\n\n");
+    if let Ok(mut f) = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+    {
         let _ = f.write_all(entry.as_bytes());
     }
 }
@@ -50,10 +54,7 @@ fn get_proxy_setting(app: tauri::AppHandle) -> Result<Option<String>, String> {
 /// プロキシ URL を保存する（None または空文字でプロキシ無効化）
 #[tauri::command]
 fn save_proxy_setting(app: tauri::AppHandle, url: Option<String>) -> Result<(), String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| e.to_string())?;
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
     // 空文字は None として扱う
@@ -87,10 +88,7 @@ fn load_saved_tasks(app: tauri::AppHandle) -> Result<Option<String>, String> {
 /// タスク JSON をアプリデータディレクトリの tasks.json に保存する。
 #[tauri::command]
 fn save_tasks(app: tauri::AppHandle, json: String) -> Result<(), String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| e.to_string())?;
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
 
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     fs::write(dir.join("tasks.json"), json).map_err(|e| e.to_string())
@@ -110,18 +108,19 @@ async fn fetch_holidays(app: tauri::AppHandle) -> Result<Vec<(String, String)>, 
 
     let url = "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv";
 
-    let send_result = client.get(url).send().await.map_err(|e| format!("取得エラー: {e}"));
+    let send_result = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("取得エラー: {e}"));
     if let Err(ref e) = send_result {
         write_error_log(&app, "fetch_holidays", e);
     }
-    let bytes = send_result?
-        .bytes()
-        .await
-        .map_err(|e| {
-            let msg = format!("読み込みエラー: {e}");
-            write_error_log(&app, "fetch_holidays", &msg);
-            msg
-        })?;
+    let bytes = send_result?.bytes().await.map_err(|e| {
+        let msg = format!("読み込みエラー: {e}");
+        write_error_log(&app, "fetch_holidays", &msg);
+        msg
+    })?;
 
     let (decoded, _, _) = encoding_rs::SHIFT_JIS.decode(&bytes);
     let text = decoded.into_owned();
@@ -146,8 +145,7 @@ fn build_client(proxy_url: Option<String>) -> Result<reqwest::Client, String> {
     let mut builder = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
     if let Some(url) = proxy_url {
-        let proxy = reqwest::Proxy::all(&url)
-            .map_err(|e| format!("プロキシ設定エラー: {e}"))?;
+        let proxy = reqwest::Proxy::all(&url).map_err(|e| format!("プロキシ設定エラー: {e}"))?;
         builder = builder.proxy(proxy);
     }
     builder.build().map_err(|e| e.to_string())
@@ -166,11 +164,15 @@ async fn save_excel_file(
     use tauri_plugin_dialog::DialogExt;
 
     // デフォルト保存先（デスクトップ）を取得
-    let default_dir = app.path().desktop_dir()
+    let default_dir = app
+        .path()
+        .desktop_dir()
         .or_else(|_| app.path().document_dir())
         .ok();
 
-    let mut dialog = app.dialog().file()
+    let mut dialog = app
+        .dialog()
+        .file()
         .set_file_name(&filename)
         .add_filter("Excel ファイル", &["xlsx"]);
 
@@ -184,8 +186,7 @@ async fn save_excel_file(
         None => Ok(None), // キャンセル
         Some(p) => {
             let path_str = p.to_string();
-            fs::write(&path_str, &data)
-                .map_err(|e| format!("ファイルの書き込みに失敗: {e}"))?;
+            fs::write(&path_str, &data).map_err(|e| format!("ファイルの書き込みに失敗: {e}"))?;
             Ok(Some(path_str))
         }
     }

@@ -17,29 +17,36 @@ import {
 interface Props {
   task: Task;
   tasks: Task[];
-  onSave:    (updatedTasks: Task[]) => void;
-  onDelete:  (updatedTasks: Task[]) => void;
+  onSave: (updatedTasks: Task[]) => void;
+  onDelete: (updatedTasks: Task[]) => void;
   onArchive: (updatedTasks: Task[]) => void;
-  onClose:   () => void;
+  onClose: () => void;
 }
 
-export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive, onClose }: Props) {
+export default function TaskEditModal({
+  task,
+  tasks,
+  onSave,
+  onDelete,
+  onArchive,
+  onClose,
+}: Props) {
   const leaf = isLeaf(task.id, tasks);
 
-  const [editName,        setEditName]        = useState(task.name);
-  const [editProgress,    setEditProgress]    = useState(task.progress);
-  const [editAssignee,    setEditAssignee]    = useState(task.assignee    ?? "");
-  const [editSubMembers,  setEditSubMembers]  = useState<string[]>(task.subMembers ?? []);
-  const [newSubMember,    setNewSubMember]    = useState("");
-  const [editStartDate,   setEditStartDate]   = useState(toInputDate(task.startDate));
-  const [editEndDate,     setEditEndDate]     = useState(toInputDate(task.endDate));
-  const [editMemo,        setEditMemo]        = useState(task.memo ?? "");
-  const [editIsFloating,  setEditIsFloating]  = useState(task.isFloating ?? false);
+  const [editName, setEditName] = useState(task.name);
+  const [editProgress, setEditProgress] = useState(task.progress);
+  const [editAssignee, setEditAssignee] = useState(task.assignee ?? "");
+  const [editSubMembers, setEditSubMembers] = useState<string[]>(task.subMembers ?? []);
+  const [newSubMember, setNewSubMember] = useState("");
+  const [editStartDate, setEditStartDate] = useState(toInputDate(task.startDate));
+  const [editEndDate, setEditEndDate] = useState(toInputDate(task.endDate));
+  const [editMemo, setEditMemo] = useState(task.memo ?? "");
+  const [editIsFloating, setEditIsFloating] = useState(task.isFloating ?? false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const initialMode = task.progressCount ? "count" : "percent";
-  const [progressMode,  setProgressMode]  = useState<"percent" | "count">(initialMode);
-  const [doneCount,     setDoneCount]     = useState(task.progressCount?.done  ?? 0);
-  const [totalCount,    setTotalCount]    = useState(task.progressCount?.total ?? 0);
+  const [progressMode, setProgressMode] = useState<"percent" | "count">(initialMode);
+  const [doneCount, setDoneCount] = useState(task.progressCount?.done ?? 0);
+  const [totalCount, setTotalCount] = useState(task.progressCount?.total ?? 0);
 
   const effectiveProgress = leaf ? editProgress : computeProgress(task.id, tasks);
 
@@ -52,7 +59,7 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
   }
 
   function handleDoneChange(val: number) {
-    const done  = Math.max(0, val);
+    const done = Math.max(0, val);
     const total = Math.max(done, totalCount);
     setDoneCount(done);
     setTotalCount(total);
@@ -61,7 +68,7 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
 
   function handleTotalChange(val: number) {
     const total = Math.max(0, val);
-    const done  = Math.min(doneCount, total);
+    const done = Math.min(doneCount, total);
     setTotalCount(total);
     setDoneCount(done);
     setEditProgress(total > 0 ? Math.round((done / total) * 100) : 0);
@@ -72,10 +79,10 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
     today.setHours(0, 0, 0, 0);
 
     let newStart = today;
-    let newEnd   = today;
+    let newEnd = today;
     if (!editIsFloating) {
       newStart = new Date(editStartDate);
-      newEnd   = new Date(editEndDate);
+      newEnd = new Date(editEndDate);
       if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
     }
 
@@ -88,24 +95,24 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
       t.id === task.id
         ? {
             ...t,
-            name:          editName.trim() || task.name,
-            progress:      editProgress,
-            assignee:      editAssignee  || undefined,
-            subMembers:    editSubMembers.length > 0 ? editSubMembers : undefined,
-            startDate:     newStart,
-            endDate:       newEnd,
-            memo:          editMemo      || undefined,
+            name: editName.trim() || task.name,
+            progress: editProgress,
+            assignee: editAssignee || undefined,
+            subMembers: editSubMembers.length > 0 ? editSubMembers : undefined,
+            startDate: newStart,
+            endDate: newEnd,
+            memo: editMemo || undefined,
             progressCount,
-            isFloating:    editIsFloating || undefined,
+            isFloating: editIsFloating || undefined,
           }
-        : t
+        : t,
     );
     onSave(editIsFloating ? updated : propagateDates(task.id, updated));
   }
 
   function handleDelete() {
     const removeIds = new Set(getAllDescendantIds(task.id, tasks));
-    const filtered  = tasks.filter((t) => !removeIds.has(t.id));
+    const filtered = tasks.filter((t) => !removeIds.has(t.id));
     onDelete(task.parentId ? propagateDates(task.parentId, filtered) : filtered);
   }
 
@@ -143,11 +150,23 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
           <div className="modal-date-row">
             <div className="modal-date-field">
               <label className="modal-label">開始日</label>
-              <input type="date" value={editStartDate} max={editEndDate}   onChange={(e) => setEditStartDate(e.target.value)} className="date-input" />
+              <input
+                type="date"
+                value={editStartDate}
+                max={editEndDate}
+                onChange={(e) => setEditStartDate(e.target.value)}
+                className="date-input"
+              />
             </div>
             <div className="modal-date-field">
               <label className="modal-label">終了日</label>
-              <input type="date" value={editEndDate}   min={editStartDate} onChange={(e) => setEditEndDate(e.target.value)}   className="date-input" />
+              <input
+                type="date"
+                value={editEndDate}
+                min={editStartDate}
+                onChange={(e) => setEditEndDate(e.target.value)}
+                className="date-input"
+              />
             </div>
           </div>
         )}
@@ -176,7 +195,9 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
                       onClick={() => setEditSubMembers(editSubMembers.filter((_, i) => i !== idx))}
                       title="削除"
                       aria-label={`${member} を削除`}
-                    >×</button>
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>
@@ -204,7 +225,9 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
                   }
                 }}
                 disabled={!newSubMember.trim()}
-              >＋ 追加</button>
+              >
+                ＋ 追加
+              </button>
             </div>
           </>
         )}
@@ -220,11 +243,15 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
               <button
                 className={progressMode === "percent" ? "toggle-btn active" : "toggle-btn"}
                 onClick={switchToPercent}
-              >％</button>
+              >
+                ％
+              </button>
               <button
                 className={progressMode === "count" ? "toggle-btn active" : "toggle-btn"}
                 onClick={switchToCount}
-              >実施数</button>
+              >
+                実施数
+              </button>
             </div>
           )}
         </div>
@@ -232,7 +259,8 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
           progressMode === "percent" ? (
             <input
               type="range"
-              min={0} max={100}
+              min={0}
+              max={100}
               value={editProgress}
               onChange={(e) => setEditProgress(Number(e.target.value))}
               className="progress-slider"
@@ -260,7 +288,10 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
           )
         ) : (
           <div className="progress-bar-readonly">
-            <div className="progress-bar-readonly-fill" style={{ width: `${effectiveProgress}%` }} />
+            <div
+              className="progress-bar-readonly-fill"
+              style={{ width: `${effectiveProgress}%` }}
+            />
           </div>
         )}
 
@@ -274,17 +305,33 @@ export default function TaskEditModal({ task, tasks, onSave, onDelete, onArchive
               <span className="modal-delete-confirm">
                 {!leaf ? "子タスクも全て削除します。よろしいですか？" : "削除しますか？"}
               </span>
-              <button className="btn-cancel" onClick={() => setConfirmDelete(false)}>いいえ</button>
-              <button className="btn-delete" onClick={handleDelete}>削除する</button>
+              <button className="btn-cancel" onClick={() => setConfirmDelete(false)}>
+                いいえ
+              </button>
+              <button className="btn-delete" onClick={handleDelete}>
+                削除する
+              </button>
             </>
           ) : (
             <>
-              <button className="btn-delete-outline" onClick={() => setConfirmDelete(true)}>削除</button>
+              <button className="btn-delete-outline" onClick={() => setConfirmDelete(true)}>
+                削除
+              </button>
               {canArchive && (
-                <button className="btn-archive-outline" onClick={handleArchive} title="このタスクと配下を全てアーカイブします">🗄 アーカイブ</button>
+                <button
+                  className="btn-archive-outline"
+                  onClick={handleArchive}
+                  title="このタスクと配下を全てアーカイブします"
+                >
+                  🗄 アーカイブ
+                </button>
               )}
-              <button className="btn-cancel" onClick={onClose}>キャンセル</button>
-              <button className="btn-save" onClick={handleSave}>保存</button>
+              <button className="btn-cancel" onClick={onClose}>
+                キャンセル
+              </button>
+              <button className="btn-save" onClick={handleSave}>
+                保存
+              </button>
             </>
           )}
         </div>

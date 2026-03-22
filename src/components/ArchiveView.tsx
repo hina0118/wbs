@@ -4,7 +4,12 @@
  */
 import { useState } from "react";
 import { Task } from "../types/task";
-import { computeProgress, getAllDescendantIds, unarchiveTask, formatDateYMD } from "../utils/taskUtils";
+import {
+  computeProgress,
+  getAllDescendantIds,
+  unarchiveTask,
+  formatDateYMD,
+} from "../utils/taskUtils";
 
 interface Props {
   tasks: Task[];
@@ -20,7 +25,8 @@ export default function ArchiveView({ tasks, onTasksChange }: Props) {
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -53,10 +59,7 @@ export default function ArchiveView({ tasks, onTasksChange }: Props) {
         </div>
         {archivedRoots.length > 0 && (
           <div className="archive-view-actions">
-            <button
-              className="archive-btn-select-all"
-              onClick={handleSelectAll}
-            >
+            <button className="archive-btn-select-all" onClick={handleSelectAll}>
               {selected.size === archivedRoots.length ? "全て解除" : "全て選択"}
             </button>
             <button
@@ -74,15 +77,17 @@ export default function ArchiveView({ tasks, onTasksChange }: Props) {
         <div className="archive-empty">
           <span className="archive-empty-icon">📭</span>
           <p>アーカイブされたタスクはありません</p>
-          <p className="archive-empty-hint">タスク編集モーダルの「🗄 アーカイブ」ボタンでアーカイブできます</p>
+          <p className="archive-empty-hint">
+            タスク編集モーダルの「🗄 アーカイブ」ボタンでアーカイブできます
+          </p>
         </div>
       ) : (
         <div className="archive-list">
           {archivedRoots.map((task) => {
-            const progress     = computeProgress(task.id, tasks);
-            const descendants  = getAllDescendantIds(task.id, tasks);
-            const childCount   = descendants.length - 1; // 自身を除く
-            const isSelected   = selected.has(task.id);
+            const progress = computeProgress(task.id, tasks);
+            const descendants = getAllDescendantIds(task.id, tasks);
+            const childCount = descendants.length - 1; // 自身を除く
+            const isSelected = selected.has(task.id);
 
             return (
               <div

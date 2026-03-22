@@ -122,9 +122,23 @@ describe("computeProgress", () => {
 // ─── propagateDates ──────────────────────────────────────────
 describe("propagateDates", () => {
   it("親の日程が子の最小 start / 最大 end に更新される", () => {
-    const t1 = makeTask({ id: "p", startDate: new Date(2025, 0, 1), endDate: new Date(2025, 11, 31) });
-    const t2 = makeTask({ id: "c1", parentId: "p", startDate: new Date(2025, 1, 1), endDate: new Date(2025, 5, 30) });
-    const t3 = makeTask({ id: "c2", parentId: "p", startDate: new Date(2025, 3, 1), endDate: new Date(2025, 9, 31) });
+    const t1 = makeTask({
+      id: "p",
+      startDate: new Date(2025, 0, 1),
+      endDate: new Date(2025, 11, 31),
+    });
+    const t2 = makeTask({
+      id: "c1",
+      parentId: "p",
+      startDate: new Date(2025, 1, 1),
+      endDate: new Date(2025, 5, 30),
+    });
+    const t3 = makeTask({
+      id: "c2",
+      parentId: "p",
+      startDate: new Date(2025, 3, 1),
+      endDate: new Date(2025, 9, 31),
+    });
 
     const result = propagateDates("c1", [t1, t2, t3]);
     const parent = result.find((t) => t.id === "p")!;
@@ -262,7 +276,7 @@ describe("copyTaskFields", () => {
   it("overrides で日付を上書きできる", () => {
     const src = makeTask({ id: "src" });
     const start = new Date(2026, 0, 1);
-    const end   = new Date(2026, 0, 7);
+    const end = new Date(2026, 0, 7);
     const result = copyTaskFields(src, { startDate: start, endDate: end });
     expect(result.startDate).toEqual(start);
     expect(result.endDate).toEqual(end);
@@ -318,22 +332,42 @@ describe("getSignalStatus", () => {
   });
 
   it("progress 100 は none", () => {
-    const task = makeTask({ id: "t", progress: 100, startDate: new Date(2025, 0, 1), endDate: new Date(2025, 11, 31) });
+    const task = makeTask({
+      id: "t",
+      progress: 100,
+      startDate: new Date(2025, 0, 1),
+      endDate: new Date(2025, 11, 31),
+    });
     expect(getSignalStatus("t", [task])).toBe("none");
   });
 
   it("終了日が過去 → red", () => {
-    const task = makeTask({ id: "t", progress: 0, startDate: new Date(2025, 0, 1), endDate: new Date(2025, 4, 1) });
+    const task = makeTask({
+      id: "t",
+      progress: 0,
+      startDate: new Date(2025, 0, 1),
+      endDate: new Date(2025, 4, 1),
+    });
     expect(getSignalStatus("t", [task])).toBe("red");
   });
 
   it("開始日が過去・progress 0 → yellow", () => {
-    const task = makeTask({ id: "t", progress: 0, startDate: new Date(2025, 3, 1), endDate: new Date(2025, 11, 31) });
+    const task = makeTask({
+      id: "t",
+      progress: 0,
+      startDate: new Date(2025, 3, 1),
+      endDate: new Date(2025, 11, 31),
+    });
     expect(getSignalStatus("t", [task])).toBe("yellow");
   });
 
   it("未来タスク・progress 0 → green", () => {
-    const task = makeTask({ id: "t", progress: 0, startDate: new Date(2025, 6, 1), endDate: new Date(2025, 11, 31) });
+    const task = makeTask({
+      id: "t",
+      progress: 0,
+      startDate: new Date(2025, 6, 1),
+      endDate: new Date(2025, 11, 31),
+    });
     expect(getSignalStatus("t", [task])).toBe("green");
   });
 
@@ -343,8 +377,18 @@ describe("getSignalStatus", () => {
 
   it("親タスクの progress は子の平均で計算される（シグナル判定にも適用）", () => {
     // child1 の子の grandchild が progress=100 → child1 の実効進捗=100 → none
-    const done = makeTask({ id: "grandchild", parentId: "child1", progress: 100, endDate: new Date(2025, 4, 1) });
-    const parent = makeTask({ id: "child1", parentId: "root", progress: 0, endDate: new Date(2025, 4, 1) });
+    const done = makeTask({
+      id: "grandchild",
+      parentId: "child1",
+      progress: 100,
+      endDate: new Date(2025, 4, 1),
+    });
+    const parent = makeTask({
+      id: "child1",
+      parentId: "root",
+      progress: 0,
+      endDate: new Date(2025, 4, 1),
+    });
     expect(getSignalStatus("child1", [parent, done])).toBe("none");
   });
 });

@@ -13,8 +13,7 @@ function getLuminance(hexColor: string): number {
   const r = parseInt(hexColor.slice(1, 3), 16) / 255;
   const g = parseInt(hexColor.slice(3, 5), 16) / 255;
   const b = parseInt(hexColor.slice(5, 7), 16) / 255;
-  const toLinear = (c: number) =>
-    c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
   return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 }
 
@@ -57,11 +56,21 @@ function formatMonth(d: Date): string {
   return `${d.getFullYear()}年${d.getMonth() + 1}月`;
 }
 
-function isSunday(d: Date)    { return d.getDay() === 0; }
-function isSaturday(d: Date)  { return d.getDay() === 6; }
-function isMonthStart(d: Date){ return d.getDate() === 1; }
-function isHoliday(d: Date, holidays: Map<string, string>)     { return holidays.has(toHolidayKey(d)); }
-function getHolidayName(d: Date, holidays: Map<string, string>){ return holidays.get(toHolidayKey(d)) ?? ""; }
+function isSunday(d: Date) {
+  return d.getDay() === 0;
+}
+function isSaturday(d: Date) {
+  return d.getDay() === 6;
+}
+function isMonthStart(d: Date) {
+  return d.getDate() === 1;
+}
+function isHoliday(d: Date, holidays: Map<string, string>) {
+  return holidays.has(toHolidayKey(d));
+}
+function getHolidayName(d: Date, holidays: Map<string, string>) {
+  return holidays.get(toHolidayKey(d)) ?? "";
+}
 
 function getDepth(taskId: string, tasks: Task[]): number {
   const task = tasks.find((t) => t.id === taskId);
@@ -112,18 +121,18 @@ export default function GanttTimeline({
     );
   }
 
-  const minDate    = allDates.reduce((m, d) => (d < m ? d : m));
-  const maxDate    = allDates.reduce((m, d) => (d > m ? d : m));
+  const minDate = allDates.reduce((m, d) => (d < m ? d : m));
+  const maxDate = allDates.reduce((m, d) => (d > m ? d : m));
   const rangeStart = addDays(minDate, -1);
-  const rangeEnd   = addDays(maxDate,  1);
+  const rangeEnd = addDays(maxDate, 1);
 
-  const days      = getDaysArray(rangeStart, rangeEnd);
+  const days = getDaysArray(rangeStart, rangeEnd);
   const totalDays = days.length;
 
   const monthGroups: { label: string; count: number }[] = [];
   days.forEach((d) => {
     const label = formatMonth(d);
-    const last  = monthGroups[monthGroups.length - 1];
+    const last = monthGroups[monthGroups.length - 1];
     if (!last || last.label !== label) monthGroups.push({ label, count: 1 });
     else last.count++;
   });
@@ -134,7 +143,10 @@ export default function GanttTimeline({
 
   return (
     <div className="gantt-timeline-wrapper">
-      <div className="gantt-timeline-header" style={{ height: HEADER_HEIGHT, width: totalDays * DAY_WIDTH }}>
+      <div
+        className="gantt-timeline-header"
+        style={{ height: HEADER_HEIGHT, width: totalDays * DAY_WIDTH }}
+      >
         <div className="gantt-month-row">
           {monthGroups.map((m) => (
             <div key={m.label} className="gantt-month-cell" style={{ width: m.count * DAY_WIDTH }}>
@@ -144,17 +156,17 @@ export default function GanttTimeline({
         </div>
         <div className="gantt-day-row">
           {days.map((d, i) => {
-            const holiday     = isHoliday(d, holidays);
+            const holiday = isHoliday(d, holidays);
             const holidayName = holiday ? getHolidayName(d, holidays) : "";
             return (
               <div
                 key={i}
                 className={[
                   "gantt-day-cell",
-                  isSunday(d)     ? "day-sunday"      : "",
-                  isSaturday(d)   ? "day-saturday"    : "",
+                  isSunday(d) ? "day-sunday" : "",
+                  isSaturday(d) ? "day-saturday" : "",
                   isMonthStart(d) ? "day-month-start" : "",
-                  holiday         ? "day-holiday"     : "",
+                  holiday ? "day-holiday" : "",
                 ].join(" ")}
                 style={{ width: DAY_WIDTH }}
                 title={holidayName}
@@ -170,36 +182,40 @@ export default function GanttTimeline({
         className="gantt-timeline-body"
         ref={timelineRef}
         onScroll={onTimelineScroll}
-        style={{ width: totalDays * DAY_WIDTH, maxHeight: `calc(100vh - ${HEADER_HEIGHT + 80}px)`, overflowY: "auto" }}
+        style={{
+          width: totalDays * DAY_WIDTH,
+          maxHeight: `calc(100vh - ${HEADER_HEIGHT + 80}px)`,
+          overflowY: "auto",
+        }}
       >
         {visibleTasks.map((task) => {
-          const depth    = getDepth(task.id, tasks);
-          const preview  = dragPreview?.taskId === task.id ? dragPreview : null;
+          const depth = getDepth(task.id, tasks);
+          const preview = dragPreview?.taskId === task.id ? dragPreview : null;
           const barStart = preview ? preview.startDate : task.startDate;
-          const barEnd   = preview ? preview.endDate   : task.endDate;
+          const barEnd = preview ? preview.endDate : task.endDate;
 
-          const barLeft  = diffDays(rangeStart, barStart) * DAY_WIDTH;
+          const barLeft = diffDays(rangeStart, barStart) * DAY_WIDTH;
           const barWidth = Math.max((diffDays(barStart, barEnd) + 1) * DAY_WIDTH, DAY_WIDTH);
           const effectiveProg = computeProgress(task.id, tasks);
-          const done          = effectiveProg === 100;
+          const done = effectiveProg === 100;
           const baseColor = done ? "#999" : (task.color ?? "#4A90D9");
-          const barColor  = `${baseColor}${barOpacity(depth)}`;
+          const barColor = `${baseColor}${barOpacity(depth)}`;
           const textColor = getContrastTextColor(baseColor);
           const barHeight = Math.max(14, ROW_HEIGHT - depth * 4 - 18);
 
           return (
             <div key={task.id} className="gantt-timeline-row" style={{ height: ROW_HEIGHT }}>
               {days.map((d, i) => {
-                const holiday     = isHoliday(d, holidays);
+                const holiday = isHoliday(d, holidays);
                 const holidayName = holiday ? getHolidayName(d, holidays) : "";
                 return (
                   <div
                     key={i}
                     className={[
                       "gantt-grid-cell",
-                      isSunday(d) || isSaturday(d) ? "grid-weekend"    : "",
-                      isMonthStart(d)              ? "grid-month-start" : "",
-                      holiday                      ? "grid-holiday"     : "",
+                      isSunday(d) || isSaturday(d) ? "grid-weekend" : "",
+                      isMonthStart(d) ? "grid-month-start" : "",
+                      holiday ? "grid-holiday" : "",
                     ].join(" ")}
                     style={{ left: i * DAY_WIDTH, width: DAY_WIDTH }}
                     title={holidayName}
@@ -208,57 +224,104 @@ export default function GanttTimeline({
               })}
 
               {todayOffset >= 0 && todayOffset < totalDays && (
-                <div className="gantt-today-line" style={{ left: todayOffset * DAY_WIDTH + DAY_WIDTH / 2 }} />
+                <div
+                  className="gantt-today-line"
+                  style={{ left: todayOffset * DAY_WIDTH + DAY_WIDTH / 2 }}
+                />
               )}
 
               <div
                 className="gantt-bar"
-                style={{ left: barLeft, width: barWidth, height: barHeight, background: barColor, cursor: "grab", userSelect: "none" }}
+                style={{
+                  left: barLeft,
+                  width: barWidth,
+                  height: barHeight,
+                  background: barColor,
+                  cursor: "grab",
+                  userSelect: "none",
+                }}
                 onMouseDown={(e) => onStartDrag(e, task, "move")}
-                onClick={() => { if (!didDragRef.current) onOpenEdit(task); }}
-                onMouseEnter={(e) => { if (!dragPreview) onSetTooltip({ task, progress: effectiveProg, x: e.clientX, y: e.clientY }); }}
-                onMouseMove={(e)  => { if (!dragPreview) onSetTooltip({ task, progress: effectiveProg, x: e.clientX, y: e.clientY }); }}
+                onClick={() => {
+                  if (!didDragRef.current) onOpenEdit(task);
+                }}
+                onMouseEnter={(e) => {
+                  if (!dragPreview)
+                    onSetTooltip({ task, progress: effectiveProg, x: e.clientX, y: e.clientY });
+                }}
+                onMouseMove={(e) => {
+                  if (!dragPreview)
+                    onSetTooltip({ task, progress: effectiveProg, x: e.clientX, y: e.clientY });
+                }}
                 onMouseLeave={() => onSetTooltip(null)}
               >
-                <div className="gantt-bar-handle gantt-bar-handle--left" style={{ width: HANDLE_WIDTH }} onMouseDown={(e) => onStartDrag(e, task, "start")} />
-                <div className="gantt-bar-progress" style={{ width: `${effectiveProg}%`, background: baseColor, filter: "brightness(0.75)" }} />
-                <span className="gantt-bar-label" style={{ color: textColor }}>{task.name}</span>
-                <div className="gantt-bar-handle gantt-bar-handle--right" style={{ width: HANDLE_WIDTH }} onMouseDown={(e) => onStartDrag(e, task, "end")} />
+                <div
+                  className="gantt-bar-handle gantt-bar-handle--left"
+                  style={{ width: HANDLE_WIDTH }}
+                  onMouseDown={(e) => onStartDrag(e, task, "start")}
+                />
+                <div
+                  className="gantt-bar-progress"
+                  style={{
+                    width: `${effectiveProg}%`,
+                    background: baseColor,
+                    filter: "brightness(0.75)",
+                  }}
+                />
+                <span className="gantt-bar-label" style={{ color: textColor }}>
+                  {task.name}
+                </span>
+                <div
+                  className="gantt-bar-handle gantt-bar-handle--right"
+                  style={{ width: HANDLE_WIDTH }}
+                  onMouseDown={(e) => onStartDrag(e, task, "end")}
+                />
               </div>
             </div>
           );
         })}
 
-      {/* 未スケジュールセクション対応の空行（左パネルと高さ合わせ） */}
-      {floatingTasks.length > 0 && (
-        <div className="gantt-unscheduled-section gantt-unscheduled-section--timeline" style={{ width: totalDays * DAY_WIDTH }}>
-          <div className="gantt-unscheduled-header" style={{ visibility: "hidden" }}>placeholder</div>
-          {floatingTasks.map((task) => (
-            <div key={task.id} className="gantt-timeline-row gantt-timeline-row--floating" style={{ height: ROW_HEIGHT }}>
-              {days.map((d, i) => {
-                const holiday     = isHoliday(d, holidays);
-                const holidayName = holiday ? getHolidayName(d, holidays) : "";
-                return (
-                  <div
-                    key={i}
-                    className={[
-                      "gantt-grid-cell",
-                      isSunday(d) || isSaturday(d) ? "grid-weekend"    : "",
-                      isMonthStart(d)              ? "grid-month-start" : "",
-                      holiday                      ? "grid-holiday"     : "",
-                    ].join(" ")}
-                    style={{ left: i * DAY_WIDTH, width: DAY_WIDTH }}
-                    title={holidayName}
-                  />
-                );
-              })}
-              {todayOffset >= 0 && todayOffset < totalDays && (
-                <div className="gantt-today-line" style={{ left: todayOffset * DAY_WIDTH + DAY_WIDTH / 2 }} />
-              )}
+        {/* 未スケジュールセクション対応の空行（左パネルと高さ合わせ） */}
+        {floatingTasks.length > 0 && (
+          <div
+            className="gantt-unscheduled-section gantt-unscheduled-section--timeline"
+            style={{ width: totalDays * DAY_WIDTH }}
+          >
+            <div className="gantt-unscheduled-header" style={{ visibility: "hidden" }}>
+              placeholder
             </div>
-          ))}
-        </div>
-      )}
+            {floatingTasks.map((task) => (
+              <div
+                key={task.id}
+                className="gantt-timeline-row gantt-timeline-row--floating"
+                style={{ height: ROW_HEIGHT }}
+              >
+                {days.map((d, i) => {
+                  const holiday = isHoliday(d, holidays);
+                  const holidayName = holiday ? getHolidayName(d, holidays) : "";
+                  return (
+                    <div
+                      key={i}
+                      className={[
+                        "gantt-grid-cell",
+                        isSunday(d) || isSaturday(d) ? "grid-weekend" : "",
+                        isMonthStart(d) ? "grid-month-start" : "",
+                        holiday ? "grid-holiday" : "",
+                      ].join(" ")}
+                      style={{ left: i * DAY_WIDTH, width: DAY_WIDTH }}
+                      title={holidayName}
+                    />
+                  );
+                })}
+                {todayOffset >= 0 && todayOffset < totalDays && (
+                  <div
+                    className="gantt-today-line"
+                    style={{ left: todayOffset * DAY_WIDTH + DAY_WIDTH / 2 }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

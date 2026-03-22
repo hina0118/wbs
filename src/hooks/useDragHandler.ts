@@ -23,7 +23,7 @@ export function useDragHandler(
   onTasksChange: (tasks: Task[]) => void,
   onDragStart?: () => void,
 ) {
-  const dragRef    = useRef<DragState | null>(null);
+  const dragRef = useRef<DragState | null>(null);
   const didDragRef = useRef(false);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
 
@@ -50,11 +50,11 @@ export function useDragHandler(
       if (delta !== 0) didDragRef.current = true;
 
       let newStart = drag.originalStart;
-      let newEnd   = drag.originalEnd;
+      let newEnd = drag.originalEnd;
 
       if (drag.type === "move") {
         newStart = addDays(drag.originalStart, delta);
-        newEnd   = addDays(drag.originalEnd,   delta);
+        newEnd = addDays(drag.originalEnd, delta);
       } else if (drag.type === "start") {
         newStart = addDays(drag.originalStart, delta);
         if (newStart >= drag.originalEnd) newStart = addDays(drag.originalEnd, -1);
@@ -67,7 +67,7 @@ export function useDragHandler(
     }
 
     function onMouseUp() {
-      const drag    = dragRef.current;
+      const drag = dragRef.current;
       dragRef.current = null;
 
       if (!drag || !didDragRef.current) {
@@ -80,7 +80,7 @@ export function useDragHandler(
         const updated = tasks.map((t) =>
           t.id === drag.taskId
             ? { ...t, startDate: preview.startDate, endDate: preview.endDate }
-            : t
+            : t,
         );
         onTasksChange(propagateDates(drag.taskId, updated));
         return null;
@@ -88,10 +88,10 @@ export function useDragHandler(
     }
 
     window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup",   onMouseUp);
+    window.addEventListener("mouseup", onMouseUp);
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup",   onMouseUp);
+      window.removeEventListener("mouseup", onMouseUp);
     };
   }, [tasks, onTasksChange]);
 

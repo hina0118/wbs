@@ -18,7 +18,7 @@ function makeUpEvent(): MouseEvent {
 }
 
 const start2025 = new Date(2025, 0, 1);
-const end2025   = new Date(2025, 11, 31);
+const end2025 = new Date(2025, 11, 31);
 
 const task = makeTask("t1", start2025, end2025);
 const tasks = [task];
@@ -31,7 +31,11 @@ describe("useDragHandler - startDrag", () => {
 
     act(() => {
       result.current.startDrag(
-        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 100 } as unknown as React.MouseEvent,
+        {
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+          clientX: 100,
+        } as unknown as React.MouseEvent,
         task,
         "move",
       );
@@ -47,12 +51,16 @@ describe("useDragHandler - startDrag", () => {
 
   it("onDragStart コールバックが呼ばれる", () => {
     const onTasksChange = vi.fn();
-    const onDragStart   = vi.fn();
+    const onDragStart = vi.fn();
     const { result } = renderHook(() => useDragHandler(tasks, onTasksChange, onDragStart));
 
     act(() => {
       result.current.startDrag(
-        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        {
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+          clientX: 0,
+        } as unknown as React.MouseEvent,
         task,
         "move",
       );
@@ -74,19 +82,25 @@ describe("useDragHandler - move ドラッグ", () => {
     // ドラッグ開始
     act(() => {
       result.current.startDrag(
-        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        {
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+          clientX: 0,
+        } as unknown as React.MouseEvent,
         task,
         "move",
       );
     });
 
     // 3日分右へ移動（3 * 28 px）
-    act(() => { window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 3)); });
+    act(() => {
+      window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 3));
+    });
 
     expect(result.current.dragPreview).not.toBeNull();
     const preview = result.current.dragPreview!;
     const expectedStart = new Date(2025, 0, 4); // 1/1 + 3 days
-    const expectedEnd   = new Date(2026, 0, 3); // 12/31 + 3 days
+    const expectedEnd = new Date(2026, 0, 3); // 12/31 + 3 days
     expect(preview.startDate).toEqual(expectedStart);
     expect(preview.endDate).toEqual(expectedEnd);
   });
@@ -97,14 +111,22 @@ describe("useDragHandler - move ドラッグ", () => {
 
     act(() => {
       result.current.startDrag(
-        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        {
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+          clientX: 0,
+        } as unknown as React.MouseEvent,
         task,
         "move",
       );
     });
 
-    act(() => { window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 5)); });
-    act(() => { window.dispatchEvent(makeUpEvent()); });
+    act(() => {
+      window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 5));
+    });
+    act(() => {
+      window.dispatchEvent(makeUpEvent());
+    });
 
     expect(onTasksChange).toHaveBeenCalledOnce();
     expect(result.current.dragPreview).toBeNull();
@@ -116,14 +138,20 @@ describe("useDragHandler - move ドラッグ", () => {
 
     act(() => {
       result.current.startDrag(
-        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        {
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+          clientX: 0,
+        } as unknown as React.MouseEvent,
         task,
         "move",
       );
     });
 
     // 移動なし → mouseup
-    act(() => { window.dispatchEvent(makeUpEvent()); });
+    act(() => {
+      window.dispatchEvent(makeUpEvent());
+    });
 
     expect(onTasksChange).not.toHaveBeenCalled();
     expect(result.current.dragPreview).toBeNull();
@@ -140,14 +168,20 @@ describe("useDragHandler - start ハンドル", () => {
 
     act(() => {
       result.current.startDrag(
-        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        {
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+          clientX: 0,
+        } as unknown as React.MouseEvent,
         shortTask,
         "start",
       );
     });
 
     // +10日分右に動かすと start > end になる → クランプ
-    act(() => { window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 10)); });
+    act(() => {
+      window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 10));
+    });
 
     const preview = result.current.dragPreview!;
     expect(preview.startDate < preview.endDate).toBe(true);
@@ -163,14 +197,20 @@ describe("useDragHandler - end ハンドル", () => {
 
     act(() => {
       result.current.startDrag(
-        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        {
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+          clientX: 0,
+        } as unknown as React.MouseEvent,
         shortTask,
         "end",
       );
     });
 
     // 大きく左へ → end < start になる → クランプ
-    act(() => { window.dispatchEvent(makeMoveEvent(-DAY_WIDTH * 20)); });
+    act(() => {
+      window.dispatchEvent(makeMoveEvent(-DAY_WIDTH * 20));
+    });
 
     const preview = result.current.dragPreview!;
     expect(preview.endDate > preview.startDate).toBe(true);
@@ -183,7 +223,9 @@ describe("useDragHandler - ドラッグ未開始時の mouseup", () => {
     const onTasksChange = vi.fn();
     renderHook(() => useDragHandler(tasks, onTasksChange));
 
-    act(() => { window.dispatchEvent(makeUpEvent()); });
+    act(() => {
+      window.dispatchEvent(makeUpEvent());
+    });
 
     expect(onTasksChange).not.toHaveBeenCalled();
   });
@@ -192,7 +234,9 @@ describe("useDragHandler - ドラッグ未開始時の mouseup", () => {
     const onTasksChange = vi.fn();
     const { result } = renderHook(() => useDragHandler(tasks, onTasksChange));
 
-    act(() => { window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 5)); });
+    act(() => {
+      window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 5));
+    });
 
     expect(result.current.dragPreview).toBeNull();
     expect(onTasksChange).not.toHaveBeenCalled();
@@ -207,14 +251,20 @@ describe("useDragHandler - delta=0 の mousemove", () => {
 
     act(() => {
       result.current.startDrag(
-        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        {
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+          clientX: 0,
+        } as unknown as React.MouseEvent,
         task,
         "move",
       );
     });
 
     // clientX=0 のまま動かさない → delta=0
-    act(() => { window.dispatchEvent(makeMoveEvent(0)); });
+    act(() => {
+      window.dispatchEvent(makeMoveEvent(0));
+    });
 
     expect(result.current.didDragRef.current).toBe(false);
   });
@@ -230,14 +280,20 @@ describe("useDragHandler - start ハンドル（クランプなし）", () => {
 
     act(() => {
       result.current.startDrag(
-        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        {
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+          clientX: 0,
+        } as unknown as React.MouseEvent,
         wideTask,
         "start",
       );
     });
 
     // 左へ 3 日分移動（start が前に移動、clamp は発生しない）
-    act(() => { window.dispatchEvent(makeMoveEvent(-DAY_WIDTH * 3)); });
+    act(() => {
+      window.dispatchEvent(makeMoveEvent(-DAY_WIDTH * 3));
+    });
 
     const preview = result.current.dragPreview!;
     expect(preview.startDate).toEqual(new Date(2025, 0, 7)); // 10 - 3 = 7
@@ -254,14 +310,20 @@ describe("useDragHandler - end ハンドル（クランプなし）", () => {
 
     act(() => {
       result.current.startDrag(
-        { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientX: 0 } as unknown as React.MouseEvent,
+        {
+          preventDefault: vi.fn(),
+          stopPropagation: vi.fn(),
+          clientX: 0,
+        } as unknown as React.MouseEvent,
         wideTask,
         "end",
       );
     });
 
     // 右へ 5 日分移動（end が後ろに移動、clamp は発生しない）
-    act(() => { window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 5)); });
+    act(() => {
+      window.dispatchEvent(makeMoveEvent(DAY_WIDTH * 5));
+    });
 
     const preview = result.current.dragPreview!;
     expect(preview.startDate).toEqual(new Date(2025, 0, 5)); // 変わらず

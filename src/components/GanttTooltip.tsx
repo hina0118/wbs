@@ -3,14 +3,14 @@
  */
 import { useRef, useLayoutEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm    from "remark-gfm";
+import remarkGfm from "remark-gfm";
 import { Task } from "../types/task";
 
 interface Props {
-  task:     Task;
+  task: Task;
   progress: number;
-  x:        number;
-  y:        number;
+  x: number;
+  y: number;
 }
 
 function fmtDate(d: Date): string {
@@ -40,9 +40,7 @@ export default function GanttTooltip({ task, progress, x, y }: Props) {
       </div>
 
       {/* メタ情報 */}
-      {task.assignee && (
-        <div className="gantt-tooltip-meta">👤 {task.assignee}</div>
-      )}
+      {task.assignee && <div className="gantt-tooltip-meta">👤 {task.assignee}</div>}
       <div className="gantt-tooltip-meta">
         📅 {fmtDate(task.startDate)} – {fmtDate(task.endDate)}
       </div>

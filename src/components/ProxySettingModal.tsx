@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function ProxySettingModal({ onClose }: Props) {
-  const [url,    setUrl]    = useState("");
+  const [url, setUrl] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errMsg, setErrMsg] = useState("");
 
@@ -52,7 +52,8 @@ export default function ProxySettingModal({ onClose }: Props) {
       <div className="gantt-modal proxy-modal" onClick={(e) => e.stopPropagation()}>
         <h3>HTTP プロキシ設定</h3>
         <p className="proxy-modal-desc">
-          祝日データ取得時に使用するプロキシを設定します。<br />
+          祝日データ取得時に使用するプロキシを設定します。
+          <br />
           空欄にすると直接接続（プロキシなし）になります。
         </p>
 
@@ -63,30 +64,26 @@ export default function ProxySettingModal({ onClose }: Props) {
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="例: http://proxy.example.com:8080"
-          onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSave();
+          }}
           autoFocus
         />
         <p className="proxy-modal-hint">
           認証が必要な場合: <code>http://user:pass@proxy.example.com:8080</code>
         </p>
 
-        {status === "error" && (
-          <p className="proxy-modal-error">{errMsg}</p>
-        )}
-        {status === "saved" && (
-          <p className="proxy-modal-ok">✓ 保存しました</p>
-        )}
+        {status === "error" && <p className="proxy-modal-error">{errMsg}</p>}
+        {status === "saved" && <p className="proxy-modal-ok">✓ 保存しました</p>}
 
         <div className="gantt-modal-actions">
           <button className="btn-cancel" onClick={handleClear}>
             プロキシを無効化
           </button>
-          <button className="btn-cancel" onClick={onClose}>キャンセル</button>
-          <button
-            className="btn-save"
-            onClick={handleSave}
-            disabled={status === "saving"}
-          >
+          <button className="btn-cancel" onClick={onClose}>
+            キャンセル
+          </button>
+          <button className="btn-save" onClick={handleSave} disabled={status === "saving"}>
             {status === "saving" ? "保存中…" : "保存"}
           </button>
         </div>

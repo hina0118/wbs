@@ -15,9 +15,9 @@ function makeTask(id: string, parentId?: string, assignee?: string): Task {
   };
 }
 
-const root   = makeTask("root",   undefined, "Alice");
-const child1 = makeTask("child1", "root",    "Bob");
-const child2 = makeTask("child2", "root",    "Alice");
+const root = makeTask("root", undefined, "Alice");
+const child1 = makeTask("child1", "root", "Bob");
+const child2 = makeTask("child2", "root", "Alice");
 const grandchild = makeTask("grandchild", "child1", "Carol");
 
 const tasks: Task[] = [root, child1, child2, grandchild];
@@ -148,9 +148,9 @@ describe("useGanttFilter - assignee なしタスク", () => {
 // ─── アーカイブ除外 ───────────────────────────────────────────
 describe("useGanttFilter - アーカイブ除外", () => {
   it("archived:true のタスクは filteredTasks に含まれない", () => {
-    const archivedRoot  = { ...root,        archived: true };
-    const archivedChild = { ...child1,      archived: true };
-    const archivedGrand = { ...grandchild,  archived: true };
+    const archivedRoot = { ...root, archived: true };
+    const archivedChild = { ...child1, archived: true };
+    const archivedGrand = { ...grandchild, archived: true };
     const tasksWithArchived: Task[] = [archivedRoot, archivedChild, child2, archivedGrand];
 
     const { result } = renderHook(() => useGanttFilter(tasksWithArchived));

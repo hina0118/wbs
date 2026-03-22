@@ -32,20 +32,23 @@
 .app-excel-btn {
   margin-left: auto;
   background: none;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #ccc;
   font-size: 0.78rem;
   cursor: pointer;
   padding: 4px 10px;
   border-radius: 6px;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
   flex-shrink: 0;
   white-space: nowrap;
 }
 .app-excel-btn:hover:not(:disabled) {
   color: #fff;
-  background: rgba(255,255,255,0.12);
-  border-color: rgba(255,255,255,0.45);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 .app-excel-btn:disabled {
   opacity: 0.35;
@@ -59,12 +62,14 @@
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   flex-shrink: 0;
 }
 .app-settings-btn:hover {
   color: #fff;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .app-header h1 {
@@ -585,7 +590,7 @@
   font-weight: 700;
   line-height: 1.4;
   color: #fff;
-  background: #4A90D9;
+  background: #4a90d9;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -618,8 +623,8 @@
 }
 
 .gantt-add-subtask-btn:hover {
-  color: #4A90D9;
-  border-color: #4A90D9;
+  color: #4a90d9;
+  border-color: #4a90d9;
   background: #f0f7ff;
 }
 
@@ -667,7 +672,7 @@
   margin-bottom: 12px;
   padding: 4px 8px;
   background: #f5f5f5;
-  border-left: 3px solid #4A90D9;
+  border-left: 3px solid #4a90d9;
   border-radius: 2px;
 }
 
@@ -1039,7 +1044,10 @@
   outline: none;
   background: #f8fafc;
   color: #1e293b;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
 }
 
 .search-box:focus,
@@ -1116,7 +1124,9 @@
   color: #b0b8c8;
   font-size: 0.9rem;
 }
-.search-no-results span { font-size: 2.5rem; }
+.search-no-results span {
+  font-size: 2.5rem;
+}
 
 /* ── 検索リスト行 ── */
 .search-item {
@@ -1293,7 +1303,7 @@
 
 .update-btn-dismiss {
   padding: 4px 10px;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -1302,7 +1312,7 @@
   transition: background 0.15s;
 }
 .update-btn-dismiss:hover {
-  background: rgba(255,255,255,0.28);
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .update-banner-progress {
@@ -1321,7 +1331,7 @@
 .update-progress-bar {
   width: 120px;
   height: 6px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -1494,7 +1504,9 @@
   padding: 10px 12px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   cursor: grab;
-  transition: box-shadow 0.15s, transform 0.1s;
+  transition:
+    box-shadow 0.15s,
+    transform 0.1s;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1631,7 +1643,9 @@
   background: transparent;
   cursor: pointer;
   color: #64748b;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .memo-tab:hover {
@@ -1674,8 +1688,12 @@
   word-break: break-word;
 }
 
-.markdown-body p       { margin: 0 0 0.5em; }
-.markdown-body p:last-child { margin-bottom: 0; }
+.markdown-body p {
+  margin: 0 0 0.5em;
+}
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
 
 .markdown-body h1,
 .markdown-body h2,
@@ -1685,17 +1703,28 @@
   margin: 0.6em 0 0.3em;
   line-height: 1.3;
 }
-.markdown-body h1 { font-size: 1.1em; }
-.markdown-body h2 { font-size: 1.0em; }
-.markdown-body h3 { font-size: 0.95em; }
-.markdown-body h4 { font-size: 0.9em; color: #555; }
+.markdown-body h1 {
+  font-size: 1.1em;
+}
+.markdown-body h2 {
+  font-size: 1em;
+}
+.markdown-body h3 {
+  font-size: 0.95em;
+}
+.markdown-body h4 {
+  font-size: 0.9em;
+  color: #555;
+}
 
 .markdown-body ul,
 .markdown-body ol {
   margin: 0.3em 0 0.5em 1.4em;
   padding: 0;
 }
-.markdown-body li { margin: 0.15em 0; }
+.markdown-body li {
+  margin: 0.15em 0;
+}
 
 /* GFM チェックリスト */
 .markdown-body input[type="checkbox"] {
@@ -1779,15 +1808,29 @@
   -webkit-box-orient: vertical;
 }
 
-.markdown-body--compact p    { margin: 0; }
+.markdown-body--compact p {
+  margin: 0;
+}
 .markdown-body--compact h1,
 .markdown-body--compact h2,
 .markdown-body--compact h3,
-.markdown-body--compact h4   { font-size: 0.75rem; margin: 0; }
+.markdown-body--compact h4 {
+  font-size: 0.75rem;
+  margin: 0;
+}
 .markdown-body--compact ul,
-.markdown-body--compact ol   { margin: 0 0 0 1em; padding: 0; }
-.markdown-body--compact pre  { padding: 2px 6px; margin: 0; }
-.markdown-body--compact blockquote { padding: 0 6px; margin: 0; }
+.markdown-body--compact ol {
+  margin: 0 0 0 1em;
+  padding: 0;
+}
+.markdown-body--compact pre {
+  padding: 2px 6px;
+  margin: 0;
+}
+.markdown-body--compact blockquote {
+  padding: 0 6px;
+  margin: 0;
+}
 
 /* ══════════════════════════════════════════
    GanttTooltip – ホバーツールチップ（ダークテーマ）
@@ -1802,7 +1845,7 @@
   border-radius: 8px;
   padding: 10px 13px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
-  pointer-events: none;   /* マウスイベントを透過させる */
+  pointer-events: none; /* マウスイベントを透過させる */
   font-size: 0.82rem;
   line-height: 1.5;
 }
@@ -1851,23 +1894,40 @@
   color: #e2e8f0;
   font-size: 0.78rem;
 }
-.gantt-tooltip .markdown-body p       { margin: 0 0 0.4em; }
+.gantt-tooltip .markdown-body p {
+  margin: 0 0 0.4em;
+}
 .gantt-tooltip .markdown-body h1,
 .gantt-tooltip .markdown-body h2,
 .gantt-tooltip .markdown-body h3,
-.gantt-tooltip .markdown-body h4      { color: #f1f5f9; }
-.gantt-tooltip .markdown-body code    { background: #334155; color: #f87171; }
-.gantt-tooltip .markdown-body pre     { background: #0f172a; }
-.gantt-tooltip .markdown-body pre code { color: #e2e8f0; }
+.gantt-tooltip .markdown-body h4 {
+  color: #f1f5f9;
+}
+.gantt-tooltip .markdown-body code {
+  background: #334155;
+  color: #f87171;
+}
+.gantt-tooltip .markdown-body pre {
+  background: #0f172a;
+}
+.gantt-tooltip .markdown-body pre code {
+  color: #e2e8f0;
+}
 .gantt-tooltip .markdown-body blockquote {
   border-left-color: #4a90d9;
   background: #1e3a5f;
   color: #cbd5e1;
 }
-.gantt-tooltip .markdown-body a       { color: #93c5fd; }
-.gantt-tooltip .markdown-body th      { background: #334155; }
+.gantt-tooltip .markdown-body a {
+  color: #93c5fd;
+}
+.gantt-tooltip .markdown-body th {
+  background: #334155;
+}
 .gantt-tooltip .markdown-body td,
-.gantt-tooltip .markdown-body th      { border-color: #334155; }
+.gantt-tooltip .markdown-body th {
+  border-color: #334155;
+}
 
 /* ── Analysis View ── */
 .analysis-view {
@@ -1883,7 +1943,7 @@
   background: #fff;
   border-radius: 10px;
   padding: 20px 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .analysis-section-title {
@@ -2023,7 +2083,9 @@
   font-size: 0.88rem;
   font-weight: 600;
 }
-.gantt-tooltip .markdown-body tr:nth-child(even) td { background: #253447; }
+.gantt-tooltip .markdown-body tr:nth-child(even) td {
+  background: #253447;
+}
 
 /* ── 信号機インジケーター ─────────────────────────────── */
 .status-signal {
@@ -2036,9 +2098,18 @@
   margin-right: 4px;
 }
 
-.status-signal--red    { background: #e53935; box-shadow: 0 0 4px #e5393580; }
-.status-signal--yellow { background: #f9a825; box-shadow: 0 0 4px #f9a82580; }
-.status-signal--green  { background: #43a047; box-shadow: 0 0 4px #43a04780; }
+.status-signal--red {
+  background: #e53935;
+  box-shadow: 0 0 4px #e5393580;
+}
+.status-signal--yellow {
+  background: #f9a825;
+  box-shadow: 0 0 4px #f9a82580;
+}
+.status-signal--green {
+  background: #43a047;
+  box-shadow: 0 0 4px #43a04780;
+}
 
 /* ── Toast 通知 ── */
 .toast {
@@ -2052,7 +2123,7 @@
   padding: 10px 16px;
   border-radius: 8px;
   font-size: 0.85rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   z-index: 9999;
   max-width: 90vw;
 }
@@ -2181,7 +2252,9 @@
   padding: 6px 14px;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 .btn-archive-outline:hover {
   background: #7b5ea7;
@@ -2267,7 +2340,9 @@
   padding: 6px 14px;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
 }
 .archive-btn-select-all:hover {
   border-color: #7b5ea7;
@@ -2337,7 +2412,9 @@
   border-radius: 10px;
   padding: 14px 16px;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   user-select: none;
 }
 .archive-item:hover {

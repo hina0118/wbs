@@ -9,7 +9,7 @@ interface TaskRaw {
   id: string;
   name: string;
   startDate: string; // "YYYY-MM-DD"
-  endDate: string;   // "YYYY-MM-DD"
+  endDate: string; // "YYYY-MM-DD"
   progress: number;
   color?: string;
   parentId?: string;
@@ -32,7 +32,7 @@ function toTask(raw: TaskRaw): Task {
   return {
     ...raw,
     startDate: raw.isFloating ? today : parseLocalDate(raw.startDate),
-    endDate:   raw.isFloating ? today : parseLocalDate(raw.endDate),
+    endDate: raw.isFloating ? today : parseLocalDate(raw.endDate),
   };
 }
 
@@ -42,7 +42,7 @@ function toRaw(task: Task): TaskRaw {
   return {
     ...task,
     startDate: task.isFloating ? toInputDate(today) : toInputDate(task.startDate),
-    endDate:   task.isFloating ? toInputDate(today) : toInputDate(task.endDate),
+    endDate: task.isFloating ? toInputDate(today) : toInputDate(task.endDate),
   };
 }
 
