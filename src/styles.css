@@ -273,6 +273,7 @@
 }
 
 .gantt-row {
+  position: relative;
   display: flex;
   align-items: center;
   border-bottom: 1px solid #eef1f6;
@@ -306,23 +307,30 @@
   background: #eef3ff;
 }
 
-.gantt-row--drag-over {
+.gantt-row--drag-over-top {
   border-top: 2px solid #4a90d9;
+  background: #ddeeff;
+}
+.gantt-row--drag-over-bottom {
+  border-bottom: 2px solid #4a90d9;
   background: #ddeeff;
 }
 
 .gantt-drag-handle {
   display: none;
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
   padding: 0 4px;
   color: #aaa;
   cursor: grab;
   font-size: 1rem;
   line-height: 1;
-  flex-shrink: 0;
 }
 
 .gantt-row:hover .gantt-drag-handle {
-  display: inline;
+  display: block;
 }
 
 .gantt-drag-handle:active {

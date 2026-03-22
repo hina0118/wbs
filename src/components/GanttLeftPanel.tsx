@@ -62,7 +62,7 @@ interface Props {
   onFilterParentChange: (value: string) => void;
   onFilterAssigneeChange: (value: string) => void;
   onLeftScroll: () => void;
-  onReorderTasks: (draggedId: string, targetId: string) => void;
+  onReorderTasks: (draggedId: string, targetId: string, insertAfter?: boolean) => void;
 }
 
 export default function GanttLeftPanel({
@@ -87,11 +87,17 @@ export default function GanttLeftPanel({
   onReorderTasks,
 }: Props) {
   const draggedIdRef = useRef<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dragOverId,      setDragOverId]      = useState<string | null>(null);
+  const [dragInsertAfter, setDragInsertAfter] = useState(false);
 
   function handleDragStart(e: React.DragEvent, taskId: string) {
     draggedIdRef.current = taskId;
     e.dataTransfer.effectAllowed = "move";
+  }
+
+  function getInsertAfter(e: React.DragEvent): boolean {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    return e.clientY > rect.top + rect.height / 2;
   }
 
   function handleDragOver(e: React.DragEvent, taskId: string) {
@@ -103,6 +109,7 @@ export default function GanttLeftPanel({
     if (!dragged || !target || dragged.parentId !== target.parentId) return;
     e.dataTransfer.dropEffect = "move";
     setDragOverId(taskId);
+    setDragInsertAfter(getInsertAfter(e));
   }
 
   function handleDrop(e: React.DragEvent, targetId: string) {
@@ -115,7 +122,7 @@ export default function GanttLeftPanel({
     const dragged = tasks.find((t) => t.id === draggedId);
     const target  = tasks.find((t) => t.id === targetId);
     if (dragged && target && dragged.parentId === target.parentId && !!dragged.isFloating === !!target.isFloating) {
-      onReorderTasks(draggedId, targetId);
+      onReorderTasks(draggedId, targetId, getInsertAfter(e));
     }
     draggedIdRef.current = null;
     setDragOverId(null);
@@ -191,7 +198,7 @@ export default function GanttLeftPanel({
           return (
             <div
               key={task.id}
-              className={`gantt-row gantt-row-depth-${Math.min(depth, 3)}${effectiveProg === 100 ? " gantt-row--done" : ""}${isDragOver ? " gantt-row--drag-over" : ""}`}
+              className={`gantt-row gantt-row-depth-${Math.min(depth, 3)}${effectiveProg === 100 ? " gantt-row--done" : ""}${isDragOver && !dragInsertAfter ? " gantt-row--drag-over-top" : ""}${isDragOver && dragInsertAfter ? " gantt-row--drag-over-bottom" : ""}`}
               style={{ height: ROW_HEIGHT }}
               draggable
               onDragStart={(e) => handleDragStart(e, task.id)}
@@ -279,7 +286,7 @@ export default function GanttLeftPanel({
             return (
               <div
                 key={task.id}
-                className={`gantt-row gantt-row-depth-0 gantt-row--floating${effectiveProg === 100 ? " gantt-row--done" : ""}${isDragOver ? " gantt-row--drag-over" : ""}`}
+                className={`gantt-row gantt-row-depth-0 gantt-row--floating${effectiveProg === 100 ? " gantt-row--done" : ""}${isDragOver && !dragInsertAfter ? " gantt-row--drag-over-top" : ""}${isDragOver && dragInsertAfter ? " gantt-row--drag-over-bottom" : ""}`}
                 style={{ height: ROW_HEIGHT }}
                 draggable
                 onDragStart={(e) => handleDragStart(e, task.id)}
