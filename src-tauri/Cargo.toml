@@ -1,6 +1,6 @@
 [package]
 name = "wbs"
-version = "1.0.14"
+version = "1.0.15"
 description = "WBS 進捗管理アプリ"
 authors = []
 edition = "2021"
