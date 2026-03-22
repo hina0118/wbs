@@ -201,10 +201,10 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
             onChange={(e) => setFilterParentId(e.target.value)}
           >
             <option value="all">全て</option>
+            <option value="__floating__">未スケジュール</option>
             {rootTasks.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
-            <option value="__floating__">未スケジュール</option>
           </select>
         </div>
         <div className="kanban-filter-item">
