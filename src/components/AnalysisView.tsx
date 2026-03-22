@@ -42,6 +42,12 @@ export default function AnalysisView({ tasks }: Props) {
     return Math.min(Math.round((todayTime - startTime) / totalDuration * 100), 100);
   }
 
+  // 未割当タスク: 担当者が設定されていない未完了の葉タスク
+  const unassignedTasks = useMemo(
+    () => leafTasks.filter((t) => !t.assignee && computeProgress(t.id, tasks) < 100),
+    [leafTasks, tasks]
+  );
+
   // 次のタスクがないメンバー
   const idleMembers = useMemo(() => {
     const assignees = [
@@ -162,6 +168,56 @@ export default function AnalysisView({ tasks }: Props) {
                             style={{ width: `${actual}%` }}
                           />
                           <span>{actual}% <span className="analysis-gap">(-{gap}%)</span></span>
+                        </div>
+                      </td>
+                      <td className="analysis-path">
+                        {ancestors.length > 0 ? ancestors.join(" > ") : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* 未割当タスク */}
+      <section className="analysis-section">
+        <h2 className="analysis-section-title">
+          <span className="analysis-icon">👤</span>
+          未割当タスク
+          <span className="analysis-count">{unassignedTasks.length}件</span>
+        </h2>
+
+        {unassignedTasks.length === 0 ? (
+          <p className="analysis-empty">未割当のタスクはありません</p>
+        ) : (
+          <div className="analysis-table-wrapper">
+            <table className="analysis-table">
+              <thead>
+                <tr>
+                  <th>タスク名</th>
+                  <th>終了予定日</th>
+                  <th>進捗</th>
+                  <th>パス</th>
+                </tr>
+              </thead>
+              <tbody>
+                {unassignedTasks.map((t) => {
+                  const ancestors = getAncestorNames(t.id, tasks);
+                  const progress = computeProgress(t.id, tasks);
+                  return (
+                    <tr key={t.id}>
+                      <td className="analysis-task-name">{t.name}</td>
+                      <td>{formatDateYMD(t.endDate)}</td>
+                      <td>
+                        <div className="analysis-progress-bar">
+                          <div
+                            className="analysis-progress-fill"
+                            style={{ width: `${progress}%` }}
+                          />
+                          <span>{progress}%</span>
                         </div>
                       </td>
                       <td className="analysis-path">

@@ -142,7 +142,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
 
   // ── 行並び替え ──
 
-  function reorderTasks(draggedId: string, targetId: string) {
+  function reorderTasks(draggedId: string, targetId: string, insertAfter = false) {
     const dragged = tasks.find((t) => t.id === draggedId);
     const target  = tasks.find((t) => t.id === targetId);
     if (!dragged || !target || dragged.parentId !== target.parentId) return;
@@ -153,7 +153,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
 
     const without   = siblings.filter((t) => t.id !== draggedId);
     const targetIdx = without.findIndex((t) => t.id === targetId);
-    without.splice(targetIdx, 0, dragged);
+    without.splice(insertAfter ? targetIdx + 1 : targetIdx, 0, dragged);
 
     const updatedOrders = new Map(without.map((t, i) => [t.id, i]));
     const updated = tasks.map((t) =>
