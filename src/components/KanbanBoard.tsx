@@ -64,7 +64,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
   const [addState, setAddState] = useState<AddState | null>(null);
 
-  const [filterParentId, setFilterParentId] = useState<string | "all">("all");
+  const [filterParentId, setFilterParentId] = useState<string | "all" | "__floating__">("all");
   const [filterAssignee, setFilterAssignee] = useState<string | "all">("all");
 
   function toggleMemo(id: string, e: React.MouseEvent) {
@@ -85,8 +85,8 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
   // リーフタスクのみ対象
   const leafTasks = activeTasks.filter((t) => isLeaf(t.id, activeTasks));
 
-  // ルートタスク一覧（親タスクフィルタ用）
-  const rootTasks = activeTasks.filter((t) => !t.parentId);
+  // ルートタスク一覧（親タスクフィルタ用）: フローティングタスクを除外
+  const rootTasks = activeTasks.filter((t) => !t.parentId && !t.isFloating);
 
   // 担当者一覧（重複除去）
   const assignees = [
@@ -96,12 +96,15 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
   ] as string[];
 
   // フィルタ適用（親タスクの子孫IDをSetで事前計算してO(n²)を回避）
-  const filteredByParent = filterParentId === "all"
-    ? leafTasks
-    : (() => {
-        const descendantSet = new Set(getAllDescendantIds(filterParentId, activeTasks));
-        return leafTasks.filter((t) => descendantSet.has(t.id));
-      })();
+  const filteredByParent =
+    filterParentId === "all"
+      ? leafTasks
+      : filterParentId === "__floating__"
+      ? activeTasks.filter((t) => t.isFloating)
+      : (() => {
+          const descendantSet = new Set(getAllDescendantIds(filterParentId, activeTasks));
+          return leafTasks.filter((t) => descendantSet.has(t.id));
+        })();
 
   const visibleTasks = filteredByParent.filter((t) =>
     filterAssignee === "all" ||
@@ -115,9 +118,8 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
   function openAdd(columnId: Column["id"]) {
     const today = new Date();
-    const parent = filterParentId !== "all"
-      ? tasks.find((t) => t.id === filterParentId)
-      : undefined;
+    const resolvedParentId = filterParentId === "all" || filterParentId === "__floating__" ? undefined : filterParentId;
+    const parent = resolvedParentId ? tasks.find((t) => t.id === resolvedParentId) : undefined;
     const defaultColor = parent?.color ?? "#4A90D9";
     setAddState({
       columnId,
@@ -125,7 +127,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
       startDate: toInputDate(today),
       endDate:   toInputDate(addDays(today, 6)),
       color:     defaultColor,
-      parentId:  filterParentId === "all" ? undefined : filterParentId,
+      parentId:  resolvedParentId,
     });
   }
 
@@ -202,6 +204,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
             {rootTasks.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
+            <option value="__floating__">未スケジュール</option>
           </select>
         </div>
         <div className="kanban-filter-item">
