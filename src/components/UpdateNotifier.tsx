@@ -6,17 +6,17 @@
  */
 import { useState, useEffect } from "react";
 import { check, Update } from "@tauri-apps/plugin-updater";
-import { relaunch }        from "@tauri-apps/plugin-process";
-import { warn, error }     from "@tauri-apps/plugin-log";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { warn, error } from "@tauri-apps/plugin-log";
 
 type Phase = "idle" | "downloading" | "done" | "error";
 
 export default function UpdateNotifier() {
-  const [update,    setUpdate]    = useState<Update | null>(null);
+  const [update, setUpdate] = useState<Update | null>(null);
   const [dismissed, setDismissed] = useState(false);
-  const [phase,     setPhase]     = useState<Phase>("idle");
-  const [progress,  setProgress]  = useState(0);
-  const [errMsg,    setErrMsg]    = useState("");
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [progress, setProgress] = useState(0);
+  const [errMsg, setErrMsg] = useState("");
 
   // 起動 3 秒後にアップデートチェック（サイレントフェール）
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function UpdateNotifier() {
 
     try {
       let downloaded = 0;
-      let total      = 0;
+      let total = 0;
 
       await update.downloadAndInstall((event) => {
         switch (event.event) {
@@ -73,9 +73,7 @@ export default function UpdateNotifier() {
 
       <span className="update-banner-text">
         新しいバージョン <strong>v{update.version}</strong> が利用可能です
-        {update.body && (
-          <span className="update-banner-notes"> — {update.body}</span>
-        )}
+        {update.body && <span className="update-banner-notes"> — {update.body}</span>}
       </span>
 
       {phase === "idle" && (
@@ -96,10 +94,7 @@ export default function UpdateNotifier() {
           </span>
           {progress > 0 && (
             <div className="update-progress-bar">
-              <div
-                className="update-progress-fill"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="update-progress-fill" style={{ width: `${progress}%` }} />
             </div>
           )}
         </div>

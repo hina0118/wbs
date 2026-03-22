@@ -10,22 +10,20 @@ export function useGanttFilter(tasks: Task[]) {
   const activeTasks = tasks.filter((t) => !t.archived);
 
   const assignees = [
-    ...new Set(
-      activeTasks.flatMap((t) => [t.assignee, ...(t.subMembers ?? [])]).filter(Boolean)
-    ),
+    ...new Set(activeTasks.flatMap((t) => [t.assignee, ...(t.subMembers ?? [])]).filter(Boolean)),
   ] as string[];
 
   const filteredByParent =
     filterParentId === "all"
       ? activeTasks
       : filterParentId === "__floating__"
-      ? activeTasks.filter((t) => t.isFloating)
-      : [
-          activeTasks.find((t) => t.id === filterParentId)!,
-          ...getAllDescendantIds(filterParentId, activeTasks)
-            .slice(1)
-            .map((id) => activeTasks.find((t) => t.id === id)!),
-        ].filter(Boolean);
+        ? activeTasks.filter((t) => t.isFloating)
+        : [
+            activeTasks.find((t) => t.id === filterParentId)!,
+            ...getAllDescendantIds(filterParentId, activeTasks)
+              .slice(1)
+              .map((id) => activeTasks.find((t) => t.id === id)!),
+          ].filter(Boolean);
 
   // 担当者フィルタ: 各タスク毎に getAllDescendantIds を呼ぶ O(n²) を避けるため
   // 「担当者に一致するタスクの祖先を上方向にたどって keep セットを構築」する O(n×depth) 方式を使用。

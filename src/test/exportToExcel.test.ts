@@ -7,17 +7,25 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 // ExcelJS をスタブで差し替え (new Workbook() が使えるようクラスで定義)
 vi.mock("exceljs", () => {
-  const makeCell = () => ({ value: null as unknown, font: {}, fill: {}, alignment: {}, border: {} });
-  const makeRow  = () => ({ height: 0, getCell: makeCell });
-  const makeWs   = () => ({
-    views:     [] as unknown[],
-    getRow:    makeRow,
+  const makeCell = () => ({
+    value: null as unknown,
+    font: {},
+    fill: {},
+    alignment: {},
+    border: {},
+  });
+  const makeRow = () => ({ height: 0, getCell: makeCell });
+  const makeWs = () => ({
+    views: [] as unknown[],
+    getRow: makeRow,
     getColumn: () => ({ width: 0 }),
     mergeCells: vi.fn(),
   });
   class MockWorkbook {
     xlsx = { writeBuffer: async () => new Uint8Array([0xd0, 0xcf, 0x11, 0xe0]) };
-    addWorksheet() { return makeWs(); }
+    addWorksheet() {
+      return makeWs();
+    }
   }
   return { default: { Workbook: MockWorkbook } };
 });
@@ -28,13 +36,7 @@ import type { Task } from "../types/task";
 
 const mockInvoke = vi.mocked(invoke);
 
-function makeTask(
-  id: string,
-  start: string,
-  end: string,
-  progress = 0,
-  parentId?: string,
-): Task {
+function makeTask(id: string, start: string, end: string, progress = 0, parentId?: string): Task {
   return { id, name: id, startDate: new Date(start), endDate: new Date(end), progress, parentId };
 }
 
@@ -92,9 +94,9 @@ describe("exportToExcel", () => {
 
   it("invoke が失敗した場合は例外を投げる", async () => {
     mockInvoke.mockRejectedValueOnce(new Error("disk full"));
-    await expect(
-      exportToExcel([makeTask("t1", "2026-01-01", "2026-03-31")]),
-    ).rejects.toThrow("disk full");
+    await expect(exportToExcel([makeTask("t1", "2026-01-01", "2026-03-31")])).rejects.toThrow(
+      "disk full",
+    );
   });
 
   it("複数タスクがあっても invoke は 1 回だけ呼ばれる", async () => {

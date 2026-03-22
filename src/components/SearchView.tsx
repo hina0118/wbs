@@ -8,8 +8,8 @@ import MemoWithToggle from "./MemoWithToggle";
 import { computeProgress, getAncestorNames, formatDateYMD } from "../utils/taskUtils";
 
 interface Props {
-  tasks:  Task[];
-  query:  string;
+  tasks: Task[];
+  query: string;
 }
 
 // ── ヘルパー ──────────────────────────────────────────────
@@ -24,9 +24,13 @@ function Highlight({ text, query }: { text: string; query: string }) {
   return (
     <>
       {parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase()
-          ? <mark key={i} className="search-highlight">{part}</mark>
-          : part
+        part.toLowerCase() === query.toLowerCase() ? (
+          <mark key={i} className="search-highlight">
+            {part}
+          </mark>
+        ) : (
+          part
+        ),
       )}
     </>
   );
@@ -37,16 +41,16 @@ function matchesQuery(task: Task, q: string): boolean {
   return (
     task.name.toLowerCase().includes(lower) ||
     (task.assignee ?? "").toLowerCase().includes(lower) ||
-    (task.memo    ?? "").toLowerCase().includes(lower)
+    (task.memo ?? "").toLowerCase().includes(lower)
   );
 }
 
 function matchFields(task: Task, q: string) {
   const lower = q.toLowerCase();
   return {
-    name:     task.name.toLowerCase().includes(lower),
+    name: task.name.toLowerCase().includes(lower),
     assignee: (task.assignee ?? "").toLowerCase().includes(lower),
-    memo:     (task.memo     ?? "").toLowerCase().includes(lower),
+    memo: (task.memo ?? "").toLowerCase().includes(lower),
   };
 }
 
@@ -55,7 +59,7 @@ function matchFields(task: Task, q: string) {
 export default function SearchView({ tasks, query }: Props) {
   const [expandedMemos, setExpandedMemos] = useState<Set<string>>(new Set());
 
-  const q       = query.trim();
+  const q = query.trim();
   const results = q ? tasks.filter((t) => !t.archived && matchesQuery(t, q)) : [];
 
   // クエリが変わったら、メモにマッチしたタスクを自動展開
@@ -67,14 +71,15 @@ export default function SearchView({ tasks, query }: Props) {
           .map((t) => t.id)
       : [];
     setExpandedMemos(new Set(autoIds));
-  // tasks を依存配列に含めると「タスク追加時にもメモ展開がリセットされる」副作用が生じるため意図的に除外
+    // tasks を依存配列に含めると「タスク追加時にもメモ展開がリセットされる」副作用が生じるため意図的に除外
   }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleMemo(id: string, e: React.MouseEvent) {
     e.stopPropagation();
     setExpandedMemos((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -102,9 +107,9 @@ export default function SearchView({ tasks, query }: Props) {
         )}
 
         {results.map((task) => {
-          const progress  = computeProgress(task.id, tasks);
+          const progress = computeProgress(task.id, tasks);
           const ancestors = getAncestorNames(task.id, tasks);
-          const matched   = matchFields(task, q);
+          const matched = matchFields(task, q);
 
           return (
             <div
@@ -163,7 +168,6 @@ export default function SearchView({ tasks, query }: Props) {
           );
         })}
       </div>
-
     </div>
   );
 }

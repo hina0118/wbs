@@ -1,12 +1,20 @@
 import { useRef, useState } from "react";
 import { Task } from "../types/task";
-import { toInputDate, genId, propagateDates, sortByTree, copyTaskFields, getAncestorNames, addDays } from "../utils/taskUtils";
+import {
+  toInputDate,
+  genId,
+  propagateDates,
+  sortByTree,
+  copyTaskFields,
+  getAncestorNames,
+  addDays,
+} from "../utils/taskUtils";
 import { useDragHandler } from "../hooks/useDragHandler";
 import { useGanttFilter } from "../hooks/useGanttFilter";
 import GanttLeftPanel from "./GanttLeftPanel";
-import GanttTimeline  from "./GanttTimeline";
-import TaskEditModal  from "./TaskEditModal";
-import GanttTooltip   from "./GanttTooltip";
+import GanttTimeline from "./GanttTimeline";
+import TaskEditModal from "./TaskEditModal";
+import GanttTooltip from "./GanttTooltip";
 
 interface Props {
   tasks: Task[];
@@ -33,20 +41,27 @@ function isVisible(task: Task, tasks: Task[], collapsedIds: Set<string>): boolea
 }
 
 export default function GanttChart({ tasks, onTasksChange, holidays = new Map() }: Props) {
-  const timelineRef   = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
   const leftScrollRef = useRef<HTMLDivElement>(null);
 
-  const [collapsedIds,   setCollapsedIds]   = useState<Set<string>>(new Set());
-  const [editingId,      setEditingId]      = useState<string | null>(null);
-  const [editingNameId,  setEditingNameId]  = useState<string | null>(null);
-  const [addState,       setAddState]       = useState<AddState | null>(null);
-  const [tooltip, setTooltip] = useState<{ task: Task; progress: number; x: number; y: number } | null>(null);
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [addState, setAddState] = useState<AddState | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    task: Task;
+    progress: number;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   // カスタムフック
-  const { didDragRef, dragPreview, startDrag } = useDragHandler(tasks, onTasksChange, () => setTooltip(null));
+  const { didDragRef, dragPreview, startDrag } = useDragHandler(tasks, onTasksChange, () =>
+    setTooltip(null),
+  );
   const {
     filterParentId,
     filterAssignee,
@@ -56,15 +71,18 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
     setFilterAssignee,
   } = useGanttFilter(tasks);
 
-  const scheduledVisibleTasks = filteredTasks.filter((t) => !t.isFloating && isVisible(t, filteredTasks, collapsedIds));
-  const floatingTasks         = filteredTasks.filter((t) => t.isFloating);
+  const scheduledVisibleTasks = filteredTasks.filter(
+    (t) => !t.isFloating && isVisible(t, filteredTasks, collapsedIds),
+  );
+  const floatingTasks = filteredTasks.filter((t) => t.isFloating);
 
   // ── 操作 ──
 
   function toggleCollapse(id: string) {
     setCollapsedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -72,20 +90,20 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   function commitRename(taskId: string, newName: string) {
     const trimmed = newName.trim();
     if (trimmed) {
-      onTasksChange(tasks.map((t) => t.id === taskId ? { ...t, name: trimmed } : t));
+      onTasksChange(tasks.map((t) => (t.id === taskId ? { ...t, name: trimmed } : t)));
     }
     setEditingNameId(null);
   }
 
   function openAdd(parentId?: string) {
-    const parent       = parentId ? tasks.find((t) => t.id === parentId) : undefined;
+    const parent = parentId ? tasks.find((t) => t.id === parentId) : undefined;
     const defaultColor = parent?.color ?? "#4A90D9";
     setAddState({
       parentId,
       name: "",
       startDate: toInputDate(today),
-      endDate:   toInputDate(addDays(today, 6)),
-      color:     defaultColor,
+      endDate: toInputDate(addDays(today, 6)),
+      color: defaultColor,
     });
   }
 
@@ -93,37 +111,42 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
     if (!addState || !addState.name.trim()) return;
 
     let newStart = today;
-    let newEnd   = today;
+    let newEnd = today;
     if (!addState.isFloating) {
       newStart = new Date(addState.startDate);
-      newEnd   = new Date(addState.endDate);
+      newEnd = new Date(addState.endDate);
       if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
     }
 
-    const copySource = addState.copySourceId ? tasks.find((t) => t.id === addState.copySourceId) : undefined;
+    const copySource = addState.copySourceId
+      ? tasks.find((t) => t.id === addState.copySourceId)
+      : undefined;
     const copiedFields = copySource
       ? copyTaskFields(copySource, { startDate: newStart, endDate: newEnd })
       : undefined;
 
     const newTask: Task = {
-      id:         genId(),
-      name:       addState.name.trim(),
-      startDate:  newStart,
-      endDate:    newEnd,
-      progress:   0,
-      color:      addState.color,
-      parentId:   addState.parentId,
+      id: genId(),
+      name: addState.name.trim(),
+      startDate: newStart,
+      endDate: newEnd,
+      progress: 0,
+      color: addState.color,
+      parentId: addState.parentId,
       isFloating: addState.isFloating || undefined,
-      ...(copiedFields ? {
-        assignee:      copiedFields.assignee,
-        subMembers:    copiedFields.subMembers,
-        memo:          copiedFields.memo,
-        progressCount: copiedFields.progressCount,
-      } : {}),
+      ...(copiedFields
+        ? {
+            assignee: copiedFields.assignee,
+            subMembers: copiedFields.subMembers,
+            memo: copiedFields.memo,
+            progressCount: copiedFields.progressCount,
+          }
+        : {}),
     };
 
-    const appended   = [...tasks, newTask];
-    const propagated = newTask.parentId && !newTask.isFloating ? propagateDates(newTask.id, appended) : appended;
+    const appended = [...tasks, newTask];
+    const propagated =
+      newTask.parentId && !newTask.isFloating ? propagateDates(newTask.id, appended) : appended;
     onTasksChange(propagated);
     setAddState(null);
   }
@@ -144,20 +167,20 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
 
   function reorderTasks(draggedId: string, targetId: string, insertAfter = false) {
     const dragged = tasks.find((t) => t.id === draggedId);
-    const target  = tasks.find((t) => t.id === targetId);
+    const target = tasks.find((t) => t.id === targetId);
     if (!dragged || !target || dragged.parentId !== target.parentId) return;
 
     const siblings = tasks
       .filter((t) => t.parentId === dragged.parentId)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-    const without   = siblings.filter((t) => t.id !== draggedId);
+    const without = siblings.filter((t) => t.id !== draggedId);
     const targetIdx = without.findIndex((t) => t.id === targetId);
     without.splice(insertAfter ? targetIdx + 1 : targetIdx, 0, dragged);
 
     const updatedOrders = new Map(without.map((t, i) => [t.id, i]));
     const updated = tasks.map((t) =>
-      updatedOrders.has(t.id) ? { ...t, order: updatedOrders.get(t.id)! } : t
+      updatedOrders.has(t.id) ? { ...t, order: updatedOrders.get(t.id)! } : t,
     );
     onTasksChange(sortByTree(updated));
   }
@@ -173,7 +196,6 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
 
   return (
     <div className="gantt-wrapper">
-
       {/* 左パネル */}
       <GanttLeftPanel
         tasks={tasks}
@@ -216,100 +238,151 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
       {tooltip && <GanttTooltip {...tooltip} />}
 
       {/* 編集モーダル */}
-      {editingId !== null && (() => {
-        const task = tasks.find((t) => t.id === editingId)!;
-        return (
-          <TaskEditModal
-            task={task}
-            tasks={tasks}
-            onSave={(updated)    => { onTasksChange(updated); setEditingId(null); }}
-            onDelete={(updated)  => { onTasksChange(updated); setEditingId(null); }}
-            onArchive={(updated) => { onTasksChange(updated); setEditingId(null); }}
-            onClose={() => setEditingId(null)}
-          />
-        );
-      })()}
+      {editingId !== null &&
+        (() => {
+          const task = tasks.find((t) => t.id === editingId)!;
+          return (
+            <TaskEditModal
+              task={task}
+              tasks={tasks}
+              onSave={(updated) => {
+                onTasksChange(updated);
+                setEditingId(null);
+              }}
+              onDelete={(updated) => {
+                onTasksChange(updated);
+                setEditingId(null);
+              }}
+              onArchive={(updated) => {
+                onTasksChange(updated);
+                setEditingId(null);
+              }}
+              onClose={() => setEditingId(null)}
+            />
+          );
+        })()}
 
       {/* 追加モーダル */}
-      {addState !== null && (() => {
-        const parent = addState.parentId ? tasks.find((t) => t.id === addState.parentId) : undefined;
-        return (
-          <div className="gantt-modal-overlay" onClick={() => setAddState(null)}>
-            <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
-              <h3>{parent ? "サブタスクを追加" : "タスクを追加"}</h3>
-              {parent && <p className="modal-parent-info">親タスク: {parent.name}</p>}
+      {addState !== null &&
+        (() => {
+          const parent = addState.parentId
+            ? tasks.find((t) => t.id === addState.parentId)
+            : undefined;
+          return (
+            <div className="gantt-modal-overlay" onClick={() => setAddState(null)}>
+              <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
+                <h3>{parent ? "サブタスクを追加" : "タスクを追加"}</h3>
+                {parent && <p className="modal-parent-info">親タスク: {parent.name}</p>}
 
-              <label className="modal-label">コピー元タスク</label>
-              <select
-                className="assignee-input"
-                value={addState.copySourceId ?? ""}
-                onChange={(e) => {
-                  const copySourceId = e.target.value || undefined;
-                  const src = copySourceId ? tasks.find((t) => t.id === copySourceId) : undefined;
-                  setAddState({
-                    ...addState,
-                    copySourceId,
-                    name: src ? `${src.name} のコピー` : "",
-                    color: src?.color ?? (addState.parentId ? tasks.find((t) => t.id === addState.parentId)?.color ?? "#4A90D9" : "#4A90D9"),
-                  });
-                }}
-              >
-                <option value="">なし（新規作成）</option>
-                {tasks.map((t) => {
-                  const ancestors = getAncestorNames(t.id, tasks);
-                  const label = ancestors.length > 0 ? `${ancestors.join(" > ")} > ${t.name}` : t.name;
-                  return <option key={t.id} value={t.id}>{label}</option>;
-                })}
-              </select>
+                <label className="modal-label">コピー元タスク</label>
+                <select
+                  className="assignee-input"
+                  value={addState.copySourceId ?? ""}
+                  onChange={(e) => {
+                    const copySourceId = e.target.value || undefined;
+                    const src = copySourceId ? tasks.find((t) => t.id === copySourceId) : undefined;
+                    setAddState({
+                      ...addState,
+                      copySourceId,
+                      name: src ? `${src.name} のコピー` : "",
+                      color:
+                        src?.color ??
+                        (addState.parentId
+                          ? (tasks.find((t) => t.id === addState.parentId)?.color ?? "#4A90D9")
+                          : "#4A90D9"),
+                    });
+                  }}
+                >
+                  <option value="">なし（新規作成）</option>
+                  {tasks.map((t) => {
+                    const ancestors = getAncestorNames(t.id, tasks);
+                    const label =
+                      ancestors.length > 0 ? `${ancestors.join(" > ")} > ${t.name}` : t.name;
+                    return (
+                      <option key={t.id} value={t.id}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
 
-              <label className="modal-label">タスク名 <span className="modal-required">*</span></label>
-              <input
-                type="text"
-                value={addState.name}
-                onChange={(e) => setAddState({ ...addState, name: e.target.value })}
-                placeholder="タスク名を入力"
-                className="assignee-input"
-                autoFocus
-                onKeyDown={(e) => { if (e.key === "Enter") confirmAdd(); }}
-              />
-
-              <label className="modal-floating-label">
+                <label className="modal-label">
+                  タスク名 <span className="modal-required">*</span>
+                </label>
                 <input
-                  type="checkbox"
-                  checked={addState.isFloating ?? false}
-                  onChange={(e) => setAddState({ ...addState, isFloating: e.target.checked })}
-                  className="modal-floating-checkbox"
+                  type="text"
+                  value={addState.name}
+                  onChange={(e) => setAddState({ ...addState, name: e.target.value })}
+                  placeholder="タスク名を入力"
+                  className="assignee-input"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") confirmAdd();
+                  }}
                 />
-                単発タスク（開始時期未定）
-              </label>
 
-              {!addState.isFloating && (
-                <div className="modal-date-row">
-                  <div className="modal-date-field">
-                    <label className="modal-label">開始日</label>
-                    <input type="date" value={addState.startDate} max={addState.endDate} onChange={(e) => setAddState({ ...addState, startDate: e.target.value })} className="date-input" />
+                <label className="modal-floating-label">
+                  <input
+                    type="checkbox"
+                    checked={addState.isFloating ?? false}
+                    onChange={(e) => setAddState({ ...addState, isFloating: e.target.checked })}
+                    className="modal-floating-checkbox"
+                  />
+                  単発タスク（開始時期未定）
+                </label>
+
+                {!addState.isFloating && (
+                  <div className="modal-date-row">
+                    <div className="modal-date-field">
+                      <label className="modal-label">開始日</label>
+                      <input
+                        type="date"
+                        value={addState.startDate}
+                        max={addState.endDate}
+                        onChange={(e) => setAddState({ ...addState, startDate: e.target.value })}
+                        className="date-input"
+                      />
+                    </div>
+                    <div className="modal-date-field">
+                      <label className="modal-label">終了日</label>
+                      <input
+                        type="date"
+                        value={addState.endDate}
+                        min={addState.startDate}
+                        onChange={(e) => setAddState({ ...addState, endDate: e.target.value })}
+                        className="date-input"
+                      />
+                    </div>
                   </div>
-                  <div className="modal-date-field">
-                    <label className="modal-label">終了日</label>
-                    <input type="date" value={addState.endDate} min={addState.startDate} onChange={(e) => setAddState({ ...addState, endDate: e.target.value })} className="date-input" />
-                  </div>
+                )}
+
+                <div className="modal-color-row">
+                  <label className="modal-label">カラー</label>
+                  <input
+                    type="color"
+                    value={addState.color}
+                    onChange={(e) => setAddState({ ...addState, color: e.target.value })}
+                    className="color-input"
+                  />
+                  <span className="modal-color-preview" style={{ background: addState.color }} />
                 </div>
-              )}
 
-              <div className="modal-color-row">
-                <label className="modal-label">カラー</label>
-                <input type="color" value={addState.color} onChange={(e) => setAddState({ ...addState, color: e.target.value })} className="color-input" />
-                <span className="modal-color-preview" style={{ background: addState.color }} />
-              </div>
-
-              <div className="gantt-modal-actions">
-                <button className="btn-cancel" onClick={() => setAddState(null)}>キャンセル</button>
-                <button className="btn-save" onClick={confirmAdd} disabled={!addState.name.trim()}>追加</button>
+                <div className="gantt-modal-actions">
+                  <button className="btn-cancel" onClick={() => setAddState(null)}>
+                    キャンセル
+                  </button>
+                  <button
+                    className="btn-save"
+                    onClick={confirmAdd}
+                    disabled={!addState.name.trim()}
+                  >
+                    追加
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </div>
   );
 }

@@ -1,6 +1,12 @@
 import { useMemo } from "react";
 import { Task } from "../types/task";
-import { isLeaf, computeProgress, getAncestorNames, getSignalStatus, formatDateYMD } from "../utils/taskUtils";
+import {
+  isLeaf,
+  computeProgress,
+  getAncestorNames,
+  getSignalStatus,
+  formatDateYMD,
+} from "../utils/taskUtils";
 
 interface Props {
   tasks: Task[];
@@ -15,22 +21,19 @@ export default function AnalysisView({ tasks }: Props) {
 
   const leafTasks = useMemo(
     () => tasks.filter((t) => !t.isFloating && isLeaf(t.id, tasks)),
-    [tasks]
+    [tasks],
   );
 
   // 遅延タスク: 終了予定日を過ぎているのに未完了
   const delayedTasks = useMemo(
-    () =>
-      leafTasks.filter(
-        (t) => t.endDate < today && computeProgress(t.id, tasks) < 100
-      ),
-    [leafTasks, tasks, today]
+    () => leafTasks.filter((t) => t.endDate < today && computeProgress(t.id, tasks) < 100),
+    [leafTasks, tasks, today],
   );
 
   // 進捗遅れタスク: 期限内だが計画進捗より10%以上遅れている
   const behindTasks = useMemo(
     () => leafTasks.filter((t) => getSignalStatus(t.id, tasks) === "yellow"),
-    [leafTasks, tasks]
+    [leafTasks, tasks],
   );
 
   function expectedProgress(t: Task): number {
@@ -39,26 +42,21 @@ export default function AnalysisView({ tasks }: Props) {
     const todayTime = today.getTime();
     const totalDuration = endTime - startTime;
     if (totalDuration <= 0) return 100;
-    return Math.min(Math.round((todayTime - startTime) / totalDuration * 100), 100);
+    return Math.min(Math.round(((todayTime - startTime) / totalDuration) * 100), 100);
   }
 
   // 未割当タスク: 担当者が設定されていない未完了の葉タスク
   const unassignedTasks = useMemo(
     () => leafTasks.filter((t) => !t.assignee && computeProgress(t.id, tasks) < 100),
-    [leafTasks, tasks]
+    [leafTasks, tasks],
   );
 
   // 次のタスクがないメンバー
   const idleMembers = useMemo(() => {
-    const assignees = [
-      ...new Set(leafTasks.map((t) => t.assignee).filter(Boolean) as string[]),
-    ];
+    const assignees = [...new Set(leafTasks.map((t) => t.assignee).filter(Boolean) as string[])];
     return assignees.filter((assignee) => {
       const activeTasks = leafTasks.filter(
-        (t) =>
-          t.assignee === assignee &&
-          computeProgress(t.id, tasks) < 100 &&
-          t.endDate >= today
+        (t) => t.assignee === assignee && computeProgress(t.id, tasks) < 100 && t.endDate >= today,
       );
       return activeTasks.length === 0;
     });
@@ -167,7 +165,9 @@ export default function AnalysisView({ tasks }: Props) {
                             className="analysis-progress-fill analysis-progress-fill--behind"
                             style={{ width: `${actual}%` }}
                           />
-                          <span>{actual}% <span className="analysis-gap">(-{gap}%)</span></span>
+                          <span>
+                            {actual}% <span className="analysis-gap">(-{gap}%)</span>
+                          </span>
                         </div>
                       </td>
                       <td className="analysis-path">

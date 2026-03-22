@@ -16,7 +16,8 @@ function lightenHex(hex: string, factor: number): string {
   const h = hex.replace("#", "").padEnd(6, "0");
   const blend = (ch: string) =>
     Math.round(parseInt(ch, 16) + (255 - parseInt(ch, 16)) * factor)
-      .toString(16).padStart(2, "0");
+      .toString(16)
+      .padStart(2, "0");
   return ("FF" + blend(h.slice(0, 2)) + blend(h.slice(2, 4)) + blend(h.slice(4, 6))).toUpperCase();
 }
 
@@ -41,7 +42,7 @@ export async function exportToExcel(tasks: Task[], filename?: string): Promise<s
   // ── 日付範囲 ──────────────────────────────────────────
   const times = sorted.flatMap((t) => [t.startDate.getTime(), t.endDate.getTime()]);
   const rangeStart = new Date(Math.min(...times));
-  const rangeEnd   = new Date(Math.max(...times));
+  const rangeEnd = new Date(Math.max(...times));
   rangeStart.setHours(0, 0, 0, 0);
   rangeEnd.setHours(0, 0, 0, 0);
 
@@ -69,13 +70,13 @@ export async function exportToExcel(tasks: Task[], filename?: string): Promise<s
   ws.views = [{ state: "frozen", xSplit: INFO, ySplit: 2 }];
 
   // ── 色定数 ────────────────────────────────────────────
-  const HDR1_BG  = "FF1E3A5F";
-  const HDR2_BG  = "FF2C4F7A";
-  const HDR_FG   = "FFFFFFFF";
-  const WE_HDR   = "FF3D566E";  // 週末ヘッダー
-  const WE_CELL  = "FFF0F0F0";  // 週末セル
-  const TODAY_H  = "FF3B82F6";  // 今日ヘッダー
-  const TODAY_C  = "FFFFF3CD";  // 今日セル
+  const HDR1_BG = "FF1E3A5F";
+  const HDR2_BG = "FF2C4F7A";
+  const HDR_FG = "FFFFFFFF";
+  const WE_HDR = "FF3D566E"; // 週末ヘッダー
+  const WE_CELL = "FFF0F0F0"; // 週末セル
+  const TODAY_H = "FF3B82F6"; // 今日ヘッダー
+  const TODAY_C = "FFFFF3CD"; // 今日セル
 
   // ── ヘッダー行1: 情報列ラベル + 月ラベル ─────────────
   const row1 = ws.getRow(1);
@@ -85,26 +86,28 @@ export async function exportToExcel(tasks: Task[], filename?: string): Promise<s
   infoLabels.forEach((label, i) => {
     const c = row1.getCell(i + 1);
     c.value = label;
-    c.font      = { bold: true, size: 10, color: { argb: HDR_FG } };
-    c.fill      = solidFill(HDR1_BG);
+    c.font = { bold: true, size: 10, color: { argb: HDR_FG } };
+    c.fill = solidFill(HDR1_BG);
     c.alignment = { horizontal: "center", vertical: "middle" };
-    c.border    = { bottom: THIN_BORDER, right: THIN_BORDER };
+    c.border = { bottom: THIN_BORDER, right: THIN_BORDER };
   });
 
   // 月ラベル (同月は結合)
   let mi = 0;
   while (mi < days.length) {
-    const mo = days[mi].getMonth(), yr = days[mi].getFullYear();
+    const mo = days[mi].getMonth(),
+      yr = days[mi].getFullYear();
     let mj = mi;
     while (mj < days.length && days[mj].getMonth() === mo && days[mj].getFullYear() === yr) mj++;
-    const sc = INFO + 1 + mi, ec = INFO + mj;
+    const sc = INFO + 1 + mi,
+      ec = INFO + mj;
     if (ec > sc) ws.mergeCells(1, sc, 1, ec);
     const mc = row1.getCell(sc);
     mc.value = `${yr}年${mo + 1}月`;
-    mc.font      = { bold: true, size: 9, color: { argb: HDR_FG } };
-    mc.fill      = solidFill(HDR1_BG);
+    mc.font = { bold: true, size: 9, color: { argb: HDR_FG } };
+    mc.fill = solidFill(HDR1_BG);
     mc.alignment = { horizontal: "center", vertical: "middle" };
-    mc.border    = { bottom: THIN_BORDER, right: THIN_BORDER };
+    mc.border = { bottom: THIN_BORDER, right: THIN_BORDER };
     mi = mj;
   }
 
@@ -114,112 +117,124 @@ export async function exportToExcel(tasks: Task[], filename?: string): Promise<s
 
   for (let i = 1; i <= INFO; i++) {
     const c = row2.getCell(i);
-    c.fill   = solidFill(HDR1_BG);
+    c.fill = solidFill(HDR1_BG);
     c.border = { bottom: THIN_BORDER };
   }
 
   days.forEach((d, i) => {
     const c = row2.getCell(INFO + 1 + i);
     const isToday = d.getTime() === today.getTime();
-    const isSat   = d.getDay() === 6;
-    const isSun   = d.getDay() === 0;
+    const isSat = d.getDay() === 6;
+    const isSun = d.getDay() === 0;
     c.value = d.getDate();
-    c.font  = {
-      size: 7, bold: isToday,
+    c.font = {
+      size: 7,
+      bold: isToday,
       color: { argb: isToday ? "FFFF4444" : isSun ? "FFFF9999" : isSat ? "FF99BBDD" : HDR_FG },
     };
-    c.fill      = solidFill(isToday ? TODAY_H : (isSat || isSun) ? WE_HDR : HDR2_BG);
+    c.fill = solidFill(isToday ? TODAY_H : isSat || isSun ? WE_HDR : HDR2_BG);
     c.alignment = { horizontal: "center", vertical: "middle" };
-    c.border    = { bottom: THIN_BORDER };
+    c.border = { bottom: THIN_BORDER };
   });
 
   // ── タスク行 ──────────────────────────────────────────
   sorted.forEach((task, ri) => {
-    const depth    = getDepth(task.id, tasks);
+    const depth = getDepth(task.id, tasks);
     const isParent = tasks.some((t) => t.parentId === task.id);
     const progress = computeProgress(task.id, tasks);
-    const signal   = getSignalStatus(task.id, tasks);
+    const signal = getSignalStatus(task.id, tasks);
     const colorHex = (task.color ?? "#4A90D9").replace("#", "");
     const colorArgb = ("FF" + colorHex).toUpperCase();
 
     const statusLabel =
-      progress === 100       ? "完了" :
-      signal === "red"       ? "遅延" :
-      signal === "yellow"    ? "進捗遅れ" : "正常";
+      progress === 100
+        ? "完了"
+        : signal === "red"
+          ? "遅延"
+          : signal === "yellow"
+            ? "進捗遅れ"
+            : "正常";
 
-    const rowBg =
-      depth === 0 ? "FFEBF2FA" :
-      depth === 1 ? "FFF5F8FB" : "FFFFFFFF";
+    const rowBg = depth === 0 ? "FFEBF2FA" : depth === 1 ? "FFF5F8FB" : "FFFFFFFF";
 
     const exRow = ws.getRow(3 + ri);
     exRow.height = isParent ? 20 : 18;
 
     // タスク名
     const nc = exRow.getCell(1);
-    nc.value     = task.name;
-    nc.font      = { bold: isParent, size: isParent ? 10 : 9, color: { argb: "FF1A2B3C" } };
-    nc.fill      = solidFill(rowBg);
+    nc.value = task.name;
+    nc.font = { bold: isParent, size: isParent ? 10 : 9, color: { argb: "FF1A2B3C" } };
+    nc.fill = solidFill(rowBg);
     nc.alignment = { vertical: "middle", indent: depth * 2, wrapText: false };
-    nc.border    = { left: { style: "medium", color: { argb: colorArgb } }, bottom: THIN_BORDER };
+    nc.border = { left: { style: "medium", color: { argb: colorArgb } }, bottom: THIN_BORDER };
 
     // 担当者
     const ac = exRow.getCell(2);
-    const subMembersStr = task.subMembers && task.subMembers.length > 0
-      ? task.subMembers.join(", ")
-      : "";
-    ac.value     = task.assignee
-      ? (subMembersStr ? `${task.assignee} / ${subMembersStr}` : task.assignee)
+    const subMembersStr =
+      task.subMembers && task.subMembers.length > 0 ? task.subMembers.join(", ") : "";
+    ac.value = task.assignee
+      ? subMembersStr
+        ? `${task.assignee} / ${subMembersStr}`
+        : task.assignee
       : subMembersStr;
-    ac.font      = { size: 9 };
-    ac.fill      = solidFill(rowBg);
+    ac.font = { size: 9 };
+    ac.fill = solidFill(rowBg);
     ac.alignment = { horizontal: "center", vertical: "middle" };
-    ac.border    = { bottom: THIN_BORDER };
+    ac.border = { bottom: THIN_BORDER };
 
     // 開始日 / 終了日
-    [[3, toInputDate(task.startDate)], [4, toInputDate(task.endDate)]].forEach(([col, val]) => {
+    [
+      [3, toInputDate(task.startDate)],
+      [4, toInputDate(task.endDate)],
+    ].forEach(([col, val]) => {
       const c = exRow.getCell(col as number);
-      c.value     = val as string;
-      c.font      = { size: 9 };
-      c.fill      = solidFill(rowBg);
+      c.value = val as string;
+      c.font = { size: 9 };
+      c.fill = solidFill(rowBg);
       c.alignment = { horizontal: "center", vertical: "middle" };
-      c.border    = { bottom: THIN_BORDER };
+      c.border = { bottom: THIN_BORDER };
     });
 
     // 進捗率 (タスク色の薄いトーンで背景)
     const pc = exRow.getCell(5);
-    pc.value     = `${progress}%`;
-    pc.font      = { bold: true, size: 9, color: { argb: colorArgb } };
-    pc.fill      = solidFill(lightenHex("#" + colorHex, 0.82));
+    pc.value = `${progress}%`;
+    pc.font = { bold: true, size: 9, color: { argb: colorArgb } };
+    pc.fill = solidFill(lightenHex("#" + colorHex, 0.82));
     pc.alignment = { horizontal: "center", vertical: "middle" };
-    pc.border    = { bottom: THIN_BORDER };
+    pc.border = { bottom: THIN_BORDER };
 
     // ステータス
     const sc2 = exRow.getCell(6);
     sc2.value = statusLabel;
     const [stFg, stBg] =
-      progress === 100    ? ["FF2E7D32", "FFE8F5E9"] :
-      signal === "red"    ? ["FFC62828", "FFFFEBEE"] :
-      signal === "yellow" ? ["FFE65100", "FFFFF3E0"] :
-                            ["FF1565C0", "FFE3F2FD"];
-    sc2.font      = { size: 9, color: { argb: stFg } };
-    sc2.fill      = solidFill(stBg);
+      progress === 100
+        ? ["FF2E7D32", "FFE8F5E9"]
+        : signal === "red"
+          ? ["FFC62828", "FFFFEBEE"]
+          : signal === "yellow"
+            ? ["FFE65100", "FFFFF3E0"]
+            : ["FF1565C0", "FFE3F2FD"];
+    sc2.font = { size: 9, color: { argb: stFg } };
+    sc2.fill = solidFill(stBg);
     sc2.alignment = { horizontal: "center", vertical: "middle" };
-    sc2.border    = { bottom: THIN_BORDER, right: { style: "medium", color: { argb: "FFB0BEC5" } } };
+    sc2.border = { bottom: THIN_BORDER, right: { style: "medium", color: { argb: "FFB0BEC5" } } };
 
     // ── ガントバー ─────────────────────────────────────
-    const _tS = new Date(task.startDate); _tS.setHours(0, 0, 0, 0);
-    const _tE = new Date(task.endDate);   _tE.setHours(0, 0, 0, 0);
-    const tStart  = _tS.getTime();
-    const tEnd    = _tE.getTime();
-    const doneMs  = (tEnd - tStart) * (progress / 100);
-    const barDone = colorArgb;                           // 完了部分 = タスク色
-    const barTodo = lightenHex("#" + colorHex, 0.55);   // 未完了 = 薄い色
+    const _tS = new Date(task.startDate);
+    _tS.setHours(0, 0, 0, 0);
+    const _tE = new Date(task.endDate);
+    _tE.setHours(0, 0, 0, 0);
+    const tStart = _tS.getTime();
+    const tEnd = _tE.getTime();
+    const doneMs = (tEnd - tStart) * (progress / 100);
+    const barDone = colorArgb; // 完了部分 = タスク色
+    const barTodo = lightenHex("#" + colorHex, 0.55); // 未完了 = 薄い色
 
     days.forEach((d, i) => {
-      const dayMs    = d.getTime();
-      const c        = exRow.getCell(INFO + 1 + i);
-      const isToday  = dayMs === today.getTime();
-      const isWE     = d.getDay() === 0 || d.getDay() === 6;
+      const dayMs = d.getTime();
+      const c = exRow.getCell(INFO + 1 + i);
+      const isToday = dayMs === today.getTime();
+      const isWE = d.getDay() === 0 || d.getDay() === 6;
 
       if (dayMs >= tStart && dayMs <= tEnd) {
         const elapsed = dayMs - tStart;
@@ -230,17 +245,19 @@ export async function exportToExcel(tasks: Task[], filename?: string): Promise<s
 
       c.border = {
         bottom: THIN_BORDER,
-        ...(isToday ? {
-          left:  { style: "thin", color: { argb: TODAY_H } },
-          right: { style: "thin", color: { argb: TODAY_H } },
-        } : {}),
+        ...(isToday
+          ? {
+              left: { style: "thin", color: { argb: TODAY_H } },
+              right: { style: "thin", color: { argb: TODAY_H } },
+            }
+          : {}),
       };
     });
   });
 
   // ── ファイル生成 & 保存 ───────────────────────────────
   const buffer = await wb.xlsx.writeBuffer();
-  const bytes  = Array.from(new Uint8Array(buffer as ArrayBuffer));
+  const bytes = Array.from(new Uint8Array(buffer as ArrayBuffer));
 
   return invoke<string | null>("save_excel_file", { filename: outputFilename, data: bytes });
 }

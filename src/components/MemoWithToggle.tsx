@@ -5,9 +5,9 @@
 import MemoView from "./MemoView";
 
 interface Props {
-  memo:      string;
-  expanded:  boolean;
-  onToggle:  (e: React.MouseEvent) => void;
+  memo: string;
+  expanded: boolean;
+  onToggle: (e: React.MouseEvent) => void;
   className?: string;
 }
 

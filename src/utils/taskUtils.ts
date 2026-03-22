@@ -45,9 +45,17 @@ export function propagateDates(changedId: string, tasks: Task[]): Task[] {
   // isFloating タスクの日付は伝播しない
   const scheduledSiblings = tasks.filter((t) => t.parentId === task.parentId && !t.isFloating);
   if (scheduledSiblings.length === 0) return tasks;
-  const newStart = scheduledSiblings.reduce((m, t) => (t.startDate < m ? t.startDate : m), scheduledSiblings[0].startDate);
-  const newEnd   = scheduledSiblings.reduce((m, t) => (t.endDate   > m ? t.endDate   : m), scheduledSiblings[0].endDate);
-  const updated  = tasks.map((t) => t.id === task.parentId ? { ...t, startDate: newStart, endDate: newEnd } : t);
+  const newStart = scheduledSiblings.reduce(
+    (m, t) => (t.startDate < m ? t.startDate : m),
+    scheduledSiblings[0].startDate,
+  );
+  const newEnd = scheduledSiblings.reduce(
+    (m, t) => (t.endDate > m ? t.endDate : m),
+    scheduledSiblings[0].endDate,
+  );
+  const updated = tasks.map((t) =>
+    t.id === task.parentId ? { ...t, startDate: newStart, endDate: newEnd } : t,
+  );
   return propagateDates(task.parentId, updated);
 }
 
@@ -73,7 +81,7 @@ export function sortByTree(tasks: Task[]): Task[] {
 
   function dfs(parentId: string | undefined) {
     const siblings = [...(childrenMap.get(parentId) ?? [])].sort(
-      (a, b) => (a.order ?? 0) - (b.order ?? 0)
+      (a, b) => (a.order ?? 0) - (b.order ?? 0),
     );
     for (const task of siblings) {
       result.push(task);
@@ -95,8 +103,8 @@ export function getAncestorNames(taskId: string, tasks: Task[]): string[] {
 }
 
 export function toInputDate(d: Date): string {
-  const y   = d.getFullYear();
-  const m   = String(d.getMonth() + 1).padStart(2, "0");
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
@@ -106,10 +114,7 @@ export function genId(): string {
 }
 
 /** タスクのコピー用データを生成する（日付・進捗はリセット） */
-export function copyTaskFields(
-  source: Task,
-  overrides: Partial<Task> = {}
-): Omit<Task, "id"> {
+export function copyTaskFields(source: Task, overrides: Partial<Task> = {}): Omit<Task, "id"> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return {
@@ -148,9 +153,8 @@ export function getSignalStatus(taskId: string, tasks: Task[]): SignalStatus {
   const todayTime = today.getTime();
   if (todayTime >= startTime) {
     const totalDuration = endTime - startTime;
-    const expectedProgress = totalDuration > 0
-      ? Math.min((todayTime - startTime) / totalDuration * 100, 100)
-      : 100;
+    const expectedProgress =
+      totalDuration > 0 ? Math.min(((todayTime - startTime) / totalDuration) * 100, 100) : 100;
     if (effectiveProgress < expectedProgress - BEHIND_THRESHOLD) return "yellow";
   }
 

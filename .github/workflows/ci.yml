@@ -22,6 +22,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check formatting (Prettier)
+        run: npx prettier --check "src/**/*.{ts,tsx,json,css}"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting (Rust)
+        run: cargo fmt --check
+        working-directory: src-tauri
+
       - name: Run tests with coverage
         run: npm run test:coverage
 
