@@ -5,14 +5,29 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import TurndownService from "turndown";
 
 interface Props {
   value: string;
   onChange: (v: string) => void;
 }
 
+const turndownService = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
+
 export default function MemoField({ value, onChange }: Props) {
   const [preview, setPreview] = useState(false);
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const html = e.clipboardData.getData("text/html");
+    if (!html) return;
+    e.preventDefault();
+    const markdown = turndownService.turndown(html);
+    const textarea = e.currentTarget;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newValue = value.slice(0, start) + markdown + value.slice(end);
+    onChange(newValue);
+  };
 
   return (
     <div className="memo-field">
@@ -48,6 +63,7 @@ export default function MemoField({ value, onChange }: Props) {
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onPaste={handlePaste}
           placeholder={"Markdown 形式で入力できます\n例: **太字** `コード` - リスト"}
           className="memo-input"
           rows={5}
