@@ -15,6 +15,17 @@ import {
 import MemoWithToggle from "./MemoWithToggle";
 import TaskEditModal from "./TaskEditModal";
 
+const PRESET_COLORS = [
+  "#4A90D9",
+  "#7B68EE",
+  "#50C878",
+  "#FF7F50",
+  "#F5A623",
+  "#E74C3C",
+  "#1ABC9C",
+  "#95A5A6",
+];
+
 interface Props {
   tasks: Task[];
   onTasksChange: (tasks: Task[]) => void;
@@ -504,13 +515,23 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
             <div className="modal-color-row">
               <label className="modal-label">カラー</label>
+              <div className="color-swatches">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    className={`color-swatch${addState.color === c ? " color-swatch--active" : ""}`}
+                    style={{ background: c }}
+                    onClick={() => setAddState({ ...addState, color: c })}
+                    title={c}
+                  />
+                ))}
+              </div>
               <input
                 type="color"
                 value={addState.color}
                 onChange={(e) => setAddState({ ...addState, color: e.target.value })}
                 className="color-input"
               />
-              <span className="modal-color-preview" style={{ background: addState.color }} />
             </div>
 
             <div className="gantt-modal-actions">

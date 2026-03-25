@@ -705,6 +705,34 @@
   display: inline-block;
 }
 
+.color-swatches {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  transition:
+    transform 0.1s,
+    border-color 0.1s;
+}
+
+.color-swatch:hover {
+  transform: scale(1.2);
+}
+
+.color-swatch--active {
+  border-color: #333;
+  transform: scale(1.2);
+}
+
 .gantt-bar-progress {
   position: absolute;
   left: 0;
