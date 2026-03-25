@@ -76,6 +76,7 @@ interface AddState {
   color: string;
   parentId?: string;
   copySourceId?: string;
+  isFloating?: boolean;
 }
 
 // ── コンポーネント ────────────────────────────────────────
@@ -156,9 +157,19 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
   function confirmAdd() {
     if (!addState || !addState.name.trim()) return;
-    const newStart = new Date(addState.startDate);
-    const newEnd = new Date(addState.endDate);
-    if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
+
+    const today = new Date();
+    let newStart: Date;
+    let newEnd: Date;
+
+    if (addState.isFloating) {
+      newStart = today;
+      newEnd = today;
+    } else {
+      newStart = new Date(addState.startDate);
+      newEnd = new Date(addState.endDate);
+      if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
+    }
 
     const col = COLUMNS.find((c) => c.id === addState.columnId)!;
     const initProg = col.dropProgress(0);
@@ -177,6 +188,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
       endDate: newEnd,
       progress: initProg,
       color: addState.color,
+      ...(addState.isFloating ? { isFloating: true } : {}),
       ...(addState.parentId ? { parentId: addState.parentId } : {}),
       ...(copiedFields
         ? {
@@ -189,6 +201,9 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
     };
     onTasksChange([...tasks, newTask]);
     setAddState(null);
+    if (addState.isFloating) {
+      setFilterParentId("__floating__");
+    }
   }
 
   // ── ドラッグ & ドロップ（列間移動 → 進捗更新）──
@@ -490,28 +505,41 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
               }}
             />
 
-            <div className="modal-date-row">
-              <div className="modal-date-field">
-                <label className="modal-label">開始日</label>
-                <input
-                  type="date"
-                  value={addState.startDate}
-                  max={addState.endDate}
-                  onChange={(e) => setAddState({ ...addState, startDate: e.target.value })}
-                  className="date-input"
-                />
+            {/* 単発タスク（日付未定）チェックボックス */}
+            <label className="modal-floating-label">
+              <input
+                type="checkbox"
+                checked={addState.isFloating ?? false}
+                onChange={(e) => setAddState({ ...addState, isFloating: e.target.checked })}
+                className="modal-floating-checkbox"
+              />
+              単発タスク（開始時期未定）
+            </label>
+
+            {!addState.isFloating && (
+              <div className="modal-date-row">
+                <div className="modal-date-field">
+                  <label className="modal-label">開始日</label>
+                  <input
+                    type="date"
+                    value={addState.startDate}
+                    max={addState.endDate}
+                    onChange={(e) => setAddState({ ...addState, startDate: e.target.value })}
+                    className="date-input"
+                  />
+                </div>
+                <div className="modal-date-field">
+                  <label className="modal-label">終了日</label>
+                  <input
+                    type="date"
+                    value={addState.endDate}
+                    min={addState.startDate}
+                    onChange={(e) => setAddState({ ...addState, endDate: e.target.value })}
+                    className="date-input"
+                  />
+                </div>
               </div>
-              <div className="modal-date-field">
-                <label className="modal-label">終了日</label>
-                <input
-                  type="date"
-                  value={addState.endDate}
-                  min={addState.startDate}
-                  onChange={(e) => setAddState({ ...addState, endDate: e.target.value })}
-                  className="date-input"
-                />
-              </div>
-            </div>
+            )}
 
             <div className="modal-color-row">
               <label className="modal-label">カラー</label>
