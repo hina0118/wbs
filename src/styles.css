@@ -1645,52 +1645,40 @@
 }
 
 /* ══════════════════════════════════════════
-   MemoField – 編集 / プレビュー切替
+   MemoField – 編集 / プレビュー切替 / 分割
 ══════════════════════════════════════════ */
+.memo-split {
+  display: flex;
+  gap: 0;
+  min-height: 160px;
+  flex: 1;
+}
+
+.memo-split-editor {
+  flex: 1;
+  resize: none;
+  border-radius: 6px 0 0 6px;
+  border-right: none;
+  height: 100%;
+  min-height: 160px;
+}
+
+.memo-split-divider {
+  width: 1px;
+  background: #dde3ed;
+  flex-shrink: 0;
+}
+
+.memo-split .memo-preview {
+  flex: 1;
+  border-radius: 0 6px 6px 0;
+  max-height: none;
+  min-height: 160px;
+}
 .memo-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.memo-field-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.memo-tab-group {
-  display: flex;
-  border: 1px solid #dde3ed;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.memo-tab {
-  padding: 3px 10px;
-  font-size: 0.75rem;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: #64748b;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-
-.memo-tab:hover {
-  background: #f0f7ff;
-  color: #4a90d9;
-}
-
-.memo-tab--active {
-  background: #4a90d9;
-  color: #fff;
-}
-
-.memo-tab--active:hover {
-  background: #2c6fad;
-  color: #fff;
 }
 
 .memo-preview {
@@ -2564,4 +2552,112 @@
   color: #999;
   min-width: 32px;
   text-align: right;
+}
+
+/* ── MemoFloatingPanel ─────────────────────────────────── */
+
+.memo-floating-panel {
+  position: fixed !important;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
+  display: flex !important;
+  flex-direction: column;
+  z-index: 200;
+  overflow: hidden;
+  border: 1px solid #dde3ed;
+}
+
+.memo-floating-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f0f4fa;
+  border-bottom: 1px solid #dde3ed;
+  cursor: move;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.memo-floating-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.memo-floating-close {
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #888;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.memo-floating-close:hover {
+  background: #e0e7ef;
+  color: #333;
+}
+
+.memo-floating-body {
+  flex: 1;
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.memo-floating-body .memo-field {
+  flex: 1;
+}
+
+.memo-floating-body .memo-input {
+  flex: 1;
+  resize: none;
+  height: 100%;
+  min-height: 120px;
+}
+
+.memo-floating-body .memo-preview {
+  flex: 1;
+  max-height: none;
+}
+
+.memo-floating-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid #dde3ed;
+  background: #fafbfd;
+  flex-shrink: 0;
+}
+
+/* TaskEditModal 内のメモ編集ボタン */
+.btn-open-memo-panel {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid #4a90d9;
+  color: #4a90d9;
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.btn-open-memo-panel:hover {
+  background: #4a90d9;
+  color: #fff;
 }

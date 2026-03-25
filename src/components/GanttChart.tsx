@@ -15,6 +15,7 @@ import GanttLeftPanel from "./GanttLeftPanel";
 import GanttTimeline from "./GanttTimeline";
 import TaskEditModal from "./TaskEditModal";
 import GanttTooltip from "./GanttTooltip";
+import MemoFloatingPanel from "./MemoFloatingPanel";
 
 const PRESET_COLORS = [
   "#4A90D9",
@@ -57,6 +58,7 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
 
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [memoPanelId, setMemoPanelId] = useState<string | null>(null);
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [addState, setAddState] = useState<AddState | null>(null);
   const [tooltip, setTooltip] = useState<{
@@ -269,6 +271,28 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
                 setEditingId(null);
               }}
               onClose={() => setEditingId(null)}
+              onOpenMemoPanel={() => {
+                setMemoPanelId(editingId);
+                setEditingId(null);
+              }}
+            />
+          );
+        })()}
+
+      {/* メモフローティングパネル */}
+      {memoPanelId !== null &&
+        (() => {
+          const task = tasks.find((t) => t.id === memoPanelId);
+          if (!task) return null;
+          return (
+            <MemoFloatingPanel
+              task={task}
+              tasks={tasks}
+              onSave={(updated) => {
+                onTasksChange(updated);
+                setMemoPanelId(null);
+              }}
+              onClose={() => setMemoPanelId(null)}
             />
           );
         })()}
