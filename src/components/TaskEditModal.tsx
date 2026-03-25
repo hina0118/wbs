@@ -4,7 +4,6 @@
  */
 import { useState } from "react";
 import { Task } from "../types/task";
-import MemoField from "./MemoField";
 import {
   isLeaf,
   computeProgress,
@@ -21,6 +20,7 @@ interface Props {
   onDelete: (updatedTasks: Task[]) => void;
   onArchive: (updatedTasks: Task[]) => void;
   onClose: () => void;
+  onOpenMemoPanel?: () => void;
 }
 
 export default function TaskEditModal({
@@ -30,6 +30,7 @@ export default function TaskEditModal({
   onDelete,
   onArchive,
   onClose,
+  onOpenMemoPanel,
 }: Props) {
   const leaf = isLeaf(task.id, tasks);
 
@@ -40,7 +41,6 @@ export default function TaskEditModal({
   const [newSubMember, setNewSubMember] = useState("");
   const [editStartDate, setEditStartDate] = useState(toInputDate(task.startDate));
   const [editEndDate, setEditEndDate] = useState(toInputDate(task.endDate));
-  const [editMemo, setEditMemo] = useState(task.memo ?? "");
   const [editIsFloating, setEditIsFloating] = useState(task.isFloating ?? false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const initialMode = task.progressCount ? "count" : "percent";
@@ -101,7 +101,7 @@ export default function TaskEditModal({
             subMembers: editSubMembers.length > 0 ? editSubMembers : undefined,
             startDate: newStart,
             endDate: newEnd,
-            memo: editMemo || undefined,
+            memo: task.memo,
             progressCount,
             isFloating: editIsFloating || undefined,
           }
@@ -295,8 +295,17 @@ export default function TaskEditModal({
           </div>
         )}
 
-        {/* メモ（Markdown） */}
-        <MemoField value={editMemo} onChange={setEditMemo} />
+        {/* メモ */}
+        {onOpenMemoPanel && (
+          <button
+            type="button"
+            className="btn-open-memo-panel"
+            onClick={onOpenMemoPanel}
+            title="フローティングパネルでメモを編集"
+          >
+            ✏️ メモを編集（別ウィンドウ）
+          </button>
+        )}
 
         {/* アクション */}
         <div className="gantt-modal-actions">

@@ -14,6 +14,7 @@ import {
 } from "../utils/taskUtils";
 import MemoWithToggle from "./MemoWithToggle";
 import TaskEditModal from "./TaskEditModal";
+import MemoFloatingPanel from "./MemoFloatingPanel";
 
 const PRESET_COLORS = [
   "#4A90D9",
@@ -83,6 +84,7 @@ interface AddState {
 
 export default function KanbanBoard({ tasks, onTasksChange }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [memoPanelId, setMemoPanelId] = useState<string | null>(null);
   const [expandedMemos, setExpandedMemos] = useState<Set<string>>(new Set());
 
   const [addState, setAddState] = useState<AddState | null>(null);
@@ -420,6 +422,28 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
                 setEditingId(null);
               }}
               onClose={() => setEditingId(null)}
+              onOpenMemoPanel={() => {
+                setMemoPanelId(editingId);
+                setEditingId(null);
+              }}
+            />
+          );
+        })()}
+
+      {/* ── メモフローティングパネル ── */}
+      {memoPanelId !== null &&
+        (() => {
+          const task = tasks.find((t) => t.id === memoPanelId);
+          if (!task) return null;
+          return (
+            <MemoFloatingPanel
+              task={task}
+              tasks={tasks}
+              onSave={(updated) => {
+                onTasksChange(updated);
+                setMemoPanelId(null);
+              }}
+              onClose={() => setMemoPanelId(null)}
             />
           );
         })()}
