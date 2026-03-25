@@ -1396,11 +1396,13 @@
    カンバンボード
 ══════════════════════════════════════════ */
 .kanban-wrapper {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
   padding: 20px;
-  height: calc(100vh - 80px);
+  height: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   box-sizing: border-box;
@@ -1959,6 +1961,8 @@
 
 /* ── Analysis View ── */
 .analysis-view {
+  flex: 1;
+  min-width: 0;
   padding: 24px;
   overflow-y: auto;
   height: 100%;
@@ -2347,6 +2351,8 @@
 /* ── ArchiveView ─────────────────────────────────────────── */
 
 .archive-view {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
