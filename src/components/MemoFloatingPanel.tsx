@@ -17,9 +17,7 @@ export default function MemoFloatingPanel({ task, tasks, onSave, onClose }: Prop
   const [memo, setMemo] = useState(task.memo ?? "");
 
   function handleSave() {
-    const updated = tasks.map((t) =>
-      t.id === task.id ? { ...t, memo: memo || undefined } : t,
-    );
+    const updated = tasks.map((t) => (t.id === task.id ? { ...t, memo: memo || undefined } : t));
     onSave(updated);
     onClose();
   }
