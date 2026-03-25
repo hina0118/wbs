@@ -67,9 +67,7 @@ export default function MemoField({ value, onChange }: Props) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onPaste={handlePaste}
-          placeholder={
-            "Markdown 形式で入力できます\n例: **太字** `コード` - リスト"
-          }
+          placeholder={"Markdown 形式で入力できます\n例: **太字** `コード` - リスト"}
           className="memo-input"
           rows={5}
         />
