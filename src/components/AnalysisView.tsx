@@ -51,6 +51,41 @@ export default function AnalysisView({ tasks }: Props) {
     [leafTasks, tasks],
   );
 
+  // タスク重複メンバー: 同時期に複数タスクを抱えているメンバー
+  const overlappingMembers = useMemo(() => {
+    const activeTasks = leafTasks.filter((t) => computeProgress(t.id, tasks) < 100);
+    const memberTaskMap = new Map<string, Task[]>();
+    for (const t of activeTasks) {
+      const members: string[] = [];
+      if (t.assignee) members.push(t.assignee);
+      if (t.subMembers) members.push(...t.subMembers);
+      for (const m of members) {
+        if (!memberTaskMap.has(m)) memberTaskMap.set(m, []);
+        memberTaskMap.get(m)!.push(t);
+      }
+    }
+    const result: {
+      member: string;
+      pairs: { taskA: Task; taskB: Task; overlapStart: Date; overlapEnd: Date }[];
+    }[] = [];
+    for (const [member, mTasks] of memberTaskMap) {
+      const pairs: { taskA: Task; taskB: Task; overlapStart: Date; overlapEnd: Date }[] = [];
+      for (let i = 0; i < mTasks.length; i++) {
+        for (let j = i + 1; j < mTasks.length; j++) {
+          const a = mTasks[i];
+          const b = mTasks[j];
+          if (a.startDate <= b.endDate && a.endDate >= b.startDate) {
+            const overlapStart = a.startDate > b.startDate ? a.startDate : b.startDate;
+            const overlapEnd = a.endDate < b.endDate ? a.endDate : b.endDate;
+            pairs.push({ taskA: a, taskB: b, overlapStart, overlapEnd });
+          }
+        }
+      }
+      if (pairs.length > 0) result.push({ member, pairs });
+    }
+    return result;
+  }, [leafTasks, tasks]);
+
   // 次のタスクがないメンバー
   const idleMembers = useMemo(() => {
     const assignees = [...new Set(leafTasks.map((t) => t.assignee).filter(Boolean) as string[])];
@@ -228,6 +263,59 @@ export default function AnalysisView({ tasks }: Props) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+      </section>
+
+      {/* タスク重複メンバー */}
+      <section className="analysis-section">
+        <h2 className="analysis-section-title">
+          <span className="analysis-icon">🔀</span>
+          タスク重複メンバー
+          <span className="analysis-count">{overlappingMembers.length}人</span>
+        </h2>
+
+        {overlappingMembers.length === 0 ? (
+          <p className="analysis-empty">タスクが重複しているメンバーはいません</p>
+        ) : (
+          <div className="analysis-overlap-list">
+            {overlappingMembers.map(({ member, pairs }) => (
+              <div key={member} className="analysis-overlap-member">
+                <div className="analysis-overlap-member-name">{member}</div>
+                <div className="analysis-table-wrapper">
+                  <table className="analysis-table">
+                    <thead>
+                      <tr>
+                        <th>タスクA</th>
+                        <th>タスクB</th>
+                        <th>重複期間</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pairs.map(({ taskA, taskB, overlapStart, overlapEnd }, idx) => (
+                        <tr key={idx}>
+                          <td className="analysis-task-name">
+                            {taskA.name}
+                            <span className="analysis-date-range">
+                              {formatDateYMD(taskA.startDate)}〜{formatDateYMD(taskA.endDate)}
+                            </span>
+                          </td>
+                          <td className="analysis-task-name">
+                            {taskB.name}
+                            <span className="analysis-date-range">
+                              {formatDateYMD(taskB.startDate)}〜{formatDateYMD(taskB.endDate)}
+                            </span>
+                          </td>
+                          <td className="analysis-overlap-range">
+                            {formatDateYMD(overlapStart)}〜{formatDateYMD(overlapEnd)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </section>
