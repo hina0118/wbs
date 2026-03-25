@@ -3,6 +3,7 @@
  */
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { markdownComponents } from "./MarkdownComponents";
 
 interface Props {
   children: string;
@@ -13,7 +14,9 @@ interface Props {
 export default function MemoView({ children, compact = false }: Props) {
   return (
     <div className={`markdown-body${compact ? " markdown-body--compact" : ""}`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        {children}
+      </ReactMarkdown>
     </div>
   );
 }

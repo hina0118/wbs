@@ -6,6 +6,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import TurndownService from "turndown";
+import { markdownComponents } from "./MarkdownComponents";
 
 interface Props {
   value: string;
@@ -54,7 +55,9 @@ export default function MemoField({ value, onChange }: Props) {
       {preview ? (
         <div className="memo-preview markdown-body">
           {value.trim() ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {value}
+            </ReactMarkdown>
           ) : (
             <span className="memo-preview-empty">メモなし</span>
           )}

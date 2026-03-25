@@ -4,6 +4,7 @@
 import { useRef, useLayoutEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { markdownComponents } from "./MarkdownComponents";
 import { Task } from "../types/task";
 
 interface Props {
@@ -50,7 +51,9 @@ export default function GanttTooltip({ task, progress, x, y }: Props) {
         <>
           <div className="gantt-tooltip-divider" />
           <div className="gantt-tooltip-memo markdown-body">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{task.memo}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {task.memo}
+            </ReactMarkdown>
           </div>
         </>
       )}
