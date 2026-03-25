@@ -228,10 +228,15 @@ export default function GanttLeftPanel({
               </span>
               <span
                 className="gantt-col-task"
-                style={{ paddingLeft: depth * INDENT_PER_LEVEL + 8 }}
+                style={{ paddingLeft: depth * INDENT_PER_LEVEL + 22 }}
               >
                 {hasChildren ? (
-                  <button className="gantt-collapse-btn" onClick={() => onToggleCollapse(task.id)}>
+                  <button
+                    className="gantt-collapse-btn"
+                    onClick={() => onToggleCollapse(task.id)}
+                    draggable={false}
+                    onDragStart={(e) => e.stopPropagation()}
+                  >
                     {isCollapsed ? "▶" : "▼"}
                   </button>
                 ) : (
