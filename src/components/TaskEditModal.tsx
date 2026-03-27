@@ -34,6 +34,13 @@ export default function TaskEditModal({
 }: Props) {
   const leaf = isLeaf(task.id, tasks);
 
+  // 既存タスクから全メンバー名を収集（候補リスト用）
+  const allMembers = [
+    ...new Set(
+      tasks.flatMap((t) => [t.assignee, ...(t.subMembers ?? [])]).filter((m): m is string => !!m),
+    ),
+  ];
+
   const [editName, setEditName] = useState(task.name);
   const [editProgress, setEditProgress] = useState(task.progress);
   const [editAssignee, setEditAssignee] = useState(task.assignee ?? "");
@@ -234,9 +241,16 @@ export default function TaskEditModal({
         {/* 担当者（リーフのみ） */}
         {leaf && (
           <>
+            <datalist id="member-suggestions">
+              {allMembers.map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
+
             <label className="modal-label">担当者（主）</label>
             <input
               type="text"
+              list="member-suggestions"
               value={editAssignee}
               onChange={(e) => setEditAssignee(e.target.value)}
               placeholder="担当者名を入力"
@@ -265,6 +279,7 @@ export default function TaskEditModal({
             <div className="sub-member-add-row">
               <input
                 type="text"
+                list="member-suggestions"
                 value={newSubMember}
                 onChange={(e) => setNewSubMember(e.target.value)}
                 placeholder="メンバー名を入力"
