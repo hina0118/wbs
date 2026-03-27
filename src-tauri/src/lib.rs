@@ -248,7 +248,11 @@ fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
 
     let _tray = TrayIconBuilder::new()
-        .icon(app.default_window_icon().ok_or("ウィンドウアイコンが設定されていません")?.clone())
+        .icon(
+            app.default_window_icon()
+                .ok_or("ウィンドウアイコンが設定されていません")?
+                .clone(),
+        )
         .menu(&menu)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => {
