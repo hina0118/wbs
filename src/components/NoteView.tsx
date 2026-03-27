@@ -63,7 +63,10 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
     if (searchLower) {
       return activeTasks.filter((t) => matchingIds?.has(t.id));
     }
-    return activeTasks.filter((t) => isVisibleInTree(t, activeTasks, collapsedIds));
+    // ガントチャートと同様: スケジュール済みタスク（ツリー順）→ 未スケジュールタスクを末尾に
+    const scheduled = activeTasks.filter((t) => !t.isFloating && isVisibleInTree(t, activeTasks, collapsedIds));
+    const floating = activeTasks.filter((t) => t.isFloating);
+    return [...scheduled, ...floating];
   }, [activeTasks, collapsedIds, searchLower, matchingIds]);
 
   const selectedTask = selectedId ? (activeTasks.find((t) => t.id === selectedId) ?? null) : null;
@@ -139,7 +142,7 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
             </div>
           )}
           {visibleTreeTasks.map((task) => {
-            const depth = searchLower ? 0 : getDepth(task.id, activeTasks);
+            const depth = (searchLower || task.isFloating) ? 0 : getDepth(task.id, activeTasks);
             const hasChildren = activeTasks.some((t) => t.parentId === task.id);
             const isCollapsed = collapsedIds.has(task.id);
             const isSelected = task.id === selectedId;
