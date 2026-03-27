@@ -2701,3 +2701,384 @@
   background: #4a90d9;
   color: #fff;
 }
+
+/* ── NoteView (Obsidian 風メモビュー) ─────────────────────── */
+
+.note-view {
+  flex: 1;
+  display: flex;
+  height: calc(100vh - 60px);
+  overflow: hidden;
+  background: #f5f6fa;
+}
+
+/* ── 左: タスクツリー ── */
+
+.note-tree-panel {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #1e2030;
+  border-right: 1px solid #2d3148;
+  overflow: hidden;
+}
+
+.note-tree-header {
+  padding: 14px 14px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8b93b8;
+  border-bottom: 1px solid #2d3148;
+  flex-shrink: 0;
+}
+
+.note-tree-search-wrap {
+  position: relative;
+  padding: 8px 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #2d3148;
+}
+
+.note-tree-search {
+  width: 100%;
+  background: #161827;
+  border: 1px solid #2d3148;
+  border-radius: 6px;
+  color: #c9d1f0;
+  font-size: 0.82rem;
+  padding: 5px 28px 5px 10px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.note-tree-search::placeholder {
+  color: #4a5070;
+}
+
+.note-tree-search:focus {
+  border-color: #4a90d9;
+}
+
+.note-tree-search-clear {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #5a607a;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+}
+
+.note-tree-search-clear:hover {
+  color: #c9d1f0;
+}
+
+.note-tree-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.note-tree-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.note-tree-body::-webkit-scrollbar-thumb {
+  background: #2d3148;
+  border-radius: 2px;
+}
+
+.note-tree-empty {
+  padding: 20px 14px;
+  font-size: 0.8rem;
+  color: #4a5070;
+  text-align: center;
+}
+
+.note-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-right: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin: 1px 6px;
+  min-width: 0;
+  user-select: none;
+  transition: background 0.1s;
+}
+
+.note-tree-item:hover {
+  background: #272a42;
+}
+
+.note-tree-item--selected {
+  background: #2e3459 !important;
+}
+
+.note-tree-item--selected .note-tree-item-name {
+  color: #7eb8f7;
+  font-weight: 600;
+}
+
+.note-tree-collapse-btn {
+  background: transparent;
+  border: none;
+  color: #5a607a;
+  font-size: 0.6rem;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+
+.note-tree-collapse-btn:hover {
+  color: #c9d1f0;
+}
+
+.note-tree-leaf-icon {
+  color: #3a4060;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+
+.note-tree-item-name {
+  font-size: 0.83rem;
+  color: #a8b3d8;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-tree-memo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4a90d9;
+  flex-shrink: 0;
+}
+
+/* ── 右: メモコンテンツ ── */
+
+.note-content-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+.note-content-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #aaa;
+}
+
+.note-content-empty-icon {
+  font-size: 2.4rem;
+  opacity: 0.5;
+}
+
+.note-content-empty p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.note-content-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 28px 36px 20px;
+  box-sizing: border-box;
+}
+
+.note-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.note-breadcrumb-item {
+  cursor: pointer;
+  color: #4a90d9;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.note-breadcrumb-item:hover {
+  text-decoration: underline;
+}
+
+.note-breadcrumb-sep {
+  color: #ccc;
+  margin: 0 2px;
+}
+
+.note-task-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 10px;
+  line-height: 1.25;
+}
+
+.note-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.note-meta-item {
+  font-size: 0.82rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.note-meta-progress {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.note-divider {
+  border: none;
+  border-top: 1px solid #eaecf0;
+  margin: 12px 0 10px;
+  flex-shrink: 0;
+}
+
+.note-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.note-btn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 0.83rem;
+  cursor: pointer;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: background 0.15s, color 0.15s;
+}
+
+.note-btn--edit {
+  background: #f0f4fa;
+  border-color: #c5d2e8;
+  color: #3a6db5;
+}
+
+.note-btn--edit:hover {
+  background: #dce8f7;
+}
+
+.note-btn--save {
+  background: #4a90d9;
+  color: #fff;
+  border-color: #3a7bc8;
+}
+
+.note-btn--save:hover {
+  background: #3a7bc8;
+}
+
+.note-btn--cancel {
+  background: #f5f5f5;
+  color: #666;
+  border-color: #ddd;
+}
+
+.note-btn--cancel:hover {
+  background: #eee;
+}
+
+.note-memo-view {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.note-memo-empty {
+  font-size: 0.88rem;
+  color: #bbb;
+  font-style: italic;
+  padding: 12px 0;
+}
+
+/* 編集: 左テキスト / 右プレビューの分割レイアウト */
+
+.note-editor-split {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  gap: 0;
+  border: 1px solid #dde3ed;
+  border-radius: 8px;
+  min-height: 0;
+}
+
+.note-editor-textarea {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  padding: 16px;
+  color: #2a2a3e;
+  background: #fafbff;
+  border-radius: 8px 0 0 8px;
+}
+
+.note-editor-textarea::placeholder {
+  color: #bbb;
+}
+
+.note-editor-divider {
+  width: 1px;
+  background: #dde3ed;
+  flex-shrink: 0;
+}
+
+.note-editor-preview {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  border-radius: 0 8px 8px 0;
+  background: #fff;
+}
