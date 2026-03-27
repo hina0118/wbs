@@ -348,7 +348,14 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
                       )}
 
                       {/* タスク名 */}
-                      <div className="kanban-card-name">{task.name}</div>
+                      <div className="kanban-card-name">
+                        {task.reminder && !task.reminder.notified && (
+                          <span className="reminder-bell" title="リマインダー設定済み">
+                            🔔
+                          </span>
+                        )}
+                        {task.name}
+                      </div>
 
                       {/* 進捗バー */}
                       <div className="kanban-progress-bar">

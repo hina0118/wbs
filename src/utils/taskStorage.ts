@@ -19,6 +19,7 @@ interface TaskRaw {
   order?: number;
   isFloating?: boolean;
   archived?: boolean;
+  reminder?: { datetime: string; notified: boolean };
 }
 
 function parseLocalDate(s: string): Date {

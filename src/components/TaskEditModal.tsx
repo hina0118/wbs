@@ -42,6 +42,7 @@ export default function TaskEditModal({
   const [editStartDate, setEditStartDate] = useState(toInputDate(task.startDate));
   const [editEndDate, setEditEndDate] = useState(toInputDate(task.endDate));
   const [editIsFloating, setEditIsFloating] = useState(task.isFloating ?? false);
+  const [editReminderDatetime, setEditReminderDatetime] = useState(task.reminder?.datetime ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const initialMode = task.progressCount ? "count" : "percent";
   const [progressMode, setProgressMode] = useState<"percent" | "count">(initialMode);
@@ -91,6 +92,15 @@ export default function TaskEditModal({
         ? { done: doneCount, total: totalCount }
         : undefined;
 
+    // リマインダー: 日時が変わった場合は notified をリセット
+    const reminderChanged = editReminderDatetime !== (task.reminder?.datetime ?? "");
+    const reminder = editReminderDatetime
+      ? {
+          datetime: editReminderDatetime,
+          notified: reminderChanged ? false : (task.reminder?.notified ?? false),
+        }
+      : undefined;
+
     const updated = tasks.map((t) =>
       t.id === task.id
         ? {
@@ -104,6 +114,7 @@ export default function TaskEditModal({
             memo: task.memo,
             progressCount,
             isFloating: editIsFloating || undefined,
+            reminder,
           }
         : t,
     );
@@ -170,6 +181,33 @@ export default function TaskEditModal({
             </div>
           </div>
         )}
+
+        {/* リマインダー */}
+        <div className="modal-reminder-row">
+          <label className="modal-label">🔔 リマインダー日時</label>
+          <div className="modal-reminder-input-wrap">
+            <input
+              type="datetime-local"
+              value={editReminderDatetime}
+              onChange={(e) => setEditReminderDatetime(e.target.value)}
+              className="date-input"
+            />
+            {editReminderDatetime && (
+              <button
+                type="button"
+                className="btn-clear-reminder"
+                onClick={() => setEditReminderDatetime("")}
+                title="リマインダーを削除"
+                aria-label="リマインダーを削除"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {task.reminder?.notified && editReminderDatetime === task.reminder.datetime && (
+            <span className="reminder-notified-label">✅ 通知済み</span>
+          )}
+        </div>
 
         {/* 担当者（リーフのみ） */}
         {leaf && (
