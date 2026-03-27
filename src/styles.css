@@ -3705,6 +3705,14 @@
 }
 
 /* ── Reminder ── */
+[data-theme="dark"] .reminder-repeat-select {
+  background: #252730;
+  border-color: #353845;
+  color: #c9d1d9;
+}
+[data-theme="dark"] .reminder-repeat-select:focus {
+  border-color: #4a9eff;
+}
 [data-theme="dark"] .btn-clear-reminder {
   border-color: #353845;
   color: #6e7080;
