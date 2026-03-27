@@ -1,15 +1,9 @@
 import ExcelJS from "exceljs";
 import { invoke } from "@tauri-apps/api/core";
 import { Task } from "../types/task";
-import { computeProgress, getSignalStatus, sortByTree, toInputDate } from "./taskUtils";
+import { computeProgress, getSignalStatus, getDepth, sortByTree, toInputDate } from "./taskUtils";
 
 // ── ユーティリティ ────────────────────────────────────────
-
-function getDepth(taskId: string, tasks: Task[]): number {
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task?.parentId) return 0;
-  return 1 + getDepth(task.parentId, tasks);
-}
 
 /** 色を白方向に薄める。factor: 0=元色, 1=白 */
 function lightenHex(hex: string, factor: number): string {

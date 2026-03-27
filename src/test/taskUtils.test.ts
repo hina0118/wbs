@@ -15,6 +15,8 @@ import {
   addDays,
   formatDateShort,
   formatDateYMD,
+  getDepth,
+  isVisible,
 } from "../utils/taskUtils";
 import type { Task } from "../types/task";
 
@@ -149,6 +151,41 @@ describe("propagateDates", () => {
   it("親が存在しない（ルート）タスクはそのまま返す", () => {
     const tasks = [root, child1];
     const result = propagateDates("root", tasks);
+    expect(result).toEqual(tasks);
+  });
+
+  it("後続の兄弟が先頭より早い startDate を持つ場合に親の startDate が更新される", () => {
+    // c1.startDate(Apr) > c2.startDate(Feb) → reduce で true ブランチが通る
+    const parent = makeTask({ id: "p" });
+    const c1 = makeTask({
+      id: "c1",
+      parentId: "p",
+      startDate: new Date(2025, 3, 1),
+      endDate: new Date(2025, 9, 31),
+    });
+    const c2 = makeTask({
+      id: "c2",
+      parentId: "p",
+      startDate: new Date(2025, 1, 1),
+      endDate: new Date(2025, 5, 30),
+    });
+    const result = propagateDates("c1", [parent, c1, c2]);
+    const p = result.find((t) => t.id === "p")!;
+    expect(p.startDate).toEqual(new Date(2025, 1, 1)); // Feb 1 が最小
+    expect(p.endDate).toEqual(new Date(2025, 9, 31)); // Oct 31 が最大
+  });
+
+  it("全兄弟が isFloating の場合は日付を変更せず返す", () => {
+    const parent = makeTask({ id: "p" });
+    const floating = makeTask({
+      id: "c1",
+      parentId: "p",
+      isFloating: true,
+      startDate: new Date(2025, 0, 1),
+      endDate: new Date(2025, 0, 1),
+    });
+    const tasks = [parent, floating];
+    const result = propagateDates("c1", tasks);
     expect(result).toEqual(tasks);
   });
 });
@@ -324,6 +361,55 @@ describe("unarchiveTask", () => {
   });
 });
 
+// ─── getDepth ─────────────────────────────────────────────────
+describe("getDepth", () => {
+  it("ルートタスクは 0 を返す", () => {
+    expect(getDepth("root", flatTasks)).toBe(0);
+  });
+
+  it("子タスクは 1 を返す", () => {
+    expect(getDepth("child1", flatTasks)).toBe(1);
+    expect(getDepth("child2", flatTasks)).toBe(1);
+  });
+
+  it("孫タスクは 2 を返す", () => {
+    expect(getDepth("grandchild", flatTasks)).toBe(2);
+  });
+
+  it("存在しない id は 0 を返す", () => {
+    expect(getDepth("nonexistent", flatTasks)).toBe(0);
+  });
+});
+
+// ─── isVisible ────────────────────────────────────────────────
+describe("isVisible", () => {
+  it("ルートタスクは常に表示される", () => {
+    expect(isVisible(root, flatTasks, new Set())).toBe(true);
+    expect(isVisible(root, flatTasks, new Set(["root"]))).toBe(true);
+  });
+
+  it("親が折りたたまれていない場合は表示される", () => {
+    expect(isVisible(child1, flatTasks, new Set())).toBe(true);
+  });
+
+  it("親が折りたたまれている場合は非表示になる", () => {
+    expect(isVisible(child1, flatTasks, new Set(["root"]))).toBe(false);
+  });
+
+  it("祖父が折りたたまれている場合は孫も非表示になる", () => {
+    expect(isVisible(grandchild, flatTasks, new Set(["root"]))).toBe(false);
+  });
+
+  it("親だけが折りたたまれている場合は孫も非表示になる", () => {
+    expect(isVisible(grandchild, flatTasks, new Set(["child1"]))).toBe(false);
+  });
+
+  it("親タスクが tasks に存在しない場合は表示される（孤立タスク）", () => {
+    const orphan = makeTask({ id: "orphan", parentId: "ghost" });
+    expect(isVisible(orphan, [orphan], new Set())).toBe(true);
+  });
+});
+
 // ─── getSignalStatus ─────────────────────────────────────────
 describe("getSignalStatus", () => {
   beforeEach(() => {
@@ -373,6 +459,39 @@ describe("getSignalStatus", () => {
 
   it("存在しない id は none を返す", () => {
     expect(getSignalStatus("nonexistent", [])).toBe("none");
+  });
+
+  it("開始済みで progress が期待値以上の場合は green を返す（line 174 false ブランチ）", () => {
+    // 今日: 2025-06-15、Jan 1〜Dec 31 の期間。経過 ≈ 45%。progress=50% → 50 >= 45-10=35 → green
+    const task = makeTask({
+      id: "t",
+      progress: 50,
+      startDate: new Date(2025, 0, 1),
+      endDate: new Date(2025, 11, 31),
+    });
+    expect(getSignalStatus("t", [task])).toBe("green");
+  });
+
+  it("isFloating タスクは日付に関わらず none を返す", () => {
+    const task = makeTask({
+      id: "t",
+      progress: 0,
+      isFloating: true,
+      startDate: new Date(2025, 0, 1),
+      endDate: new Date(2025, 4, 1), // 終了日が過去でも none
+    });
+    expect(getSignalStatus("t", [task])).toBe("none");
+  });
+
+  it("startDate と endDate が今日と同日（期間0日）の場合 yellow を返す（totalDuration=0 ブランチ）", () => {
+    // totalDuration=0 → expectedProgress=100、effectiveProgress(0) < 90 → yellow
+    const task = makeTask({
+      id: "t",
+      progress: 0,
+      startDate: new Date(2025, 5, 15), // 今日と同じ
+      endDate: new Date(2025, 5, 15), // 今日と同じ
+    });
+    expect(getSignalStatus("t", [task])).toBe("yellow");
   });
 
   it("親タスクの progress は子の平均で計算される（シグナル判定にも適用）", () => {

@@ -8,17 +8,10 @@ import remarkGfm from "remark-gfm";
 import TurndownService from "turndown";
 import { markdownComponents } from "./MarkdownComponents";
 import { Task } from "../types/task";
-import { computeProgress, getSignalStatus } from "../utils/taskUtils";
-
-const INDENT_PER_LEVEL = 16;
+import { computeProgress, getSignalStatus, getDepth, isVisible } from "../utils/taskUtils";
+import { INDENT_PER_LEVEL } from "../constants/layout";
 
 const turndownService = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
-
-function getDepth(taskId: string, tasks: Task[]): number {
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task?.parentId) return 0;
-  return 1 + getDepth(task.parentId, tasks);
-}
 
 function getAncestors(taskId: string, tasks: Task[]): Task[] {
   const task = tasks.find((t) => t.id === taskId);
@@ -26,14 +19,6 @@ function getAncestors(taskId: string, tasks: Task[]): Task[] {
   const parent = tasks.find((t) => t.id === task.parentId);
   if (!parent) return [];
   return [...getAncestors(parent.id, tasks), parent];
-}
-
-function isVisibleInTree(task: Task, tasks: Task[], collapsedIds: Set<string>): boolean {
-  if (!task.parentId) return true;
-  if (collapsedIds.has(task.parentId)) return false;
-  const parent = tasks.find((t) => t.id === task.parentId);
-  if (!parent) return true;
-  return isVisibleInTree(parent, tasks, collapsedIds);
 }
 
 interface Props {
@@ -65,7 +50,7 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
     }
     // ガントチャートと同様: スケジュール済みタスク（ツリー順）→ 未スケジュールタスクを末尾に
     const scheduled = activeTasks.filter(
-      (t) => !t.isFloating && isVisibleInTree(t, activeTasks, collapsedIds),
+      (t) => !t.isFloating && isVisible(t, activeTasks, collapsedIds),
     );
     const floating = activeTasks.filter((t) => t.isFloating);
     return [...scheduled, ...floating];

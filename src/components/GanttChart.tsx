@@ -8,6 +8,7 @@ import {
   copyTaskFields,
   getAncestorNames,
   addDays,
+  isVisible,
 } from "../utils/taskUtils";
 import { useDragHandler } from "../hooks/useDragHandler";
 import { useGanttFilter } from "../hooks/useGanttFilter";
@@ -42,14 +43,6 @@ interface AddState {
   color: string;
   copySourceId?: string;
   isFloating?: boolean;
-}
-
-function isVisible(task: Task, tasks: Task[], collapsedIds: Set<string>): boolean {
-  if (!task.parentId) return true;
-  if (collapsedIds.has(task.parentId)) return false;
-  const parent = tasks.find((t) => t.id === task.parentId);
-  if (!parent) return true;
-  return isVisible(parent, tasks, collapsedIds);
 }
 
 export default function GanttChart({ tasks, onTasksChange, holidays = new Map() }: Props) {

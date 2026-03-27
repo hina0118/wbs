@@ -1,12 +1,10 @@
 import { Task } from "../types/task";
 import { toHolidayKey } from "../utils/holidays";
-import { computeProgress, addDays, formatDateShort } from "../utils/taskUtils";
+import { computeProgress, addDays, formatDateShort, getDepth } from "../utils/taskUtils";
 import { DragPreview } from "../hooks/useDragHandler";
+import { DAY_WIDTH, ROW_HEIGHT, HEADER_HEIGHT } from "../constants/layout";
 import React from "react";
 
-const DAY_WIDTH = 28;
-const ROW_HEIGHT = 40;
-const HEADER_HEIGHT = 90;
 const HANDLE_WIDTH = 6;
 
 function getLuminance(hexColor: string): number {
@@ -70,12 +68,6 @@ function isHoliday(d: Date, holidays: Map<string, string>) {
 }
 function getHolidayName(d: Date, holidays: Map<string, string>) {
   return holidays.get(toHolidayKey(d)) ?? "";
-}
-
-function getDepth(taskId: string, tasks: Task[]): number {
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task?.parentId) return 0;
-  return 1 + getDepth(task.parentId, tasks);
 }
 
 function barOpacity(depth: number): string {

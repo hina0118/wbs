@@ -41,7 +41,7 @@ function App() {
     Promise.all([
       loadTasks(),
       loadHolidays().catch((e) => {
-        setHolidayError(String(e));
+        setHolidayError(e instanceof Error ? e.message : String(e));
         return new Map<string, string>();
       }),
     ])
@@ -49,7 +49,7 @@ function App() {
         setTasks(sortByTree(loadedTasks));
         setHolidays(loadedHolidays);
       })
-      .catch((e) => setError(String(e)))
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -73,7 +73,7 @@ function App() {
   function handleTasksChange(updated: Task[]) {
     const sorted = sortByTree(updated);
     setTasks(sorted);
-    saveTasks(sorted).catch((e) => console.error("タスクの保存に失敗:", e));
+    void saveTasks(sorted).catch((e) => console.error("タスクの保存に失敗:", e));
   }
 
   /** エクスポート結果トーストを表示し、指定 ms 後に自動で閉じる */
