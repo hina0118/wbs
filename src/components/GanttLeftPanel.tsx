@@ -345,9 +345,18 @@ export default function GanttLeftPanel({
                   <span
                     className="gantt-col-assignee gantt-col-assignee--leaf"
                     onClick={() => onOpenEdit(task)}
+                    title={
+                      [task.assignee, ...(task.subMembers ?? [])].filter(Boolean).join(", ") ||
+                      "クリックで担当者を設定"
+                    }
                   >
                     {task.assignee ? (
-                      <span className="assignee-badge">{task.assignee}</span>
+                      <span className="assignee-badge">
+                        {task.assignee}
+                        {task.subMembers && task.subMembers.length > 0 && (
+                          <span className="sub-members-count"> +{task.subMembers.length}</span>
+                        )}
+                      </span>
                     ) : (
                       <span className="assignee-empty">未設定</span>
                     )}
