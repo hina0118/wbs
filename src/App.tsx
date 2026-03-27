@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getVersion } from "@tauri-apps/api/app";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import GanttChart from "./components/GanttChart";
 import KanbanBoard from "./components/KanbanBoard";
 import SearchView from "./components/SearchView";
@@ -29,6 +31,13 @@ function App() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const searchRef = useRef<HTMLInputElement>(null);
   const exportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 起動時: ウィンドウタイトルにバージョンを表示
+  useEffect(() => {
+    getVersion().then((version) => {
+      getCurrentWindow().setTitle(`WBS 進捗管理 ${version}`);
+    });
+  }, []);
 
   // ダークモード: data-theme 属性を html 要素に適用して永続化
   useEffect(() => {
