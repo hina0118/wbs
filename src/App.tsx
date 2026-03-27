@@ -4,6 +4,7 @@ import KanbanBoard from "./components/KanbanBoard";
 import SearchView from "./components/SearchView";
 import AnalysisView from "./components/AnalysisView";
 import ArchiveView from "./components/ArchiveView";
+import NoteView from "./components/NoteView";
 import ProxySettingModal from "./components/ProxySettingModal";
 import UpdateNotifier from "./components/UpdateNotifier";
 import { Task } from "./types/task";
@@ -13,7 +14,7 @@ import { sortByTree } from "./utils/taskUtils";
 import { exportToExcel } from "./utils/exportToExcel";
 import { useReminder } from "./hooks/useReminder";
 
-type ViewMode = "gantt" | "kanban" | "analysis" | "archive";
+type ViewMode = "gantt" | "kanban" | "analysis" | "archive" | "note";
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -181,6 +182,16 @@ function App() {
             🗄 アーカイブ
             {archivedRootCount > 0 && <span className="archive-badge">{archivedRootCount}</span>}
           </button>
+          <button
+            className={`view-toggle-btn${viewMode === "note" ? " view-toggle-btn--active" : ""}`}
+            onClick={() => {
+              setViewMode("note");
+              setSearchQuery("");
+            }}
+            title="ノート"
+          >
+            📝 ノート
+          </button>
         </div>
 
         {/* Excel エクスポートボタン */}
@@ -252,6 +263,9 @@ function App() {
             {!isSearching && viewMode === "analysis" && <AnalysisView tasks={tasks} />}
             {!isSearching && viewMode === "archive" && (
               <ArchiveView tasks={tasks} onTasksChange={handleTasksChange} />
+            )}
+            {!isSearching && viewMode === "note" && (
+              <NoteView tasks={tasks} onTasksChange={handleTasksChange} />
             )}
           </>
         )}
