@@ -26,8 +26,15 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showProxy, setShowProxy] = useState(false);
   const [exportMsg, setExportMsg] = useState<{ text: string; isError: boolean } | null>(null);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const searchRef = useRef<HTMLInputElement>(null);
   const exportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ダークモード: data-theme 属性を html 要素に適用して永続化
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
+    localStorage.setItem("theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
 
   // 起動時: タスク（保存済み or デフォルト）と祝日を並列ロード
   useEffect(() => {
@@ -212,6 +219,16 @@ function App() {
           disabled={tasks.length === 0}
         >
           📥 Excel
+        </button>
+
+        {/* ダークモード切替ボタン */}
+        <button
+          className="app-theme-btn"
+          onClick={() => setDarkMode((d) => !d)}
+          title={darkMode ? "ライトモードに切替" : "ダークモードに切替"}
+          aria-label={darkMode ? "ライトモードに切替" : "ダークモードに切替"}
+        >
+          {darkMode ? "☀️" : "🌙"}
         </button>
 
         {/* 設定ボタン */}
