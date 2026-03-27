@@ -90,9 +90,7 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
 
   function handleSave() {
     if (!selectedTask) return;
-    const updated = tasks.map((t) =>
-      t.id === selectedTask.id ? { ...t, memo: draftMemo } : t,
-    );
+    const updated = tasks.map((t) => (t.id === selectedTask.id ? { ...t, memo: draftMemo } : t));
     onTasksChange(updated);
     setIsEditing(false);
   }
@@ -169,9 +167,7 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
                 ) : (
                   <span className="note-tree-leaf-icon">─</span>
                 )}
-                {signal !== "none" && (
-                  <span className={`status-signal status-signal--${signal}`} />
-                )}
+                {signal !== "none" && <span className={`status-signal status-signal--${signal}`} />}
                 <span className="note-tree-item-name">{task.name}</span>
                 {hasMemo && <span className="note-tree-memo-dot" title="メモあり" />}
               </div>

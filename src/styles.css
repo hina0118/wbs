@@ -2993,7 +2993,9 @@
   cursor: pointer;
   font-weight: 500;
   border: 1px solid transparent;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .note-btn--edit {
