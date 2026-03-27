@@ -56,7 +56,9 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   const timelineRef = useRef<HTMLDivElement>(null);
   const leftScrollRef = useRef<HTMLDivElement>(null);
 
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(
+    () => new Set(tasks.filter((t) => t.collapsed).map((t) => t.id)),
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [memoPanelId, setMemoPanelId] = useState<string | null>(null);
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
@@ -92,12 +94,14 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
   // ── 操作 ──
 
   function toggleCollapse(id: string) {
+    const willBeCollapsed = !collapsedIds.has(id);
     setCollapsedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (willBeCollapsed) next.add(id);
+      else next.delete(id);
       return next;
     });
+    onTasksChange(tasks.map((t) => (t.id === id ? { ...t, collapsed: willBeCollapsed } : t)));
   }
 
   function commitRename(taskId: string, newName: string) {
