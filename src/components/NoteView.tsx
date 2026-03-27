@@ -8,7 +8,7 @@ import remarkGfm from "remark-gfm";
 import TurndownService from "turndown";
 import { markdownComponents } from "./MarkdownComponents";
 import { Task } from "../types/task";
-import { computeProgress, getSignalStatus, getDepth, isVisible } from "../utils/taskUtils";
+import { computeProgress, getDepth, isVisible } from "../utils/taskUtils";
 import { INDENT_PER_LEVEL } from "../constants/layout";
 
 const turndownService = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
@@ -134,7 +134,6 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
             const isCollapsed = collapsedIds.has(task.id);
             const isSelected = task.id === selectedId;
             const hasMemo = !!(task.memo && task.memo.trim());
-            const signal = getSignalStatus(task.id, activeTasks);
 
             return (
               <div
@@ -157,7 +156,6 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
                 ) : (
                   <span className="note-tree-leaf-icon">─</span>
                 )}
-                {signal !== "none" && <span className={`status-signal status-signal--${signal}`} />}
                 <span className="note-tree-item-name">{task.name}</span>
                 {hasMemo && <span className="note-tree-memo-dot" title="メモあり" />}
               </div>
