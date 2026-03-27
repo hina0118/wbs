@@ -41,6 +41,22 @@ Tauri 2 + React 18 + TypeScript で構築したデスクトップ向け WBS（Wo
 - アーカイブビューで一覧確認・復元
 - アーカイブ済みタスクはガントチャート・カンバン・検索から除外
 
+### ノートビュー（Obsidian 風）
+- 左ペイン: タスクツリー（折りたたみ対応）
+- 右ペイン: 選択タスクのメモを閲覧・編集
+- 編集は Markdown / WYSIWYG（contenteditable）の 2 モード切り替え
+- WYSIWYG 編集内容は Turndown で Markdown に自動変換して保存
+
+### リマインダー
+- タスク編集モーダルからリマインダー日時を設定
+- 60 秒ごとに期限チェックし、到達時に OS ネイティブ通知（システムトレイ）＋アプリ内トーストを発火
+- 繰り返し通知: `none`（1 回）/ `daily`（毎日）/ `weekly`（毎週）/ `monthly`（毎月）
+- 繰り返し設定時は通知後に次回日時を自動更新
+
+### ダークモード
+- ヘッダーの 🌙 / ☀️ ボタンで即時切り替え
+- `data-theme` 属性で CSS 変数を切り替え、設定は `localStorage` に永続化
+
 ### フローティングタスク
 - 開始時期不明の単発タスクを「フローティング」として登録
 - 日付なしでカンバン管理し、日程が決まったら通常タスクに変換
@@ -91,7 +107,8 @@ src/
 │   └── exportToExcel.ts     # Excel エクスポート（ExcelJS）
 ├── hooks/
 │   ├── useDragHandler.ts    # ガントバーのドラッグ操作フック
-│   └── useGanttFilter.ts    # ガント絞り込み（担当者・親タスク）フック
+│   ├── useGanttFilter.ts    # ガント絞り込み（担当者・親タスク）フック
+│   └── useReminder.ts       # リマインダー監視フック（60秒ポーリング・繰り返し対応）
 └── components/
     ├── GanttChart.tsx        # ガントチャートビュー（統合コンポーネント）
     ├── GanttLeftPanel.tsx    # ガント左ペイン（タスク一覧）
@@ -101,10 +118,13 @@ src/
     ├── SearchView.tsx        # タスク横断検索ビュー（リスト表示）
     ├── AnalysisView.tsx      # 分析ビュー（遅延・進捗遅れ・締切アラート）
     ├── ArchiveView.tsx       # アーカイブ一覧・復元ビュー
+    ├── NoteView.tsx          # Obsidian 風ノートビュー（タスクツリー + メモ編集）
     ├── TaskEditModal.tsx     # タスク編集モーダル（共通）
     ├── MemoField.tsx         # メモ入力（編集/プレビュータブ）
+    ├── MemoFloatingPanel.tsx # フローティングメモパネル
     ├── MemoView.tsx          # Markdown レンダリング表示
     ├── MemoWithToggle.tsx    # メモの展開/折りたたみトグル
+    ├── MarkdownComponents.tsx # react-markdown カスタムコンポーネント
     ├── ProxySettingModal.tsx # HTTP プロキシ設定ダイアログ
     └── UpdateNotifier.tsx    # 自動更新通知バナー
 ```
@@ -114,6 +134,14 @@ src/
 ## データモデル
 
 ```typescript
+type ReminderRepeat = "none" | "daily" | "weekly" | "monthly";
+
+interface TaskReminder {
+  datetime: string;          // ISO 8601 形式（例: "2026-03-25T09:00"）
+  notified: boolean;         // 通知済みフラグ（再通知防止）
+  repeat?: ReminderRepeat;   // 繰り返し間隔
+}
+
 interface Task {
   id:             string;
   name:           string;
@@ -130,6 +158,7 @@ interface Task {
   order?:         number;                          // 表示順序
   isFloating?:    boolean;                         // 開始時期不明のフローティングタスク
   archived?:      boolean;                         // アーカイブ済み（非表示、データは保持）
+  reminder?:      TaskReminder;                    // リマインダー設定
 }
 ```
 
