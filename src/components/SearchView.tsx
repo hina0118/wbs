@@ -2,7 +2,7 @@
  * SearchView – タスク横断検索（リスト表示）
  * メモにマッチしたタスクは自動展開して内容を表示する
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Task } from "../types/task";
 import MemoWithToggle from "./MemoWithToggle";
 import { computeProgress, getAncestorNames, formatDateYMD } from "../utils/taskUtils";
@@ -57,30 +57,37 @@ function matchFields(task: Task, q: string) {
 // ── コンポーネント ────────────────────────────────────────
 
 export default function SearchView({ tasks, query }: Props) {
-  const [expandedMemos, setExpandedMemos] = useState<Set<string>>(new Set());
-
   const q = query.trim();
   const results = q ? tasks.filter((t) => !t.archived && matchesQuery(t, q)) : [];
 
-  // クエリが変わったら、メモにマッチしたタスクを自動展開
-  useEffect(() => {
-    const lower = q.toLowerCase();
-    const autoIds = q
-      ? tasks
+  // クエリにマッチするメモを持つタスクを自動展開（React Compiler に最適化を委ねる）
+  const lower = q.toLowerCase();
+  const autoExpandedIds = q
+    ? new Set(
+        tasks
           .filter((t) => !t.archived && (t.memo ?? "").toLowerCase().includes(lower))
-          .map((t) => t.id)
-      : [];
-    setExpandedMemos(new Set(autoIds));
-    // tasks を依存配列に含めると「タスク追加時にもメモ展開がリセットされる」副作用が生じるため意図的に除外
-  }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
+          .map((t) => t.id),
+      )
+    : new Set<string>();
+
+  // 手動トグルをクエリと紐付けて管理（q が変わると自動リセット）
+  const [manualToggles, setManualToggles] = useState<{ q: string; ids: Map<string, boolean> }>({
+    q,
+    ids: new Map(),
+  });
+  const effectiveToggles = manualToggles.q === q ? manualToggles.ids : new Map<string, boolean>();
+
+  function isExpanded(id: string): boolean {
+    if (effectiveToggles.has(id)) return effectiveToggles.get(id)!;
+    return autoExpandedIds.has(id);
+  }
 
   function toggleMemo(id: string, e: React.MouseEvent) {
     e.stopPropagation();
-    setExpandedMemos((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+    setManualToggles((prev) => {
+      const ids = prev.q === q ? new Map(prev.ids) : new Map<string, boolean>();
+      ids.set(id, !isExpanded(id));
+      return { q, ids };
     });
   }
 
@@ -159,7 +166,7 @@ export default function SearchView({ tasks, query }: Props) {
               {task.memo && (
                 <MemoWithToggle
                   memo={task.memo}
-                  expanded={expandedMemos.has(task.id)}
+                  expanded={isExpanded(task.id)}
                   onToggle={(e) => toggleMemo(task.id, e)}
                   className="search-item-memo"
                 />

@@ -1,13 +1,11 @@
 import { useRef, useState } from "react";
 import { Task } from "../types/task";
-import { getSignalStatus, computeProgress, SignalStatus } from "../utils/taskUtils";
+import { getSignalStatus, computeProgress, getDepth, SignalStatus } from "../utils/taskUtils";
+import { ROW_HEIGHT, HEADER_HEIGHT, INDENT_PER_LEVEL } from "../constants/layout";
 
-const ROW_HEIGHT = 40;
-const HEADER_HEIGHT = 90;
 const LEFT_PANEL_WIDTH = 260;
 const ASSIGNEE_COL_WIDTH = 80;
 const PROGRESS_COL_WIDTH = 70;
-const INDENT_PER_LEVEL = 16;
 
 const SIGNAL_TITLE: Record<string, string> = {
   red: "遅延",
@@ -30,12 +28,6 @@ function expectedProgress(task: Task, today: Date): number {
   const total = diffDays(task.startDate, task.endDate);
   const elapsed = diffDays(task.startDate, today);
   return Math.round((elapsed / total) * 100);
-}
-
-function getDepth(taskId: string, tasks: Task[]): number {
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task?.parentId) return 0;
-  return 1 + getDepth(task.parentId, tasks);
 }
 
 interface Props {

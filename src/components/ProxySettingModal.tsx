@@ -2,24 +2,44 @@
  * ProxySettingModal – HTTP プロキシ設定ダイアログ
  * 設定は Tauri バックエンドの proxy.json に保存される
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 interface Props {
   onClose: () => void;
 }
 
+function getErrorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
 export default function ProxySettingModal({ onClose }: Props) {
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errMsg, setErrMsg] = useState("");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // アンマウント時にタイマーを解除
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   // 保存済みプロキシ URL を読み込む
   useEffect(() => {
     invoke<string | null>("get_proxy_setting")
       .then((v) => setUrl(v ?? ""))
-      .catch(() => {});
+      .catch((e) => console.warn("プロキシ設定の読み込みに失敗:", e));
   }, []);
+
+  function scheduleReset() {
+    if (timerRef.current !== null) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setStatus("idle");
+      timerRef.current = null;
+    }, 1500);
+  }
 
   async function handleSave() {
     setStatus("saving");
@@ -27,9 +47,9 @@ export default function ProxySettingModal({ onClose }: Props) {
     try {
       await invoke("save_proxy_setting", { url: url.trim() || null });
       setStatus("saved");
-      setTimeout(() => setStatus("idle"), 1500);
+      scheduleReset();
     } catch (e) {
-      setErrMsg(String(e));
+      setErrMsg(getErrorMessage(e));
       setStatus("error");
     }
   }
@@ -40,9 +60,9 @@ export default function ProxySettingModal({ onClose }: Props) {
     try {
       await invoke("save_proxy_setting", { url: null });
       setStatus("saved");
-      setTimeout(() => setStatus("idle"), 1500);
+      scheduleReset();
     } catch (e) {
-      setErrMsg(String(e));
+      setErrMsg(getErrorMessage(e));
       setStatus("error");
     }
   }
