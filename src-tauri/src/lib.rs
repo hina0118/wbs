@@ -196,11 +196,7 @@ async fn save_excel_file(
 
 /// OS ネイティブ通知を表示する（リマインダー機能で利用）
 #[tauri::command]
-fn show_notification(
-    app: tauri::AppHandle,
-    title: String,
-    body: String,
-) -> Result<(), String> {
+fn show_notification(app: tauri::AppHandle, title: String, body: String) -> Result<(), String> {
     use tauri_plugin_notification::NotificationExt;
     app.notification()
         .builder()

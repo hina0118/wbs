@@ -17,11 +17,21 @@ export function useReminder(
 ): void {
   // 最新の tasks / コールバックを ref で保持（interval クロージャで常に最新値を参照）
   const tasksRef = useRef(tasks);
-  tasksRef.current = tasks;
   const onTasksChangeRef = useRef(onTasksChange);
-  onTasksChangeRef.current = onTasksChange;
   const onInAppNotifyRef = useRef(onInAppNotify);
-  onInAppNotifyRef.current = onInAppNotify;
+
+  // render ではなく effect 内で ref を更新（react-hooks/refs ルール準拠）
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
+  useEffect(() => {
+    onTasksChangeRef.current = onTasksChange;
+  }, [onTasksChange]);
+
+  useEffect(() => {
+    onInAppNotifyRef.current = onInAppNotify;
+  }, [onInAppNotify]);
 
   const checkReminders = useCallback(() => {
     const now = new Date();
