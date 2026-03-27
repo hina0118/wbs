@@ -1,3 +1,8 @@
+export interface TaskReminder {
+  datetime: string; // ISO 8601 (例: "2026-03-25T09:00")
+  notified: boolean; // 通知済みフラグ（再通知防止）
+}
+
 export interface Task {
   id: string;
   name: string;
@@ -14,4 +19,5 @@ export interface Task {
   order?: number;
   isFloating?: boolean; // 開始時期不明の単発タスク（日付なし）
   archived?: boolean; // アーカイブ済み（非表示、データは保持）
+  reminder?: TaskReminder; // リマインダー設定
 }

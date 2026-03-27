@@ -11,6 +11,7 @@ import { loadTasks, saveTasks } from "./utils/taskStorage";
 import { loadHolidays } from "./utils/holidays";
 import { sortByTree } from "./utils/taskUtils";
 import { exportToExcel } from "./utils/exportToExcel";
+import { useReminder } from "./hooks/useReminder";
 
 type ViewMode = "gantt" | "kanban" | "analysis" | "archive";
 
@@ -79,6 +80,16 @@ function App() {
     },
     [],
   );
+
+  /** リマインダー到達時のアプリ内トースト */
+  const showReminderToast = useCallback(
+    (message: string) => {
+      showExportMsg({ text: message, isError: false }, 8000);
+    },
+    [showExportMsg],
+  );
+
+  useReminder(tasks, handleTasksChange, showReminderToast);
 
   // アーカイブ済みを除いたアクティブタスクで集計
   const activeTasks = tasks.filter((t) => !t.archived);

@@ -2208,6 +2208,46 @@
   opacity: 0.6;
 }
 
+/* ── リマインダー ─────────────────────────────────────── */
+
+.modal-reminder-row {
+  margin-bottom: 12px;
+}
+
+.modal-reminder-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.btn-clear-reminder {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.btn-clear-reminder:hover {
+  background: #f5f5f5;
+}
+
+.reminder-notified-label {
+  display: block;
+  font-size: 11px;
+  color: #4caf50;
+  margin-top: 4px;
+}
+
+.reminder-bell {
+  font-size: 12px;
+  margin-right: 3px;
+}
+
 /* カンバンカード右上に絶対配置 */
 .kanban-card-signal {
   position: absolute;

@@ -260,6 +260,11 @@ export default function GanttLeftPanel({
                     title={task.name}
                     onDoubleClick={() => onSetEditingNameId(task.id)}
                   >
+                    {task.reminder && !task.reminder.notified && (
+                      <span className="reminder-bell" title="リマインダー設定済み">
+                        🔔
+                      </span>
+                    )}
                     {task.name}
                   </span>
                 )}
