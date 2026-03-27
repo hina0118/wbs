@@ -140,6 +140,88 @@ describe("useReminder - 複数タスク", () => {
   });
 });
 
+// ─── 繰り返し通知 ─────────────────────────────────────────────
+describe("useReminder - 繰り返し通知", () => {
+  it("repeat:daily の場合、通知後に翌日の同時刻へ日時が更新される", () => {
+    vi.setSystemTime(new Date("2026-03-27T10:00:00"));
+    const task: Task = {
+      id: "t1",
+      name: "タスクt1",
+      startDate: new Date(2026, 0, 1),
+      endDate: new Date(2026, 11, 31),
+      progress: 0,
+      reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "daily" },
+    };
+    const onTasksChange = vi.fn();
+
+    renderHook(() => useReminder([task], onTasksChange, vi.fn()));
+
+    expect(onTasksChange).toHaveBeenCalledOnce();
+    const updated = onTasksChange.mock.calls[0][0] as Task[];
+    expect(updated[0].reminder?.datetime).toBe("2026-03-28T09:00");
+    expect(updated[0].reminder?.notified).toBe(false);
+  });
+
+  it("repeat:weekly の場合、通知後に7日後の同時刻へ日時が更新される", () => {
+    vi.setSystemTime(new Date("2026-03-27T10:00:00"));
+    const task: Task = {
+      id: "t1",
+      name: "タスクt1",
+      startDate: new Date(2026, 0, 1),
+      endDate: new Date(2026, 11, 31),
+      progress: 0,
+      reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "weekly" },
+    };
+    const onTasksChange = vi.fn();
+
+    renderHook(() => useReminder([task], onTasksChange, vi.fn()));
+
+    expect(onTasksChange).toHaveBeenCalledOnce();
+    const updated = onTasksChange.mock.calls[0][0] as Task[];
+    expect(updated[0].reminder?.datetime).toBe("2026-04-03T09:00");
+    expect(updated[0].reminder?.notified).toBe(false);
+  });
+
+  it("repeat:monthly の場合、通知後に1ヶ月後の同時刻へ日時が更新される", () => {
+    vi.setSystemTime(new Date("2026-03-27T10:00:00"));
+    const task: Task = {
+      id: "t1",
+      name: "タスクt1",
+      startDate: new Date(2026, 0, 1),
+      endDate: new Date(2026, 11, 31),
+      progress: 0,
+      reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "monthly" },
+    };
+    const onTasksChange = vi.fn();
+
+    renderHook(() => useReminder([task], onTasksChange, vi.fn()));
+
+    expect(onTasksChange).toHaveBeenCalledOnce();
+    const updated = onTasksChange.mock.calls[0][0] as Task[];
+    expect(updated[0].reminder?.datetime).toBe("2026-04-27T09:00");
+    expect(updated[0].reminder?.notified).toBe(false);
+  });
+
+  it("repeat:none の場合、通知後に notified:true になる（1回限り）", () => {
+    vi.setSystemTime(new Date("2026-03-27T10:00:00"));
+    const task: Task = {
+      id: "t1",
+      name: "タスクt1",
+      startDate: new Date(2026, 0, 1),
+      endDate: new Date(2026, 11, 31),
+      progress: 0,
+      reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "none" },
+    };
+    const onTasksChange = vi.fn();
+
+    renderHook(() => useReminder([task], onTasksChange, vi.fn()));
+
+    const updated = onTasksChange.mock.calls[0][0] as Task[];
+    expect(updated[0].reminder?.notified).toBe(true);
+    expect(updated[0].reminder?.datetime).toBe("2026-03-27T09:00");
+  });
+});
+
 // ─── インターバル ─────────────────────────────────────────────
 describe("useReminder - インターバル", () => {
   it("60秒後に新たに到達したリマインダーを通知する", () => {

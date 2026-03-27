@@ -57,6 +57,41 @@ describe("loadTasks", () => {
     const tasks = await loadTasks();
     expect(tasks).toEqual([]);
   });
+
+  it("リマインダーに有効な repeat がある場合はそのまま保持する", async () => {
+    const raw = JSON.stringify([
+      {
+        id: "t1",
+        name: "Task1",
+        startDate: "2025-01-01",
+        endDate: "2025-03-31",
+        progress: 0,
+        reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "daily" },
+      },
+    ]);
+    mockInvoke.mockResolvedValueOnce(raw);
+
+    const tasks = await loadTasks();
+    expect(tasks[0].reminder?.repeat).toBe("daily");
+    expect(tasks[0].reminder?.notified).toBe(false);
+  });
+
+  it("リマインダーに無効な repeat がある場合は undefined になる", async () => {
+    const raw = JSON.stringify([
+      {
+        id: "t1",
+        name: "Task1",
+        startDate: "2025-01-01",
+        endDate: "2025-03-31",
+        progress: 0,
+        reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "invalid_value" },
+      },
+    ]);
+    mockInvoke.mockResolvedValueOnce(raw);
+
+    const tasks = await loadTasks();
+    expect(tasks[0].reminder?.repeat).toBeUndefined();
+  });
 });
 
 // ─── saveTasks ────────────────────────────────────────────────

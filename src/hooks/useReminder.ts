@@ -1,6 +1,25 @@
 import { useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Task } from "../types/task";
+import { Task, ReminderRepeat } from "../types/task";
+
+/** 繰り返し設定に応じて次回の通知日時を計算する */
+function nextReminderDatetime(datetime: string, repeat: ReminderRepeat): string {
+  const d = new Date(datetime);
+  switch (repeat) {
+    case "daily":
+      d.setDate(d.getDate() + 1);
+      break;
+    case "weekly":
+      d.setDate(d.getDate() + 7);
+      break;
+    case "monthly":
+      d.setMonth(d.getMonth() + 1);
+      break;
+  }
+  // "YYYY-MM-DDTHH:mm" 形式に戻す
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 /**
  * useReminder – リマインダー監視フック
@@ -48,6 +67,19 @@ export function useReminder(
       );
       onInAppNotifyRef.current(`🔔 ${body}`);
       changed = true;
+
+      const repeat = task.reminder.repeat ?? "none";
+      if (repeat !== "none") {
+        // 繰り返し: 次回日時へ進めて notified をリセット
+        return {
+          ...task,
+          reminder: {
+            ...task.reminder,
+            datetime: nextReminderDatetime(task.reminder.datetime, repeat),
+            notified: false,
+          },
+        };
+      }
       return { ...task, reminder: { ...task.reminder, notified: true } };
     });
 
