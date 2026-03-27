@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { Task } from "../types/task";
+import { Task, ReminderRepeat } from "../types/task";
 import { loadSampleTasks } from "../data/sampleData";
 import { toInputDate } from "./taskUtils";
 
@@ -19,7 +19,7 @@ interface TaskRaw {
   order?: number;
   isFloating?: boolean;
   archived?: boolean;
-  reminder?: { datetime: string; notified: boolean };
+  reminder?: { datetime: string; notified: boolean; repeat?: string };
 }
 
 function parseLocalDate(s: string): Date {
@@ -27,13 +27,24 @@ function parseLocalDate(s: string): Date {
   return new Date(y, m - 1, d);
 }
 
+const VALID_REPEATS = new Set<ReminderRepeat>(["none", "daily", "weekly", "monthly"]);
+
 function toTask(raw: TaskRaw): Task {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const reminder = raw.reminder
+    ? {
+        ...raw.reminder,
+        repeat: VALID_REPEATS.has(raw.reminder.repeat as ReminderRepeat)
+          ? (raw.reminder.repeat as ReminderRepeat)
+          : undefined,
+      }
+    : undefined;
   return {
     ...raw,
     startDate: raw.isFloating ? today : parseLocalDate(raw.startDate),
     endDate: raw.isFloating ? today : parseLocalDate(raw.endDate),
+    reminder,
   };
 }
 

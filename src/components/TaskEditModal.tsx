@@ -3,7 +3,7 @@
  * GanttChart / KanbanBoard / SearchView で共通利用
  */
 import { useState } from "react";
-import { Task } from "../types/task";
+import { Task, ReminderRepeat } from "../types/task";
 import {
   isLeaf,
   computeProgress,
@@ -43,6 +43,9 @@ export default function TaskEditModal({
   const [editEndDate, setEditEndDate] = useState(toInputDate(task.endDate));
   const [editIsFloating, setEditIsFloating] = useState(task.isFloating ?? false);
   const [editReminderDatetime, setEditReminderDatetime] = useState(task.reminder?.datetime ?? "");
+  const [editReminderRepeat, setEditReminderRepeat] = useState<ReminderRepeat>(
+    task.reminder?.repeat ?? "none",
+  );
   const [confirmDelete, setConfirmDelete] = useState(false);
   const initialMode = task.progressCount ? "count" : "percent";
   const [progressMode, setProgressMode] = useState<"percent" | "count">(initialMode);
@@ -98,6 +101,7 @@ export default function TaskEditModal({
       ? {
           datetime: editReminderDatetime,
           notified: reminderChanged ? false : (task.reminder?.notified ?? false),
+          repeat: editReminderRepeat,
         }
       : undefined;
 
@@ -196,7 +200,10 @@ export default function TaskEditModal({
               <button
                 type="button"
                 className="btn-clear-reminder"
-                onClick={() => setEditReminderDatetime("")}
+                onClick={() => {
+                  setEditReminderDatetime("");
+                  setEditReminderRepeat("none");
+                }}
                 title="リマインダーを削除"
                 aria-label="リマインダーを削除"
               >
@@ -204,6 +211,21 @@ export default function TaskEditModal({
               </button>
             )}
           </div>
+          {editReminderDatetime && (
+            <div className="modal-reminder-repeat-row">
+              <label className="modal-label-inline">繰り返し</label>
+              <select
+                value={editReminderRepeat}
+                onChange={(e) => setEditReminderRepeat(e.target.value as ReminderRepeat)}
+                className="reminder-repeat-select"
+              >
+                <option value="none">なし</option>
+                <option value="daily">毎日</option>
+                <option value="weekly">毎週</option>
+                <option value="monthly">毎月</option>
+              </select>
+            </div>
+          )}
           {task.reminder?.notified && editReminderDatetime === task.reminder.datetime && (
             <span className="reminder-notified-label">✅ 通知済み</span>
           )}

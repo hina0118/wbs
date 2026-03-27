@@ -1,6 +1,9 @@
+export type ReminderRepeat = "none" | "daily" | "weekly" | "monthly";
+
 export interface TaskReminder {
   datetime: string; // ISO 8601 (例: "2026-03-25T09:00")
   notified: boolean; // 通知済みフラグ（再通知防止）
+  repeat?: ReminderRepeat; // 繰り返し間隔
 }
 
 export interface Task {
