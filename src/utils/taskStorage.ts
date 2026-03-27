@@ -13,6 +13,7 @@ interface TaskRaw {
   progress: number;
   color?: string;
   parentId?: string;
+  collapsed?: boolean;
   assignee?: string;
   subMembers?: string[];
   progressCount?: { done: number; total: number };
