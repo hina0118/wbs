@@ -33,8 +33,8 @@ export function useReminder(
 
       // 期限到達 → 通知発火
       const body = task.name;
-      invoke("show_notification", { title: "WBS リマインダー", body }).catch(
-        (e) => console.warn("通知送信エラー:", e),
+      invoke("show_notification", { title: "WBS リマインダー", body }).catch((e) =>
+        console.warn("通知送信エラー:", e),
       );
       onInAppNotifyRef.current(`🔔 ${body}`);
       changed = true;

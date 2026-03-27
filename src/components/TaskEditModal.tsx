@@ -42,9 +42,7 @@ export default function TaskEditModal({
   const [editStartDate, setEditStartDate] = useState(toInputDate(task.startDate));
   const [editEndDate, setEditEndDate] = useState(toInputDate(task.endDate));
   const [editIsFloating, setEditIsFloating] = useState(task.isFloating ?? false);
-  const [editReminderDatetime, setEditReminderDatetime] = useState(
-    task.reminder?.datetime ?? "",
-  );
+  const [editReminderDatetime, setEditReminderDatetime] = useState(task.reminder?.datetime ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const initialMode = task.progressCount ? "count" : "percent";
   const [progressMode, setProgressMode] = useState<"percent" | "count">(initialMode);
