@@ -2,7 +2,7 @@
  * TaskEditModal – タスク編集モーダル（共有コンポーネント）
  * GanttChart / KanbanBoard / SearchView で共通利用
  */
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Task, ReminderRepeat } from "../types/task";
 import {
   isLeaf,
@@ -12,6 +12,94 @@ import {
   toInputDate,
   archiveTask,
 } from "../utils/taskUtils";
+
+// カスタムコンボボックス（担当者候補をテーマに合わせて表示）
+function MemberCombobox({
+  value,
+  onChange,
+  suggestions,
+  placeholder,
+  className,
+  onKeyDown,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  suggestions: string[];
+  placeholder?: string;
+  className?: string;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = suggestions.filter((s) =>
+    s.toLowerCase().includes(value.toLowerCase()),
+  );
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="combobox-wrapper" ref={containerRef}>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+          setActiveIndex(-1);
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        className={`assignee-input${className ? ` ${className}` : ""}`}
+        autoComplete="off"
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setActiveIndex((i) => Math.min(i + 1, filtered.length - 1));
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setActiveIndex((i) => Math.max(i - 1, -1));
+          } else if (e.key === "Enter" && activeIndex >= 0) {
+            e.preventDefault();
+            onChange(filtered[activeIndex]);
+            setOpen(false);
+            setActiveIndex(-1);
+          } else if (e.key === "Escape") {
+            setOpen(false);
+          } else {
+            onKeyDown?.(e);
+          }
+        }}
+      />
+      {open && filtered.length > 0 && (
+        <ul className="combobox-dropdown">
+          {filtered.map((s, i) => (
+            <li
+              key={s}
+              className={`combobox-option${i === activeIndex ? " active" : ""}`}
+              onMouseDown={() => {
+                onChange(s);
+                setOpen(false);
+                setActiveIndex(-1);
+              }}
+            >
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 interface Props {
   task: Task;
@@ -241,20 +329,12 @@ export default function TaskEditModal({
         {/* 担当者（リーフのみ） */}
         {leaf && (
           <>
-            <datalist id="member-suggestions">
-              {allMembers.map((m) => (
-                <option key={m} value={m} />
-              ))}
-            </datalist>
-
             <label className="modal-label">担当者（主）</label>
-            <input
-              type="text"
-              list="member-suggestions"
+            <MemberCombobox
               value={editAssignee}
-              onChange={(e) => setEditAssignee(e.target.value)}
+              onChange={setEditAssignee}
+              suggestions={allMembers}
               placeholder="担当者名を入力"
-              className="assignee-input"
             />
 
             <label className="modal-label">サブメンバー</label>
@@ -277,13 +357,12 @@ export default function TaskEditModal({
               </div>
             )}
             <div className="sub-member-add-row">
-              <input
-                type="text"
-                list="member-suggestions"
+              <MemberCombobox
                 value={newSubMember}
-                onChange={(e) => setNewSubMember(e.target.value)}
+                onChange={setNewSubMember}
+                suggestions={allMembers}
                 placeholder="メンバー名を入力"
-                className="assignee-input sub-member-input"
+                className="sub-member-input"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && newSubMember.trim()) {
                     setEditSubMembers([...editSubMembers, newSubMember.trim()]);
