@@ -232,7 +232,7 @@ export async function exportToExcel(tasks: Task[], filename?: string): Promise<s
 
       if (dayMs >= tStart && dayMs <= tEnd) {
         const elapsed = dayMs - tStart;
-        c.fill = solidFill(elapsed < doneMs ? barDone : barTodo);
+        c.fill = solidFill(progress === 100 || elapsed < doneMs ? barDone : barTodo);
       } else {
         c.fill = solidFill(isToday ? TODAY_C : isWE ? WE_CELL : "FFFFFFFF");
       }
