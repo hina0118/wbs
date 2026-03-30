@@ -906,6 +906,46 @@
   border-color: #4a90d9;
 }
 
+.combobox-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.combobox-wrapper .assignee-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.combobox-dropdown {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid #dde3ed;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.combobox-option {
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.combobox-option:hover,
+.combobox-option.active {
+  background: #f0f4fb;
+  color: #1a56db;
+}
+
 .progress-slider {
   width: 100%;
   accent-color: #4a90d9;
@@ -3345,6 +3385,19 @@
 }
 [data-theme="dark"] .assignee-input:focus {
   border-color: #4a90d9;
+}
+[data-theme="dark"] .combobox-dropdown {
+  background: #1e2130;
+  border-color: #353845;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .combobox-option {
+  color: #e2e4f0;
+}
+[data-theme="dark"] .combobox-option:hover,
+[data-theme="dark"] .combobox-option.active {
+  background: #2a2f45;
+  color: #7eb8f5;
 }
 [data-theme="dark"] .modal-label {
   color: #a0a3b0;
