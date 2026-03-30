@@ -33,9 +33,7 @@ function MemberCombobox({
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const filtered = suggestions.filter((s) =>
-    s.toLowerCase().includes(value.toLowerCase()),
-  );
+  const filtered = suggestions.filter((s) => s.toLowerCase().includes(value.toLowerCase()));
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
