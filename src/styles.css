@@ -4006,3 +4006,232 @@
 [data-theme="dark"] input[type="datetime-local"] {
   color-scheme: dark;
 }
+
+/* ── Daily Task Panel ── */
+.daily-panel {
+  position: fixed !important;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
+  display: flex !important;
+  flex-direction: column;
+  z-index: 200;
+  overflow: hidden;
+  border: 1px solid #dde3ed;
+}
+
+.daily-panel-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f0f4fa;
+  border-bottom: 1px solid #dde3ed;
+  cursor: move;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.daily-panel-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.daily-panel-close {
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #888;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.daily-panel-close:hover {
+  background: #e0e7ef;
+  color: #333;
+}
+
+.daily-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.daily-panel-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.daily-panel-empty {
+  padding: 16px 14px;
+  color: #aaa;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.daily-panel-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 14px;
+  border-radius: 6px;
+  margin: 2px 6px;
+  transition: background 0.12s;
+}
+.daily-panel-item:hover {
+  background: #f5f7fb;
+}
+
+.daily-panel-checkbox {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: #4a90d9;
+}
+
+.daily-panel-text {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #1a1a2e;
+  word-break: break-all;
+  line-height: 1.4;
+}
+.daily-panel-item--done .daily-panel-text {
+  text-decoration: line-through;
+  color: #aaa;
+}
+
+.daily-panel-delete {
+  border: none;
+  background: transparent;
+  color: #ccc;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  line-height: 1;
+  visibility: hidden;
+}
+.daily-panel-item:hover .daily-panel-delete {
+  visibility: visible;
+}
+.daily-panel-delete:hover {
+  background: #fde8e8;
+  color: #e55;
+}
+
+.daily-panel-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid #dde3ed;
+  background: #fafbfd;
+  flex-shrink: 0;
+}
+
+.daily-panel-input {
+  flex: 1;
+  border: 1px solid #dde3ed;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 0.82rem;
+  background: #fff;
+  color: #1a1a2e;
+  outline: none;
+}
+.daily-panel-input:focus {
+  border-color: #4a90d9;
+}
+
+.daily-panel-add {
+  border: none;
+  background: #4a90d9;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.daily-panel-add:hover {
+  background: #3a7ec9;
+}
+
+/* Daily panel toggle button in header */
+.app-daily-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ccc;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.app-daily-btn:hover,
+.app-daily-btn--active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+/* ── Dark mode: Daily Task Panel ── */
+[data-theme="dark"] .daily-panel {
+  background: #1e2028;
+  border-color: #353845;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+[data-theme="dark"] .daily-panel-titlebar {
+  background: #252730;
+  border-bottom-color: #353845;
+}
+[data-theme="dark"] .daily-panel-title {
+  color: #e2e4f0;
+}
+[data-theme="dark"] .daily-panel-close {
+  color: #6e7080;
+}
+[data-theme="dark"] .daily-panel-close:hover {
+  background: #353845;
+  color: #e2e4f0;
+}
+[data-theme="dark"] .daily-panel-item:hover {
+  background: #252730;
+}
+[data-theme="dark"] .daily-panel-text {
+  color: #d0d3e8;
+}
+[data-theme="dark"] .daily-panel-item--done .daily-panel-text {
+  color: #555870;
+}
+[data-theme="dark"] .daily-panel-empty {
+  color: #555870;
+}
+[data-theme="dark"] .daily-panel-footer {
+  border-top-color: #353845;
+  background: #1a1c24;
+}
+[data-theme="dark"] .daily-panel-input {
+  background: #252730;
+  border-color: #353845;
+  color: #d0d3e8;
+}
+[data-theme="dark"] .daily-panel-input:focus {
+  border-color: #4a90d9;
+}
+[data-theme="dark"] .daily-panel-delete:hover {
+  background: #3a2020;
+  color: #e55;
+}
