@@ -42,10 +42,7 @@ export default function DailyTaskPanel({ onClose }: Props) {
   function handleAdd() {
     const text = inputText.trim();
     if (!text) return;
-    setTasks((prev) => [
-      ...prev,
-      { id: `${Date.now()}-${Math.random()}`, text, done: false },
-    ]);
+    setTasks((prev) => [...prev, { id: `${Date.now()}-${Math.random()}`, text, done: false }]);
     setInputText("");
     inputRef.current?.focus();
   }
@@ -55,9 +52,7 @@ export default function DailyTaskPanel({ onClose }: Props) {
   }
 
   function toggleDone(id: string) {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
-    );
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
   }
 
   function deleteTask(id: string) {
@@ -87,11 +82,12 @@ export default function DailyTaskPanel({ onClose }: Props) {
 
       <div className="daily-panel-body">
         <ul className="daily-panel-list">
-          {tasks.length === 0 && (
-            <li className="daily-panel-empty">タスクがありません</li>
-          )}
+          {tasks.length === 0 && <li className="daily-panel-empty">タスクがありません</li>}
           {tasks.map((task) => (
-            <li key={task.id} className={`daily-panel-item${task.done ? " daily-panel-item--done" : ""}`}>
+            <li
+              key={task.id}
+              className={`daily-panel-item${task.done ? " daily-panel-item--done" : ""}`}
+            >
               <input
                 type="checkbox"
                 className="daily-panel-checkbox"
