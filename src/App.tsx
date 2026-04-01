@@ -9,6 +9,7 @@ import ArchiveView from "./components/ArchiveView";
 import NoteView from "./components/NoteView";
 import ProxySettingModal from "./components/ProxySettingModal";
 import UpdateNotifier from "./components/UpdateNotifier";
+import DailyTaskPanel from "./components/DailyTaskPanel";
 import { Task } from "./types/task";
 import { loadTasks, saveTasks } from "./utils/taskStorage";
 import { loadHolidays } from "./utils/holidays";
@@ -29,6 +30,7 @@ function App() {
   const [showProxy, setShowProxy] = useState(false);
   const [exportMsg, setExportMsg] = useState<{ text: string; isError: boolean } | null>(null);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
+  const [showDailyPanel, setShowDailyPanel] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const exportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -210,6 +212,16 @@ function App() {
           </button>
         </div>
 
+        {/* デイリーTODOパネル切替ボタン */}
+        <button
+          className={`app-daily-btn${showDailyPanel ? " app-daily-btn--active" : ""}`}
+          onClick={() => setShowDailyPanel((v) => !v)}
+          title="今日のTODO"
+          aria-label="今日のTODOパネルを開く"
+        >
+          📋 TODO
+        </button>
+
         {/* Excel エクスポートボタン */}
         <button
           className="app-excel-btn"
@@ -252,6 +264,7 @@ function App() {
       </header>
 
       {showProxy && <ProxySettingModal onClose={() => setShowProxy(false)} />}
+      {showDailyPanel && <DailyTaskPanel onClose={() => setShowDailyPanel(false)} />}
 
       {exportMsg && (
         <div className={`toast ${exportMsg.isError ? "toast--warn" : "toast--ok"}`}>
