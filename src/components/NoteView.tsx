@@ -12,6 +12,10 @@ import { computeProgress, getDepth, isVisible } from "../utils/taskUtils";
 import { INDENT_PER_LEVEL } from "../constants/layout";
 
 const turndownService = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
+turndownService.addRule("lineBreak", {
+  filter: "br",
+  replacement: () => "  \n",
+});
 
 function getAncestors(taskId: string, tasks: Task[]): Task[] {
   const task = tasks.find((t) => t.id === taskId);
