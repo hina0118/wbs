@@ -12,6 +12,10 @@ interface Props {
 }
 
 const turndownService = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
+turndownService.addRule("lineBreak", {
+  filter: "br",
+  replacement: () => "  \n",
+});
 
 export default function MemoField({ value, onChange }: Props) {
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
