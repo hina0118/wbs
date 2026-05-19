@@ -8,7 +8,7 @@ import AnalysisView from "./components/AnalysisView";
 import ArchiveView from "./components/ArchiveView";
 import NoteView from "./components/NoteView";
 import TestProgressView from "./components/TestProgressView";
-import ProxySettingModal from "./components/ProxySettingModal";
+import SettingsModal from "./components/SettingsModal";
 import UpdateNotifier from "./components/UpdateNotifier";
 import DailyTaskPanel from "./components/DailyTaskPanel";
 import { Task } from "./types/task";
@@ -19,6 +19,7 @@ import { loadHolidays } from "./utils/holidays";
 import { sortByTree } from "./utils/taskUtils";
 import { exportToExcel } from "./utils/exportToExcel";
 import { useReminder } from "./hooks/useReminder";
+import { loadAppSettings } from "./utils/settingsStorage";
 
 type ViewMode = "gantt" | "kanban" | "analysis" | "archive" | "note" | "test";
 
@@ -32,6 +33,9 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>("gantt");
   const [searchQuery, setSearchQuery] = useState("");
   const [showProxy, setShowProxy] = useState(false);
+  const [defaultChildTaskNames, setDefaultChildTaskNames] = useState<string[]>(
+    () => loadAppSettings().defaultChildTaskNames,
+  );
   const [exportMsg, setExportMsg] = useState<{ text: string; isError: boolean } | null>(null);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const [showDailyPanel, setShowDailyPanel] = useState(false);
@@ -284,7 +288,12 @@ function App() {
         </button>
       </header>
 
-      {showProxy && <ProxySettingModal onClose={() => setShowProxy(false)} />}
+      {showProxy && (
+        <SettingsModal
+          onClose={() => setShowProxy(false)}
+          onChildTaskNamesChange={setDefaultChildTaskNames}
+        />
+      )}
       {showDailyPanel && <DailyTaskPanel onClose={() => setShowDailyPanel(false)} />}
 
       {exportMsg && (
@@ -315,7 +324,12 @@ function App() {
           <>
             {isSearching && <SearchView tasks={tasks} query={searchQuery} />}
             {!isSearching && viewMode === "gantt" && (
-              <GanttChart tasks={tasks} onTasksChange={handleTasksChange} holidays={holidays} />
+              <GanttChart
+                tasks={tasks}
+                onTasksChange={handleTasksChange}
+                holidays={holidays}
+                defaultChildTaskNames={defaultChildTaskNames}
+              />
             )}
             {!isSearching && viewMode === "kanban" && (
               <KanbanBoard tasks={tasks} onTasksChange={handleTasksChange} />
