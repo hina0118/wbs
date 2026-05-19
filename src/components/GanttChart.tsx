@@ -33,6 +33,7 @@ interface Props {
   tasks: Task[];
   onTasksChange: (tasks: Task[]) => void;
   holidays?: Map<string, string>;
+  defaultChildTaskNames?: string[];
 }
 
 interface AddState {
@@ -45,7 +46,12 @@ interface AddState {
   isFloating?: boolean;
 }
 
-export default function GanttChart({ tasks, onTasksChange, holidays = new Map() }: Props) {
+export default function GanttChart({
+  tasks,
+  onTasksChange,
+  holidays = new Map(),
+  defaultChildTaskNames = [],
+}: Props) {
   const timelineRef = useRef<HTMLDivElement>(null);
   const leftScrollRef = useRef<HTMLDivElement>(null);
 
@@ -154,7 +160,21 @@ export default function GanttChart({ tasks, onTasksChange, holidays = new Map() 
         : {}),
     };
 
-    const appended = [...tasks, newTask];
+    // 親タスク（単発でない・子タスクでない）追加時にデフォルト子タスクを自動生成
+    const autoChildren: Task[] =
+      !addState.parentId && !addState.isFloating && defaultChildTaskNames.length > 0
+        ? defaultChildTaskNames.map((name) => ({
+            id: genId(),
+            name,
+            startDate: newStart,
+            endDate: newEnd,
+            progress: 0,
+            color: addState.color,
+            parentId: newTask.id,
+          }))
+        : [];
+
+    const appended = [...tasks, newTask, ...autoChildren];
     const propagated =
       newTask.parentId && !newTask.isFloating ? propagateDates(newTask.id, appended) : appended;
     onTasksChange(propagated);

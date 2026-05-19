@@ -818,6 +818,135 @@
   min-width: 420px;
   max-width: 520px;
 }
+
+/* 設定モーダル（タブ付き） */
+.settings-modal {
+  min-width: 460px;
+  max-width: 560px;
+}
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+.settings-tab-btn {
+  padding: 6px 14px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #64748b;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.settings-tab-btn:hover {
+  color: #334155;
+}
+.settings-tab-btn--active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+.settings-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.settings-desc {
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+.settings-child-add-row {
+  display: flex;
+  gap: 8px;
+}
+.settings-child-input {
+  flex: 1;
+}
+.settings-child-add-btn {
+  padding: 5px 14px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #fff;
+  background: #2563eb;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.settings-child-add-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.settings-child-add-btn:not(:disabled):hover {
+  background: #1d4ed8;
+}
+.settings-child-empty {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  text-align: center;
+  padding: 12px 0;
+}
+.settings-child-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.settings-child-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+}
+.settings-child-name {
+  font-size: 0.88rem;
+  color: #1e293b;
+}
+.settings-child-actions {
+  display: flex;
+  gap: 4px;
+}
+.settings-child-move-btn {
+  width: 26px;
+  height: 26px;
+  font-size: 0.72rem;
+  color: #64748b;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.settings-child-move-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.settings-child-move-btn:not(:disabled):hover {
+  background: #e2e8f0;
+}
+.settings-child-remove-btn {
+  width: 26px;
+  height: 26px;
+  font-size: 0.8rem;
+  color: #e53935;
+  background: none;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.settings-child-remove-btn:hover {
+  background: #fef2f2;
+}
 .proxy-modal-desc {
   font-size: 0.82rem;
   color: #64748b;
@@ -3446,6 +3575,47 @@
 }
 [data-theme="dark"] .color-swatch--active {
   border-color: #e2e4f0;
+}
+
+/* ── Settings modal ── */
+[data-theme="dark"] .settings-tabs {
+  border-bottom-color: #353845;
+}
+[data-theme="dark"] .settings-tab-btn {
+  color: #6e7080;
+}
+[data-theme="dark"] .settings-tab-btn:hover {
+  color: #c0c3d0;
+}
+[data-theme="dark"] .settings-tab-btn--active {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}
+[data-theme="dark"] .settings-desc {
+  color: #6e7080;
+}
+[data-theme="dark"] .settings-child-item {
+  background: #1e2028;
+  border-color: #2a2d38;
+}
+[data-theme="dark"] .settings-child-name {
+  color: #c0c3d0;
+}
+[data-theme="dark"] .settings-child-move-btn {
+  color: #6e7080;
+  border-color: #2a2d38;
+}
+[data-theme="dark"] .settings-child-move-btn:not(:disabled):hover {
+  background: #2a2d38;
+}
+[data-theme="dark"] .settings-child-remove-btn {
+  border-color: #5a2020;
+}
+[data-theme="dark"] .settings-child-remove-btn:hover {
+  background: #3a1a1a;
+}
+[data-theme="dark"] .settings-child-empty {
+  color: #555;
 }
 
 /* ── Proxy modal ── */
