@@ -144,7 +144,13 @@ function getTaskDepth(taskId: string, tasks: Task[]): number {
   return 1 + getTaskDepth(task.parentId, tasks);
 }
 
-export default function TestProgressView({ tasks, testBooks, onTestBooksChange, onTasksChange, holidays = new Map() }: Props) {
+export default function TestProgressView({
+  tasks,
+  testBooks,
+  onTestBooksChange,
+  onTasksChange,
+  holidays = new Map(),
+}: Props) {
   const [filterTaskId, setFilterTaskId] = useState<string>("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -167,7 +173,8 @@ export default function TestProgressView({ tasks, testBooks, onTestBooksChange, 
     (s, b) => s + Math.max(0, b.totalCount - sumPass(b.dailyLogs) - sumFail(b.dailyLogs)),
     0,
   );
-  const executedRate = totalCount > 0 ? Math.round(((passCount + failCount) / totalCount) * 100) : 0;
+  const executedRate =
+    totalCount > 0 ? Math.round(((passCount + failCount) / totalCount) * 100) : 0;
   const passRate = totalCount > 0 ? Math.round((passCount / totalCount) * 100) : 0;
 
   function updateBook(id: string, patch: Partial<TestBook>) {
@@ -240,7 +247,9 @@ export default function TestProgressView({ tasks, testBooks, onTestBooksChange, 
               const prefix = depth > 0 ? "└ " : "";
               return (
                 <option key={t.id} value={t.id}>
-                  {indent}{prefix}{t.name}
+                  {indent}
+                  {prefix}
+                  {t.name}
                 </option>
               );
             })}
@@ -259,7 +268,9 @@ export default function TestProgressView({ tasks, testBooks, onTestBooksChange, 
             <span className="test-summary-pass">合格: {passCount}</span>
             <span className="test-summary-fail">不合格: {failCount}</span>
             <span className="test-summary-not">未実施: {notExecuted}</span>
-            <span className="test-summary-rate">実施率: {executedRate}% / 合格率: {passRate}%</span>
+            <span className="test-summary-rate">
+              実施率: {executedRate}% / 合格率: {passRate}%
+            </span>
           </div>
           <div className="test-progress-summary-bar">
             <div className="test-summary-bar-pass" style={{ width: `${passRate}%` }} />
@@ -302,9 +313,7 @@ export default function TestProgressView({ tasks, testBooks, onTestBooksChange, 
                 const fail = sumFail(book.dailyLogs);
                 const notEx = Math.max(0, book.totalCount - pass - fail);
                 const rate =
-                  book.totalCount > 0
-                    ? Math.round(((pass + fail) / book.totalCount) * 100)
-                    : 0;
+                  book.totalCount > 0 ? Math.round(((pass + fail) / book.totalCount) * 100) : 0;
                 const passRateBook =
                   book.totalCount > 0 ? Math.round((pass / book.totalCount) * 100) : 0;
                 const isExpanded = expandedIds.has(book.id);
@@ -357,7 +366,9 @@ export default function TestProgressView({ tasks, testBooks, onTestBooksChange, 
                             const prefix = depth > 0 ? "└ " : "";
                             return (
                               <option key={t.id} value={t.id}>
-                                {indent}{prefix}{t.name}
+                                {indent}
+                                {prefix}
+                                {t.name}
                               </option>
                             );
                           })}
@@ -448,7 +459,9 @@ export default function TestProgressView({ tasks, testBooks, onTestBooksChange, 
                                   <tr>
                                     <th className="tpt-log-label-col"></th>
                                     {book.dailyLogs.map((log) => {
-                                      const { label, isSaturday, isSunday } = getDayOfWeek(log.date);
+                                      const { label, isSaturday, isSunday } = getDayOfWeek(
+                                        log.date,
+                                      );
                                       const holidayName = getHolidayName(log.date, holidays);
                                       const isRed = isSunday || !!holidayName;
                                       const [, m, d] = log.date.split("-");
@@ -459,8 +472,12 @@ export default function TestProgressView({ tasks, testBooks, onTestBooksChange, 
                                           title={holidayName || undefined}
                                         >
                                           <div className="tpt-log-date-head">
-                                            <span className="tpt-log-date-num">{Number(m)}/{Number(d)}</span>
-                                            <span className={`tpt-log-weekday${isRed ? " tpt-log-weekday--sunday" : isSaturday ? " tpt-log-weekday--saturday" : ""}`}>
+                                            <span className="tpt-log-date-num">
+                                              {Number(m)}/{Number(d)}
+                                            </span>
+                                            <span
+                                              className={`tpt-log-weekday${isRed ? " tpt-log-weekday--sunday" : isSaturday ? " tpt-log-weekday--saturday" : ""}`}
+                                            >
                                               {holidayName ? "祝" : label}
                                             </span>
                                             <button
@@ -478,12 +495,24 @@ export default function TestProgressView({ tasks, testBooks, onTestBooksChange, 
                                 </thead>
                                 <tbody>
                                   <tr>
-                                    <td className="tpt-log-row-label tpt-log-row-label--pass">合格数</td>
+                                    <td className="tpt-log-row-label tpt-log-row-label--pass">
+                                      合格数
+                                    </td>
                                     {book.dailyLogs.map((log) => {
                                       const { isSaturday, isSunday } = getDayOfWeek(log.date);
-                                      const isRed = isSunday || !!getHolidayName(log.date, holidays);
+                                      const isRed =
+                                        isSunday || !!getHolidayName(log.date, holidays);
                                       return (
-                                        <td key={log.date} className={isRed ? "tpt-log-cell--sunday" : isSaturday ? "tpt-log-cell--saturday" : ""}>
+                                        <td
+                                          key={log.date}
+                                          className={
+                                            isRed
+                                              ? "tpt-log-cell--sunday"
+                                              : isSaturday
+                                                ? "tpt-log-cell--saturday"
+                                                : ""
+                                          }
+                                        >
                                           <input
                                             type="number"
                                             className="tpt-log-input-cell tpt-log-input--pass"
@@ -501,12 +530,24 @@ export default function TestProgressView({ tasks, testBooks, onTestBooksChange, 
                                     })}
                                   </tr>
                                   <tr>
-                                    <td className="tpt-log-row-label tpt-log-row-label--fail">不合格数</td>
+                                    <td className="tpt-log-row-label tpt-log-row-label--fail">
+                                      不合格数
+                                    </td>
                                     {book.dailyLogs.map((log) => {
                                       const { isSaturday, isSunday } = getDayOfWeek(log.date);
-                                      const isRed = isSunday || !!getHolidayName(log.date, holidays);
+                                      const isRed =
+                                        isSunday || !!getHolidayName(log.date, holidays);
                                       return (
-                                        <td key={log.date} className={isRed ? "tpt-log-cell--sunday" : isSaturday ? "tpt-log-cell--saturday" : ""}>
+                                        <td
+                                          key={log.date}
+                                          className={
+                                            isRed
+                                              ? "tpt-log-cell--sunday"
+                                              : isSaturday
+                                                ? "tpt-log-cell--saturday"
+                                                : ""
+                                          }
+                                        >
                                           <input
                                             type="number"
                                             className="tpt-log-input-cell tpt-log-input--fail"
@@ -526,10 +567,7 @@ export default function TestProgressView({ tasks, testBooks, onTestBooksChange, 
                                 </tbody>
                               </table>
                             </div>
-                            <button
-                              className="tpt-log-add-row"
-                              onClick={() => addLogRow(book)}
-                            >
+                            <button className="tpt-log-add-row" onClick={() => addLogRow(book)}>
                               + 今日の列を追加
                             </button>
                           </div>
