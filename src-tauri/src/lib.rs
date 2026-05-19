@@ -94,6 +94,35 @@ fn save_tasks(app: tauri::AppHandle, json: String) -> Result<(), String> {
     fs::write(dir.join("tasks.json"), json).map_err(|e| e.to_string())
 }
 
+// ── テストブック保存 ──────────────────────────────────────
+
+/// アプリデータディレクトリの testBooks.json を読む。
+#[tauri::command]
+fn load_test_books(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let path = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("testBooks.json");
+
+    if path.exists() {
+        fs::read_to_string(&path)
+            .map(Some)
+            .map_err(|e| e.to_string())
+    } else {
+        Ok(None)
+    }
+}
+
+/// テストブック JSON をアプリデータディレクトリの testBooks.json に保存する。
+#[tauri::command]
+fn save_test_books(app: tauri::AppHandle, json: String) -> Result<(), String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    fs::write(dir.join("testBooks.json"), json).map_err(|e| e.to_string())
+}
+
 // ── 祝日取得 ──────────────────────────────────────────────
 
 /// 内閣府が公開している祝日CSVを取得してパースする。
@@ -225,6 +254,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             load_saved_tasks,
             save_tasks,
+            load_test_books,
+            save_test_books,
             fetch_holidays,
             get_proxy_setting,
             save_proxy_setting,
