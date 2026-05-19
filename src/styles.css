@@ -4235,3 +4235,456 @@
   background: #3a2020;
   color: #e55;
 }
+
+/* ── TestProgressView ────────────────────────────────────── */
+
+.test-progress-view {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f0f2f5;
+  overflow: hidden;
+}
+
+.test-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e0e3ea;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.test-progress-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.test-progress-icon { font-size: 1.4rem; }
+
+.test-progress-title h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.test-progress-count {
+  font-size: 0.82rem;
+  color: #666;
+  background: #f0f2f5;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.test-progress-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.test-progress-filter {
+  padding: 5px 10px;
+  border: 1px solid #d0d3db;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  color: #333;
+  background: #fff;
+  cursor: pointer;
+}
+
+.test-progress-add-btn {
+  padding: 6px 14px;
+  background: #4a90d9;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.test-progress-add-btn:hover { background: #357abd; }
+
+.test-progress-summary {
+  padding: 10px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e0e3ea;
+  flex-shrink: 0;
+}
+
+.test-progress-summary-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.84rem;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.test-summary-total { color: #555; }
+.test-summary-pass { color: #27ae60; font-weight: 600; }
+.test-summary-fail { color: #e74c3c; font-weight: 600; }
+.test-summary-not { color: #999; }
+.test-summary-rate { color: #4a90d9; margin-left: auto; font-weight: 500; }
+
+.test-progress-summary-bar {
+  height: 8px;
+  background: #e8eaf0;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+}
+
+.test-summary-bar-pass { height: 100%; background: #27ae60; transition: width 0.3s; }
+.test-summary-bar-fail { height: 100%; background: #e74c3c; transition: width 0.3s; }
+
+.test-progress-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #aaa;
+}
+.test-progress-empty-icon { font-size: 3rem; }
+.test-progress-empty p { font-size: 1rem; }
+.test-progress-empty-hint { font-size: 0.82rem; color: #bbb; }
+
+.test-progress-table-wrap {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.test-progress-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  font-size: 0.84rem;
+}
+
+.test-progress-table thead tr {
+  background: #f5f6fa;
+  border-bottom: 2px solid #e0e3ea;
+}
+
+.test-progress-table th {
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+
+.test-progress-row td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #f0f2f5;
+  vertical-align: middle;
+}
+.test-progress-row:last-child td { border-bottom: none; }
+.test-progress-row:hover td { background: #f8f9fc; }
+
+.tpt-expand { width: 28px; }
+.tpt-name { min-width: 160px; }
+.tpt-task { min-width: 120px; }
+.tpt-assignee { width: 90px; }
+.tpt-due { width: 120px; }
+.tpt-total, .tpt-pass, .tpt-fail { width: 64px; }
+.tpt-not { width: 56px; }
+.tpt-bar { min-width: 100px; }
+.tpt-del { width: 36px; }
+
+.tpt-derived { color: #555; text-align: right; font-size: 0.84rem; padding-right: 14px; }
+.tpt-not.tpt-derived { color: #999; }
+
+.tpt-input {
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 0.84rem;
+  background: transparent;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+.tpt-input:hover, .tpt-input:focus {
+  border-color: #c0c4d0;
+  background: #f5f6fa;
+  outline: none;
+}
+.tpt-input--name { font-weight: 500; }
+.tpt-input--num { text-align: right; width: 56px; }
+.tpt-input--pass:focus { border-color: #27ae60; }
+.tpt-input--fail:focus { border-color: #e74c3c; }
+.tpt-input--date { width: 110px; font-size: 0.8rem; }
+
+.tpt-select {
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.tpt-select:hover, .tpt-select:focus {
+  border-color: #c0c4d0;
+  background: #f5f6fa;
+  outline: none;
+}
+
+.tpt-bar-wrap { display: flex; align-items: center; gap: 6px; }
+.tpt-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #e8eaf0;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+}
+.tpt-bar-pass { height: 100%; background: #27ae60; transition: width 0.2s; }
+.tpt-bar-fail { height: 100%; background: #e74c3c; transition: width 0.2s; }
+.tpt-bar-pct { font-size: 0.78rem; color: #888; width: 32px; text-align: right; flex-shrink: 0; }
+
+.tpt-expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: #888;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.tpt-expand-btn:hover { background: #e8eaf0; color: #444; }
+
+.tpt-del-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 3px 5px;
+  border-radius: 4px;
+  opacity: 0.4;
+  transition: opacity 0.15s, background 0.15s;
+}
+.tpt-del-btn:hover { opacity: 1; background: #fdf0ef; }
+
+.tpt-sync { width: 64px; text-align: center; }
+.tpt-sync-btn {
+  padding: 3px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1e88e5;
+  background: #e8f4fd;
+  border: 1px solid #90caf9;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tpt-sync-btn:hover { background: #bbdefb; border-color: #42a5f5; }
+
+/* 日次ログテーブル */
+.test-progress-log-row td {
+  padding: 8px 16px 12px 40px;
+  background: #f5f7fb;
+  border-bottom: 1px solid #e8eaf0;
+  /* テーブルセルがログテーブルの幅で広がらないよう制約 */
+  max-width: 0;
+  overflow: hidden;
+}
+
+.tpt-log-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tpt-log-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.tpt-log-table {
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.tpt-log-table thead tr {
+  background: #eef0f6;
+}
+
+.tpt-log-table th {
+  padding: 6px 6px 4px;
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.tpt-log-entry td {
+  padding: 4px 4px;
+  border-top: 1px solid #f0f2f5;
+  vertical-align: middle;
+}
+
+.tpt-log-label-col { width: 72px; min-width: 72px; }
+
+.tpt-log-date-col {
+  min-width: 84px;
+  width: 84px;
+  text-align: center;
+  padding: 6px 4px 4px;
+}
+.tpt-log-date-col--saturday { background: #f0f7ff; }
+.tpt-log-date-col--sunday   { background: #fff0f0; }
+
+.tpt-log-date-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.tpt-log-date-num {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #444;
+  white-space: nowrap;
+}
+
+.tpt-log-weekday {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #888;
+}
+.tpt-log-weekday--saturday { color: #1e88e5; }
+.tpt-log-weekday--sunday   { color: #e53935; }
+
+.tpt-log-row-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  white-space: nowrap;
+  padding: 6px 10px;
+  text-align: right;
+}
+.tpt-log-row-label--pass { color: #27ae60; }
+.tpt-log-row-label--fail { color: #e74c3c; }
+
+.tpt-log-cell--saturday { background: #f0f7ff; }
+.tpt-log-cell--sunday   { background: #fff0f0; }
+
+.tpt-log-input-cell {
+  width: 72px;
+  padding: 5px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.84rem;
+  background: transparent;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+.tpt-log-input-cell:hover, .tpt-log-input-cell:focus {
+  border-color: #c0c4d0;
+  background: #f5f6fa;
+  outline: none;
+}
+.tpt-log-input--pass:focus { border-color: #27ae60; }
+.tpt-log-input--fail:focus { border-color: #e74c3c; }
+
+.tpt-log-del-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.68rem;
+  padding: 1px 3px;
+  border-radius: 3px;
+  opacity: 0.3;
+  color: #888;
+  transition: opacity 0.15s, background 0.15s;
+}
+.tpt-log-del-btn:hover { opacity: 1; background: #fdf0ef; color: #e74c3c; }
+
+.tpt-log-add-row {
+  align-self: flex-start;
+  padding: 4px 12px;
+  background: none;
+  border: 1px dashed #b0b4c4;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  color: #777;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.tpt-log-add-row:hover { border-color: #4a90d9; color: #4a90d9; background: #eef4fc; }
+
+/* ── Dark mode: TestProgressView ── */
+
+[data-theme="dark"] .test-progress-view { background: #121318; }
+[data-theme="dark"] .test-progress-header { background: #1e2028; border-bottom-color: #353845; }
+[data-theme="dark"] .test-progress-title h2 { color: #e2e4f0; }
+[data-theme="dark"] .test-progress-count { background: #2a2d38; color: #6e7080; }
+[data-theme="dark"] .test-progress-filter { background: #2a2d38; border-color: #353845; color: #c0c3d0; }
+[data-theme="dark"] .test-progress-summary { background: #1e2028; border-bottom-color: #353845; }
+[data-theme="dark"] .test-summary-total { color: #a0a3b0; }
+[data-theme="dark"] .test-summary-not { color: #666; }
+[data-theme="dark"] .test-progress-summary-bar { background: #2a2d38; }
+[data-theme="dark"] .test-progress-table { background: #1e2028; box-shadow: none; }
+[data-theme="dark"] .test-progress-table thead tr { background: #252830; border-bottom-color: #353845; }
+[data-theme="dark"] .test-progress-table th { color: #8a8da0; }
+[data-theme="dark"] .test-progress-row td { border-bottom-color: #2a2d38; }
+[data-theme="dark"] .test-progress-row:hover td { background: #252830; }
+[data-theme="dark"] .tpt-not--val { color: #666; }
+[data-theme="dark"] .tpt-input { color: #c0c3d0; }
+[data-theme="dark"] .tpt-input:hover, [data-theme="dark"] .tpt-input:focus { border-color: #454860; background: #252830; }
+[data-theme="dark"] .tpt-select { color: #c0c3d0; }
+[data-theme="dark"] .tpt-select:hover, [data-theme="dark"] .tpt-select:focus { border-color: #454860; background: #252830; }
+[data-theme="dark"] .tpt-bar-track { background: #2a2d38; }
+[data-theme="dark"] .tpt-bar-pct { color: #666; }
+[data-theme="dark"] .tpt-expand-btn { color: #666; }
+[data-theme="dark"] .tpt-expand-btn:hover { background: #2a2d38; color: #c0c3d0; }
+[data-theme="dark"] .tpt-derived { color: #8a8da0; }
+[data-theme="dark"] .tpt-not.tpt-derived { color: #555; }
+[data-theme="dark"] .tpt-del-btn:hover { background: #3a1a1a; }
+[data-theme="dark"] .tpt-sync-btn { color: #64b5f6; background: #1a2535; border-color: #1e3a5f; }
+[data-theme="dark"] .tpt-sync-btn:hover { background: #1e3a5f; border-color: #42a5f5; }
+[data-theme="dark"] .test-progress-log-row td { background: #191b22; border-bottom-color: #2a2d38; }
+[data-theme="dark"] .tpt-log-table { background: #1e2028; }
+[data-theme="dark"] .tpt-log-table thead tr { background: #252830; }
+[data-theme="dark"] .tpt-log-table th { color: #6e7080; }
+[data-theme="dark"] .tpt-log-entry td { border-top-color: #2a2d38; }
+[data-theme="dark"] .tpt-log-input-cell { color: #c0c3d0; }
+[data-theme="dark"] .tpt-log-input-cell:hover, [data-theme="dark"] .tpt-log-input-cell:focus { border-color: #454860; background: #252830; }
+[data-theme="dark"] .tpt-log-del-btn:hover { background: #3a1a1a; }
+[data-theme="dark"] .tpt-log-weekday { color: #555; }
+[data-theme="dark"] .tpt-log-weekday--saturday { color: #64b5f6; }
+[data-theme="dark"] .tpt-log-weekday--sunday   { color: #f44336; }
+[data-theme="dark"] .tpt-log-date-col--saturday { background: #1a2030; }
+[data-theme="dark"] .tpt-log-date-col--sunday   { background: #2a1818; }
+[data-theme="dark"] .tpt-log-cell--saturday { background: #1a2030; }
+[data-theme="dark"] .tpt-log-cell--sunday   { background: #2a1818; }
+[data-theme="dark"] .tpt-log-date-num { color: #c0c3d0; }
+[data-theme="dark"] .tpt-log-row-label { color: #6e7080; }
+[data-theme="dark"] .tpt-log-row-label--pass { color: #2ecc71; }
+[data-theme="dark"] .tpt-log-row-label--fail { color: #e74c3c; }
+[data-theme="dark"] .tpt-log-del-btn:hover { background: #3a1a1a; }
+[data-theme="dark"] .tpt-log-add-row { border-color: #454860; color: #6e7080; }
+[data-theme="dark"] .tpt-log-add-row:hover { border-color: #4a90d9; color: #7eb8f5; background: #1a2d45; }

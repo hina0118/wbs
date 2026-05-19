@@ -7,20 +7,24 @@ import SearchView from "./components/SearchView";
 import AnalysisView from "./components/AnalysisView";
 import ArchiveView from "./components/ArchiveView";
 import NoteView from "./components/NoteView";
+import TestProgressView from "./components/TestProgressView";
 import ProxySettingModal from "./components/ProxySettingModal";
 import UpdateNotifier from "./components/UpdateNotifier";
 import DailyTaskPanel from "./components/DailyTaskPanel";
 import { Task } from "./types/task";
+import { TestBook } from "./types/testBook";
 import { loadTasks, saveTasks } from "./utils/taskStorage";
+import { loadTestBooks, saveTestBooks } from "./utils/testBookStorage";
 import { loadHolidays } from "./utils/holidays";
 import { sortByTree } from "./utils/taskUtils";
 import { exportToExcel } from "./utils/exportToExcel";
 import { useReminder } from "./hooks/useReminder";
 
-type ViewMode = "gantt" | "kanban" | "analysis" | "archive" | "note";
+type ViewMode = "gantt" | "kanban" | "analysis" | "archive" | "note" | "test";
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [testBooks, setTestBooks] = useState<TestBook[]>([]);
   const [holidays, setHolidays] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,17 +51,19 @@ function App() {
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
-  // 起動時: タスク（保存済み or デフォルト）と祝日を並列ロード
+  // 起動時: タスク・テストブック・祝日を並列ロード
   useEffect(() => {
     Promise.all([
       loadTasks(),
+      loadTestBooks(),
       loadHolidays().catch((e) => {
         setHolidayError(e instanceof Error ? e.message : String(e));
         return new Map<string, string>();
       }),
     ])
-      .then(([loadedTasks, loadedHolidays]) => {
+      .then(([loadedTasks, loadedBooks, loadedHolidays]) => {
         setTasks(sortByTree(loadedTasks));
+        setTestBooks(loadedBooks);
         setHolidays(loadedHolidays);
       })
       .catch((e) => setError(e instanceof Error ? e.message : String(e)))
@@ -85,6 +91,11 @@ function App() {
     const sorted = sortByTree(updated);
     setTasks(sorted);
     void saveTasks(sorted).catch((e) => console.error("タスクの保存に失敗:", e));
+  }
+
+  function handleTestBooksChange(updated: TestBook[]) {
+    setTestBooks(updated);
+    void saveTestBooks(updated).catch((e) => console.error("テストブックの保存に失敗:", e));
   }
 
   /** エクスポート結果トーストを表示し、指定 ms 後に自動で閉じる */
@@ -210,6 +221,16 @@ function App() {
           >
             📝 ノート
           </button>
+          <button
+            className={`view-toggle-btn${viewMode === "test" ? " view-toggle-btn--active" : ""}`}
+            onClick={() => {
+              setViewMode("test");
+              setSearchQuery("");
+            }}
+            title="テスト進捗"
+          >
+            🧪 テスト進捗
+          </button>
         </div>
 
         {/* デイリーTODOパネル切替ボタン */}
@@ -305,6 +326,15 @@ function App() {
             )}
             {!isSearching && viewMode === "note" && (
               <NoteView tasks={tasks} onTasksChange={handleTasksChange} />
+            )}
+            {!isSearching && viewMode === "test" && (
+              <TestProgressView
+                tasks={tasks}
+                testBooks={testBooks}
+                onTestBooksChange={handleTestBooksChange}
+                onTasksChange={handleTasksChange}
+                holidays={holidays}
+              />
             )}
           </>
         )}
