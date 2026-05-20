@@ -144,6 +144,13 @@ function getTaskDepth(taskId: string, tasks: Task[]): number {
   return 1 + getTaskDepth(task.parentId, tasks);
 }
 
+function getRootTask(taskId: string, tasks: Task[]): Task | undefined {
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task) return undefined;
+  if (!task.parentId) return task;
+  return getRootTask(task.parentId, tasks);
+}
+
 export default function TestProgressView({
   tasks,
   testBooks,
@@ -152,9 +159,17 @@ export default function TestProgressView({
   holidays = new Map(),
 }: Props) {
   const [filterTaskId, setFilterTaskId] = useState<string>("");
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [showBulkInput, setShowBulkInput] = useState(false);
+  const [bulkText, setBulkText] = useState("");
 
-  const selectableTasks = tasks.filter((t) => !t.archived);
+  const childIds = new Set(tasks.map((t) => t.parentId).filter((id): id is string => !!id));
+  const selectableTasks = tasks.filter((t) => !t.archived && !childIds.has(t.id));
+
+  useEffect(() => {
+    if (!filterTaskId && selectableTasks.length > 0) {
+      setFilterTaskId(selectableTasks[0].id);
+    }
+  }, [selectableTasks.length]);
 
   const allMembers = [
     ...new Set(
@@ -181,30 +196,31 @@ export default function TestProgressView({
     onTestBooksChange(testBooks.map((b) => (b.id === id ? { ...b, ...patch } : b)));
   }
 
-  function addBook() {
+  function addBooks(names: string[]) {
     const linked = tasks.find((t) => t.id === filterTaskId);
-    const book: TestBook = {
+    const added: TestBook[] = names.map((name) => ({
       ...newBook(),
+      name,
       taskId: filterTaskId || undefined,
       assignee: linked?.assignee,
       dueDate: linked ? linked.endDate.toISOString().slice(0, 10) : undefined,
       dailyLogs: linked ? buildLogsFromTask(linked) : [],
-    };
-    onTestBooksChange([...testBooks, book]);
-    setExpandedIds((prev) => new Set([...prev, book.id]));
+    }));
+    onTestBooksChange([...testBooks, ...added]);
+  }
+
+  function confirmBulkAdd() {
+    const names = bulkText
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    if (names.length > 0) addBooks(names);
+    setBulkText("");
+    setShowBulkInput(false);
   }
 
   function deleteBook(id: string) {
     onTestBooksChange(testBooks.filter((b) => b.id !== id));
-  }
-
-  function toggleExpand(id: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   }
 
   function addLogRow(book: TestBook) {
@@ -240,24 +256,63 @@ export default function TestProgressView({
             value={filterTaskId}
             onChange={(e) => setFilterTaskId(e.target.value)}
           >
-            <option value="">すべてのタスク</option>
-            {selectableTasks.map((t) => {
-              const depth = getTaskDepth(t.id, tasks);
-              const indent = "    ".repeat(depth);
-              const prefix = depth > 0 ? "└ " : "";
+            {Object.entries(
+              selectableTasks.reduce<Record<string, Task[]>>((acc, t) => {
+                const root = getRootTask(t.id, tasks);
+                const key = root ? root.id : t.id;
+                (acc[key] ??= []).push(t);
+                return acc;
+              }, {}),
+            ).map(([rootId, leaves]) => {
+              const rootName = tasks.find((t) => t.id === rootId)?.name ?? "";
               return (
-                <option key={t.id} value={t.id}>
-                  {indent}
-                  {prefix}
-                  {t.name}
-                </option>
+                <optgroup key={rootId} label={rootName}>
+                  {leaves.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </optgroup>
               );
             })}
           </select>
-          <button className="test-progress-add-btn" onClick={addBook}>
+          <button
+            className="test-progress-add-btn"
+            onClick={() => {
+              setBulkText("");
+              setShowBulkInput((v) => !v);
+            }}
+          >
             + ブック追加
           </button>
         </div>
+
+        {/* 一括入力エリア */}
+        {showBulkInput && (
+          <div className="test-progress-bulk-area">
+            <p className="test-progress-bulk-hint">1行につき1ブック名を入力してください</p>
+            <textarea
+              className="test-progress-bulk-textarea"
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              placeholder={"例:\n結合テスト_画面A\n結合テスト_画面B\n性能テスト"}
+              rows={5}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) confirmBulkAdd();
+                if (e.key === "Escape") setShowBulkInput(false);
+              }}
+            />
+            <div className="test-progress-bulk-actions">
+              <button className="btn-cancel" onClick={() => setShowBulkInput(false)}>
+                キャンセル
+              </button>
+              <button className="btn-save" onClick={confirmBulkAdd} disabled={!bulkText.trim()}>
+                追加 (Ctrl+Enter)
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* サマリーバー */}
@@ -294,17 +349,8 @@ export default function TestProgressView({
           <table className="test-progress-table">
             <thead>
               <tr>
-                <th className="tpt-expand"></th>
-                <th className="tpt-name">ブック名</th>
-                <th className="tpt-task">WBSタスク</th>
-                <th className="tpt-assignee">担当者</th>
-                <th className="tpt-due">期限</th>
-                <th className="tpt-total">総件数</th>
-                <th className="tpt-pass">合格</th>
-                <th className="tpt-fail">不合格</th>
-                <th className="tpt-not">未実施</th>
-                <th className="tpt-bar">進捗</th>
-                <th className="tpt-del"></th>
+                <th className="tpt-info-col">ブック情報</th>
+                <th className="tpt-log-col">日次ログ</th>
               </tr>
             </thead>
             <tbody>
@@ -316,31 +362,31 @@ export default function TestProgressView({
                   book.totalCount > 0 ? Math.round(((pass + fail) / book.totalCount) * 100) : 0;
                 const passRateBook =
                   book.totalCount > 0 ? Math.round((pass / book.totalCount) * 100) : 0;
-                const isExpanded = expandedIds.has(book.id);
 
                 return (
-                  <>
-                    <tr key={book.id} className="test-progress-row">
-                      <td className="tpt-expand">
-                        <button
-                          className="tpt-expand-btn"
-                          onClick={() => toggleExpand(book.id)}
-                          title={isExpanded ? "折りたたむ" : "日次ログを展開"}
-                        >
-                          {isExpanded ? "▼" : "▶"}
-                        </button>
-                      </td>
-                      <td className="tpt-name">
-                        <input
-                          className="tpt-input tpt-input--name"
-                          value={book.name}
-                          placeholder="ブック名"
-                          onChange={(e) => updateBook(book.id, { name: e.target.value })}
-                        />
-                      </td>
-                      <td className="tpt-task">
+                  <tr key={book.id} className="test-progress-row">
+                    {/* ブック情報カード */}
+                    <td className="tpt-info-col">
+                      <div className="tpt-info-card">
+                        {/* 行1: ブック名 + 削除 */}
+                        <div className="tpt-info-row tpt-info-row--name">
+                          <input
+                            className="tpt-input tpt-input--name"
+                            value={book.name}
+                            placeholder="ブック名"
+                            onChange={(e) => updateBook(book.id, { name: e.target.value })}
+                          />
+                          <button
+                            className="tpt-del-btn"
+                            onClick={() => deleteBook(book.id)}
+                            title="削除"
+                          >
+                            🗑
+                          </button>
+                        </div>
+                        {/* 行2: WBSタスク */}
                         <select
-                          className="tpt-select"
+                          className="tpt-select tpt-select--full"
                           value={book.taskId ?? ""}
                           onChange={(e) => {
                             const taskId = e.target.value || undefined;
@@ -359,222 +405,227 @@ export default function TestProgressView({
                             });
                           }}
                         >
-                          <option value="">-</option>
-                          {selectableTasks.map((t) => {
-                            const depth = getTaskDepth(t.id, tasks);
-                            const indent = "    ".repeat(depth);
-                            const prefix = depth > 0 ? "└ " : "";
+                          <option value="">- WBSタスク未選択 -</option>
+                          {Object.entries(
+                            selectableTasks.reduce<Record<string, Task[]>>((acc, t) => {
+                              const root = getRootTask(t.id, tasks);
+                              const key = root ? root.id : t.id;
+                              (acc[key] ??= []).push(t);
+                              return acc;
+                            }, {}),
+                          ).map(([rootId, leaves]) => {
+                            const rootName = tasks.find((t) => t.id === rootId)?.name ?? "";
                             return (
-                              <option key={t.id} value={t.id}>
-                                {indent}
-                                {prefix}
-                                {t.name}
-                              </option>
+                              <optgroup key={rootId} label={rootName}>
+                                {leaves.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.name}
+                                  </option>
+                                ))}
+                              </optgroup>
                             );
                           })}
                         </select>
-                      </td>
-                      <td className="tpt-assignee">
-                        <AssigneeCombobox
-                          value={book.assignee ?? ""}
-                          onChange={(v) => updateBook(book.id, { assignee: v || undefined })}
-                          suggestions={allMembers}
-                        />
-                      </td>
-                      <td className="tpt-due">
-                        <input
-                          type="date"
-                          className="tpt-input tpt-input--date"
-                          value={book.dueDate ?? ""}
-                          onChange={(e) =>
-                            updateBook(book.id, { dueDate: e.target.value || undefined })
-                          }
-                        />
-                      </td>
-                      <td className="tpt-total">
-                        <input
-                          type="number"
-                          className="tpt-input tpt-input--num"
-                          value={book.totalCount || ""}
-                          min={0}
-                          placeholder="0"
-                          onChange={(e) =>
-                            updateBook(book.id, { totalCount: parseInt(e.target.value, 10) || 0 })
-                          }
-                        />
-                      </td>
-                      <td className="tpt-pass tpt-derived">{pass}</td>
-                      <td className="tpt-fail tpt-derived">{fail}</td>
-                      <td className="tpt-not tpt-derived">{notEx}</td>
-                      <td className="tpt-bar">
-                        <div className="tpt-bar-wrap">
-                          <div className="tpt-bar-track">
-                            <div className="tpt-bar-pass" style={{ width: `${passRateBook}%` }} />
-                            <div
-                              className="tpt-bar-fail"
-                              style={{
-                                width: `${book.totalCount > 0 ? Math.round((fail / book.totalCount) * 100) : 0}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="tpt-bar-pct">{rate}%</span>
+                        {/* 行3: 担当者 + 期限 */}
+                        <div className="tpt-info-row">
+                          <AssigneeCombobox
+                            value={book.assignee ?? ""}
+                            onChange={(v) => updateBook(book.id, { assignee: v || undefined })}
+                            suggestions={allMembers}
+                          />
+                          <input
+                            type="date"
+                            className="tpt-input tpt-input--date"
+                            value={book.dueDate ?? ""}
+                            onChange={(e) =>
+                              updateBook(book.id, { dueDate: e.target.value || undefined })
+                            }
+                          />
                         </div>
-                      </td>
-                      <td className="tpt-sync">
-                        {book.taskId && (
-                          <button
-                            className="tpt-sync-btn"
-                            onClick={() => {
-                              onTasksChange(
-                                tasks.map((t) =>
-                                  t.id === book.taskId ? { ...t, progress: rate } : t,
-                                ),
-                              );
-                            }}
-                            title={`実施率 ${rate}% をタスクの進捗率に反映`}
-                          >
-                            ↑ 反映
-                          </button>
-                        )}
-                      </td>
-                      <td className="tpt-del">
-                        <button
-                          className="tpt-del-btn"
-                          onClick={() => deleteBook(book.id)}
-                          title="削除"
-                        >
-                          🗑
-                        </button>
-                      </td>
-                    </tr>
-
-                    {/* 日次ログテーブル（横方向に日付が並ぶ転置レイアウト） */}
-                    {isExpanded && (
-                      <tr key={`${book.id}-log`} className="test-progress-log-row">
-                        <td colSpan={12}>
-                          <div className="tpt-log-area">
-                            <div className="tpt-log-scroll">
-                              <table className="tpt-log-table">
-                                <thead>
-                                  <tr>
-                                    <th className="tpt-log-label-col"></th>
-                                    {book.dailyLogs.map((log) => {
-                                      const { label, isSaturday, isSunday } = getDayOfWeek(
-                                        log.date,
-                                      );
-                                      const holidayName = getHolidayName(log.date, holidays);
-                                      const isRed = isSunday || !!holidayName;
-                                      const [, m, d] = log.date.split("-");
-                                      return (
-                                        <th
-                                          key={log.date}
-                                          className={`tpt-log-date-col${isRed ? " tpt-log-date-col--sunday" : isSaturday ? " tpt-log-date-col--saturday" : ""}`}
-                                          title={holidayName || undefined}
-                                        >
-                                          <div className="tpt-log-date-head">
-                                            <span className="tpt-log-date-num">
-                                              {Number(m)}/{Number(d)}
-                                            </span>
-                                            <span
-                                              className={`tpt-log-weekday${isRed ? " tpt-log-weekday--sunday" : isSaturday ? " tpt-log-weekday--saturday" : ""}`}
-                                            >
-                                              {holidayName ? "祝" : label}
-                                            </span>
-                                            <button
-                                              className="tpt-log-del-btn"
-                                              onClick={() => deleteLogRow(book, log.date)}
-                                              title="この列を削除"
-                                            >
-                                              ✕
-                                            </button>
-                                          </div>
-                                        </th>
-                                      );
-                                    })}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td className="tpt-log-row-label tpt-log-row-label--pass">
-                                      合格数
-                                    </td>
-                                    {book.dailyLogs.map((log) => {
-                                      const { isSaturday, isSunday } = getDayOfWeek(log.date);
-                                      const isRed =
-                                        isSunday || !!getHolidayName(log.date, holidays);
-                                      return (
-                                        <td
-                                          key={log.date}
-                                          className={
-                                            isRed
-                                              ? "tpt-log-cell--sunday"
-                                              : isSaturday
-                                                ? "tpt-log-cell--saturday"
-                                                : ""
-                                          }
-                                        >
-                                          <input
-                                            type="number"
-                                            className="tpt-log-input-cell tpt-log-input--pass"
-                                            value={log.passCount || ""}
-                                            min={0}
-                                            placeholder="0"
-                                            onChange={(e) =>
-                                              updateLogRow(book, log.date, {
-                                                passCount: parseInt(e.target.value, 10) || 0,
-                                              })
-                                            }
-                                          />
-                                        </td>
-                                      );
-                                    })}
-                                  </tr>
-                                  <tr>
-                                    <td className="tpt-log-row-label tpt-log-row-label--fail">
-                                      不合格数
-                                    </td>
-                                    {book.dailyLogs.map((log) => {
-                                      const { isSaturday, isSunday } = getDayOfWeek(log.date);
-                                      const isRed =
-                                        isSunday || !!getHolidayName(log.date, holidays);
-                                      return (
-                                        <td
-                                          key={log.date}
-                                          className={
-                                            isRed
-                                              ? "tpt-log-cell--sunday"
-                                              : isSaturday
-                                                ? "tpt-log-cell--saturday"
-                                                : ""
-                                          }
-                                        >
-                                          <input
-                                            type="number"
-                                            className="tpt-log-input-cell tpt-log-input--fail"
-                                            value={log.failCount || ""}
-                                            min={0}
-                                            placeholder="0"
-                                            onChange={(e) =>
-                                              updateLogRow(book, log.date, {
-                                                failCount: parseInt(e.target.value, 10) || 0,
-                                              })
-                                            }
-                                          />
-                                        </td>
-                                      );
-                                    })}
-                                  </tr>
-                                </tbody>
-                              </table>
+                        {/* 行4: 総件数 + 集計 */}
+                        <div className="tpt-info-row tpt-info-row--counts">
+                          <span className="tpt-count-label">総件数</span>
+                          <input
+                            type="number"
+                            className="tpt-input tpt-input--num"
+                            value={book.totalCount || ""}
+                            min={0}
+                            placeholder="0"
+                            onChange={(e) =>
+                              updateBook(book.id, {
+                                totalCount: parseInt(e.target.value, 10) || 0,
+                              })
+                            }
+                          />
+                          <span className="tpt-count-pass">合格 {pass}</span>
+                          <span className="tpt-count-fail">不合格 {fail}</span>
+                          <span className="tpt-count-not">未実施 {notEx}</span>
+                        </div>
+                        {/* 行5: 進捗バー + 反映 */}
+                        <div className="tpt-info-row tpt-info-row--footer">
+                          <div className="tpt-bar-wrap">
+                            <div className="tpt-bar-track">
+                              <div className="tpt-bar-pass" style={{ width: `${passRateBook}%` }} />
+                              <div
+                                className="tpt-bar-fail"
+                                style={{
+                                  width: `${book.totalCount > 0 ? Math.round((fail / book.totalCount) * 100) : 0}%`,
+                                }}
+                              />
                             </div>
-                            <button className="tpt-log-add-row" onClick={() => addLogRow(book)}>
-                              + 今日の列を追加
-                            </button>
+                            <span className="tpt-bar-pct">{rate}%</span>
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
+                          {book.taskId &&
+                            (() => {
+                              const linked = testBooks.filter((b) => b.taskId === book.taskId);
+                              const totalAll = linked.reduce((s, b) => s + b.totalCount, 0);
+                              const execAll = linked.reduce(
+                                (s, b) => s + sumPass(b.dailyLogs) + sumFail(b.dailyLogs),
+                                0,
+                              );
+                              const combinedRate =
+                                totalAll > 0 ? Math.round((execAll / totalAll) * 100) : 0;
+                              const label =
+                                linked.length > 1
+                                  ? `${linked.length}ブック合算 実施率 ${combinedRate}%`
+                                  : `実施率 ${combinedRate}%`;
+                              return (
+                                <button
+                                  className="tpt-sync-btn"
+                                  onClick={() => {
+                                    onTasksChange(
+                                      tasks.map((t) =>
+                                        t.id === book.taskId ? { ...t, progress: combinedRate } : t,
+                                      ),
+                                    );
+                                  }}
+                                  title={`${label} をタスクの進捗率に反映`}
+                                >
+                                  ↑ 反映
+                                </button>
+                              );
+                            })()}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="tpt-log-col">
+                      <div className="tpt-log-col-inner">
+                        <div className="tpt-log-scroll">
+                          <table className="tpt-log-table">
+                            <thead>
+                              <tr>
+                                <th className="tpt-log-label-col"></th>
+                                {book.dailyLogs.map((log) => {
+                                  const { label, isSaturday, isSunday } = getDayOfWeek(log.date);
+                                  const holidayName = getHolidayName(log.date, holidays);
+                                  const isRed = isSunday || !!holidayName;
+                                  const [, m, d] = log.date.split("-");
+                                  return (
+                                    <th
+                                      key={log.date}
+                                      className={`tpt-log-date-col${isRed ? " tpt-log-date-col--sunday" : isSaturday ? " tpt-log-date-col--saturday" : ""}`}
+                                      title={holidayName || undefined}
+                                    >
+                                      <div className="tpt-log-date-head">
+                                        <span className="tpt-log-date-num">
+                                          {Number(m)}/{Number(d)}
+                                        </span>
+                                        <span
+                                          className={`tpt-log-weekday${isRed ? " tpt-log-weekday--sunday" : isSaturday ? " tpt-log-weekday--saturday" : ""}`}
+                                        >
+                                          {holidayName ? "祝" : label}
+                                        </span>
+                                        <button
+                                          className="tpt-log-del-btn"
+                                          onClick={() => deleteLogRow(book, log.date)}
+                                          title="この列を削除"
+                                        >
+                                          ✕
+                                        </button>
+                                      </div>
+                                    </th>
+                                  );
+                                })}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="tpt-log-row-label tpt-log-row-label--pass">
+                                  合格数
+                                </td>
+                                {book.dailyLogs.map((log) => {
+                                  const { isSaturday, isSunday } = getDayOfWeek(log.date);
+                                  const isRed = isSunday || !!getHolidayName(log.date, holidays);
+                                  return (
+                                    <td
+                                      key={log.date}
+                                      className={
+                                        isRed
+                                          ? "tpt-log-cell--sunday"
+                                          : isSaturday
+                                            ? "tpt-log-cell--saturday"
+                                            : ""
+                                      }
+                                    >
+                                      <input
+                                        type="number"
+                                        className="tpt-log-input-cell tpt-log-input--pass"
+                                        value={log.passCount || ""}
+                                        min={0}
+                                        placeholder="0"
+                                        onChange={(e) =>
+                                          updateLogRow(book, log.date, {
+                                            passCount: parseInt(e.target.value, 10) || 0,
+                                          })
+                                        }
+                                      />
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                              <tr>
+                                <td className="tpt-log-row-label tpt-log-row-label--fail">
+                                  不合格数
+                                </td>
+                                {book.dailyLogs.map((log) => {
+                                  const { isSaturday, isSunday } = getDayOfWeek(log.date);
+                                  const isRed = isSunday || !!getHolidayName(log.date, holidays);
+                                  return (
+                                    <td
+                                      key={log.date}
+                                      className={
+                                        isRed
+                                          ? "tpt-log-cell--sunday"
+                                          : isSaturday
+                                            ? "tpt-log-cell--saturday"
+                                            : ""
+                                      }
+                                    >
+                                      <input
+                                        type="number"
+                                        className="tpt-log-input-cell tpt-log-input--fail"
+                                        value={log.failCount || ""}
+                                        min={0}
+                                        placeholder="0"
+                                        onChange={(e) =>
+                                          updateLogRow(book, log.date, {
+                                            failCount: parseInt(e.target.value, 10) || 0,
+                                          })
+                                        }
+                                      />
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <button className="tpt-log-add-row" onClick={() => addLogRow(book)}>
+                          + 今日の列を追加
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>

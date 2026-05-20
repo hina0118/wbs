@@ -4484,6 +4484,43 @@
   background: #357abd;
 }
 
+.test-progress-bulk-area {
+  padding: 12px 16px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.test-progress-bulk-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0;
+}
+.test-progress-bulk-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.6;
+  box-sizing: border-box;
+  background: #fff;
+  color: inherit;
+}
+.test-progress-bulk-textarea:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.15);
+}
+.test-progress-bulk-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .test-progress-summary {
   padding: 10px 20px;
   background: #fff;
@@ -4567,6 +4604,7 @@
 
 .test-progress-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   background: #fff;
   border-radius: 8px;
@@ -4591,7 +4629,7 @@
 .test-progress-row td {
   padding: 6px 10px;
   border-bottom: 1px solid #f0f2f5;
-  vertical-align: middle;
+  vertical-align: top;
 }
 .test-progress-row:last-child td {
   border-bottom: none;
@@ -4600,34 +4638,70 @@
   background: #f8f9fc;
 }
 
-.tpt-expand {
-  width: 28px;
+/* ブック情報列: 固定幅カードレイアウト */
+.tpt-info-col {
+  width: 300px;
+  padding: 10px 12px;
+  vertical-align: top;
 }
-.tpt-name {
-  min-width: 160px;
+.tpt-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-.tpt-task {
-  min-width: 120px;
+.tpt-info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.tpt-assignee {
-  width: 90px;
+.tpt-info-row--name {
+  justify-content: space-between;
 }
-.tpt-due {
-  width: 120px;
+.tpt-info-row--counts {
+  flex-wrap: wrap;
+  gap: 4px 8px;
 }
-.tpt-total,
-.tpt-pass,
-.tpt-fail {
-  width: 64px;
+.tpt-info-row--footer {
+  justify-content: space-between;
 }
-.tpt-not {
-  width: 56px;
+.tpt-count-label {
+  font-size: 0.78rem;
+  color: #888;
+  white-space: nowrap;
 }
-.tpt-bar {
-  min-width: 100px;
+.tpt-count-pass {
+  font-size: 0.8rem;
+  color: #27ae60;
+  font-weight: 600;
+  white-space: nowrap;
 }
-.tpt-del {
-  width: 36px;
+.tpt-count-fail {
+  font-size: 0.8rem;
+  color: #e74c3c;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tpt-count-not {
+  font-size: 0.8rem;
+  color: #aaa;
+  white-space: nowrap;
+}
+.tpt-select--full {
+  width: 100%;
+}
+
+/* ログ列: 残り幅を自動取得 */
+.tpt-log-col {
+  overflow: hidden;
+  padding: 8px 10px;
+  vertical-align: top;
+}
+.tpt-log-col-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .tpt-derived {
@@ -4779,22 +4853,6 @@
 }
 
 /* 日次ログテーブル */
-.test-progress-log-row td {
-  padding: 8px 16px 12px 40px;
-  background: #f5f7fb;
-  border-bottom: 1px solid #e8eaf0;
-  /* テーブルセルがログテーブルの幅で広がらないよう制約 */
-  max-width: 0;
-  overflow: hidden;
-}
-
-.tpt-log-area {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-  overflow: hidden;
-}
 
 .tpt-log-scroll {
   overflow-x: auto;
@@ -4964,6 +5022,21 @@
 [data-theme="dark"] .test-progress-view {
   background: #121318;
 }
+[data-theme="dark"] .test-progress-bulk-area {
+  background: #191b22;
+  border-top-color: #2a2d38;
+}
+[data-theme="dark"] .test-progress-bulk-hint {
+  color: #6e7080;
+}
+[data-theme="dark"] .test-progress-bulk-textarea {
+  background: #1e2028;
+  border-color: #353845;
+  color: #c0c3d0;
+}
+[data-theme="dark"] .test-progress-bulk-textarea:focus {
+  border-color: #4a90d9;
+}
 [data-theme="dark"] .test-progress-header {
   background: #1e2028;
   border-bottom-color: #353845;
@@ -5048,6 +5121,12 @@
 [data-theme="dark"] .tpt-not.tpt-derived {
   color: #555;
 }
+[data-theme="dark"] .tpt-count-label {
+  color: #555;
+}
+[data-theme="dark"] .tpt-count-not {
+  color: #555;
+}
 [data-theme="dark"] .tpt-del-btn:hover {
   background: #3a1a1a;
 }
@@ -5059,10 +5138,6 @@
 [data-theme="dark"] .tpt-sync-btn:hover {
   background: #1e3a5f;
   border-color: #42a5f5;
-}
-[data-theme="dark"] .test-progress-log-row td {
-  background: #191b22;
-  border-bottom-color: #2a2d38;
 }
 [data-theme="dark"] .tpt-log-table {
   background: #1e2028;
