@@ -4484,6 +4484,43 @@
   background: #357abd;
 }
 
+.test-progress-bulk-area {
+  padding: 12px 16px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.test-progress-bulk-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0;
+}
+.test-progress-bulk-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.6;
+  box-sizing: border-box;
+  background: #fff;
+  color: inherit;
+}
+.test-progress-bulk-textarea:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.15);
+}
+.test-progress-bulk-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .test-progress-summary {
   padding: 10px 20px;
   background: #fff;
@@ -4963,6 +5000,21 @@
 
 [data-theme="dark"] .test-progress-view {
   background: #121318;
+}
+[data-theme="dark"] .test-progress-bulk-area {
+  background: #191b22;
+  border-top-color: #2a2d38;
+}
+[data-theme="dark"] .test-progress-bulk-hint {
+  color: #6e7080;
+}
+[data-theme="dark"] .test-progress-bulk-textarea {
+  background: #1e2028;
+  border-color: #353845;
+  color: #c0c3d0;
+}
+[data-theme="dark"] .test-progress-bulk-textarea:focus {
+  border-color: #4a90d9;
 }
 [data-theme="dark"] .test-progress-header {
   background: #1e2028;

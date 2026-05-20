@@ -144,6 +144,13 @@ function getTaskDepth(taskId: string, tasks: Task[]): number {
   return 1 + getTaskDepth(task.parentId, tasks);
 }
 
+function getRootTask(taskId: string, tasks: Task[]): Task | undefined {
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task) return undefined;
+  if (!task.parentId) return task;
+  return getRootTask(task.parentId, tasks);
+}
+
 export default function TestProgressView({
   tasks,
   testBooks,
@@ -153,8 +160,11 @@ export default function TestProgressView({
 }: Props) {
   const [filterTaskId, setFilterTaskId] = useState<string>("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [showBulkInput, setShowBulkInput] = useState(false);
+  const [bulkText, setBulkText] = useState("");
 
-  const selectableTasks = tasks.filter((t) => !t.archived);
+  const childIds = new Set(tasks.map((t) => t.parentId).filter((id): id is string => !!id));
+  const selectableTasks = tasks.filter((t) => !t.archived && !childIds.has(t.id));
 
   const allMembers = [
     ...new Set(
@@ -181,17 +191,28 @@ export default function TestProgressView({
     onTestBooksChange(testBooks.map((b) => (b.id === id ? { ...b, ...patch } : b)));
   }
 
-  function addBook() {
+  function addBooks(names: string[]) {
     const linked = tasks.find((t) => t.id === filterTaskId);
-    const book: TestBook = {
+    const added: TestBook[] = names.map((name) => ({
       ...newBook(),
+      name,
       taskId: filterTaskId || undefined,
       assignee: linked?.assignee,
       dueDate: linked ? linked.endDate.toISOString().slice(0, 10) : undefined,
       dailyLogs: linked ? buildLogsFromTask(linked) : [],
-    };
-    onTestBooksChange([...testBooks, book]);
-    setExpandedIds((prev) => new Set([...prev, book.id]));
+    }));
+    onTestBooksChange([...testBooks, ...added]);
+    setExpandedIds((prev) => new Set([...prev, ...added.map((b) => b.id)]));
+  }
+
+  function confirmBulkAdd() {
+    const names = bulkText
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    if (names.length > 0) addBooks(names);
+    setBulkText("");
+    setShowBulkInput(false);
   }
 
   function deleteBook(id: string) {
@@ -241,23 +262,63 @@ export default function TestProgressView({
             onChange={(e) => setFilterTaskId(e.target.value)}
           >
             <option value="">すべてのタスク</option>
-            {selectableTasks.map((t) => {
-              const depth = getTaskDepth(t.id, tasks);
-              const indent = "    ".repeat(depth);
-              const prefix = depth > 0 ? "└ " : "";
+            {Object.entries(
+              selectableTasks.reduce<Record<string, Task[]>>((acc, t) => {
+                const root = getRootTask(t.id, tasks);
+                const key = root ? root.id : t.id;
+                (acc[key] ??= []).push(t);
+                return acc;
+              }, {}),
+            ).map(([rootId, leaves]) => {
+              const rootName = tasks.find((t) => t.id === rootId)?.name ?? "";
               return (
-                <option key={t.id} value={t.id}>
-                  {indent}
-                  {prefix}
-                  {t.name}
-                </option>
+                <optgroup key={rootId} label={rootName}>
+                  {leaves.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </optgroup>
               );
             })}
           </select>
-          <button className="test-progress-add-btn" onClick={addBook}>
+          <button
+            className="test-progress-add-btn"
+            onClick={() => {
+              setBulkText("");
+              setShowBulkInput((v) => !v);
+            }}
+          >
             + ブック追加
           </button>
         </div>
+
+        {/* 一括入力エリア */}
+        {showBulkInput && (
+          <div className="test-progress-bulk-area">
+            <p className="test-progress-bulk-hint">1行につき1ブック名を入力してください</p>
+            <textarea
+              className="test-progress-bulk-textarea"
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              placeholder={"例:\n結合テスト_画面A\n結合テスト_画面B\n性能テスト"}
+              rows={5}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) confirmBulkAdd();
+                if (e.key === "Escape") setShowBulkInput(false);
+              }}
+            />
+            <div className="test-progress-bulk-actions">
+              <button className="btn-cancel" onClick={() => setShowBulkInput(false)}>
+                キャンセル
+              </button>
+              <button className="btn-save" onClick={confirmBulkAdd} disabled={!bulkText.trim()}>
+                追加 (Ctrl+Enter)
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* サマリーバー */}
@@ -360,16 +421,23 @@ export default function TestProgressView({
                           }}
                         >
                           <option value="">-</option>
-                          {selectableTasks.map((t) => {
-                            const depth = getTaskDepth(t.id, tasks);
-                            const indent = "    ".repeat(depth);
-                            const prefix = depth > 0 ? "└ " : "";
+                          {Object.entries(
+                            selectableTasks.reduce<Record<string, Task[]>>((acc, t) => {
+                              const root = getRootTask(t.id, tasks);
+                              const key = root ? root.id : t.id;
+                              (acc[key] ??= []).push(t);
+                              return acc;
+                            }, {}),
+                          ).map(([rootId, leaves]) => {
+                            const rootName = tasks.find((t) => t.id === rootId)?.name ?? "";
                             return (
-                              <option key={t.id} value={t.id}>
-                                {indent}
-                                {prefix}
-                                {t.name}
-                              </option>
+                              <optgroup key={rootId} label={rootName}>
+                                {leaves.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.name}
+                                  </option>
+                                ))}
+                              </optgroup>
                             );
                           })}
                         </select>
