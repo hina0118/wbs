@@ -4638,43 +4638,62 @@
   background: #f8f9fc;
 }
 
-.tpt-name {
-  width: 150px;
+/* ブック情報列: 固定幅カードレイアウト */
+.tpt-info-col {
+  width: 300px;
+  padding: 10px 12px;
+  vertical-align: top;
 }
-.tpt-task {
-  width: 160px;
+.tpt-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-.tpt-assignee {
-  width: 88px;
+.tpt-info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.tpt-due {
-  width: 108px;
+.tpt-info-row--name {
+  justify-content: space-between;
 }
-.tpt-total {
-  width: 56px;
+.tpt-info-row--counts {
+  flex-wrap: wrap;
+  gap: 4px 8px;
 }
-.tpt-pass {
-  width: 48px;
+.tpt-info-row--footer {
+  justify-content: space-between;
 }
-.tpt-fail {
-  width: 56px;
+.tpt-count-label {
+  font-size: 0.78rem;
+  color: #888;
+  white-space: nowrap;
 }
-.tpt-not {
-  width: 56px;
+.tpt-count-pass {
+  font-size: 0.8rem;
+  color: #27ae60;
+  font-weight: 600;
+  white-space: nowrap;
 }
-.tpt-bar {
-  width: 130px;
+.tpt-count-fail {
+  font-size: 0.8rem;
+  color: #e74c3c;
+  font-weight: 600;
+  white-space: nowrap;
 }
-.tpt-sync {
-  width: 66px;
+.tpt-count-not {
+  font-size: 0.8rem;
+  color: #aaa;
+  white-space: nowrap;
 }
-.tpt-del {
-  width: 34px;
+.tpt-select--full {
+  width: 100%;
 }
+
 /* ログ列: 残り幅を自動取得 */
 .tpt-log-col {
   overflow: hidden;
-  padding: 6px 8px;
+  padding: 8px 10px;
   vertical-align: top;
 }
 .tpt-log-col-inner {
@@ -5100,6 +5119,12 @@
   color: #8a8da0;
 }
 [data-theme="dark"] .tpt-not.tpt-derived {
+  color: #555;
+}
+[data-theme="dark"] .tpt-count-label {
+  color: #555;
+}
+[data-theme="dark"] .tpt-count-not {
   color: #555;
 }
 [data-theme="dark"] .tpt-del-btn:hover {

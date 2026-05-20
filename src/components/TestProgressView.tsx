@@ -344,17 +344,7 @@ export default function TestProgressView({
           <table className="test-progress-table">
             <thead>
               <tr>
-                <th className="tpt-name">ブック名</th>
-                <th className="tpt-task">WBSタスク</th>
-                <th className="tpt-assignee">担当者</th>
-                <th className="tpt-due">期限</th>
-                <th className="tpt-total">総件数</th>
-                <th className="tpt-pass">合格</th>
-                <th className="tpt-fail">不合格</th>
-                <th className="tpt-not">未実施</th>
-                <th className="tpt-bar">進捗</th>
-                <th className="tpt-sync"></th>
-                <th className="tpt-del"></th>
+                <th className="tpt-info-col">ブック情報</th>
                 <th className="tpt-log-col">日次ログ</th>
               </tr>
             </thead>
@@ -370,128 +360,133 @@ export default function TestProgressView({
 
                 return (
                   <tr key={book.id} className="test-progress-row">
-                    <td className="tpt-name">
-                      <input
-                        className="tpt-input tpt-input--name"
-                        value={book.name}
-                        placeholder="ブック名"
-                        onChange={(e) => updateBook(book.id, { name: e.target.value })}
-                      />
-                    </td>
-                    <td className="tpt-task">
-                      <select
-                        className="tpt-select"
-                        value={book.taskId ?? ""}
-                        onChange={(e) => {
-                          const taskId = e.target.value || undefined;
-                          const linked = tasks.find((t) => t.id === taskId);
-                          updateBook(book.id, {
-                            taskId,
-                            ...(linked?.assignee && !book.assignee
-                              ? { assignee: linked.assignee }
-                              : {}),
-                            ...(linked?.endDate && !book.dueDate
-                              ? { dueDate: linked.endDate.toISOString().slice(0, 10) }
-                              : {}),
-                            ...(linked && book.dailyLogs.length === 0
-                              ? { dailyLogs: buildLogsFromTask(linked) }
-                              : {}),
-                          });
-                        }}
-                      >
-                        <option value="">-</option>
-                        {Object.entries(
-                          selectableTasks.reduce<Record<string, Task[]>>((acc, t) => {
-                            const root = getRootTask(t.id, tasks);
-                            const key = root ? root.id : t.id;
-                            (acc[key] ??= []).push(t);
-                            return acc;
-                          }, {}),
-                        ).map(([rootId, leaves]) => {
-                          const rootName = tasks.find((t) => t.id === rootId)?.name ?? "";
-                          return (
-                            <optgroup key={rootId} label={rootName}>
-                              {leaves.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                  {t.name}
-                                </option>
-                              ))}
-                            </optgroup>
-                          );
-                        })}
-                      </select>
-                    </td>
-                    <td className="tpt-assignee">
-                      <AssigneeCombobox
-                        value={book.assignee ?? ""}
-                        onChange={(v) => updateBook(book.id, { assignee: v || undefined })}
-                        suggestions={allMembers}
-                      />
-                    </td>
-                    <td className="tpt-due">
-                      <input
-                        type="date"
-                        className="tpt-input tpt-input--date"
-                        value={book.dueDate ?? ""}
-                        onChange={(e) =>
-                          updateBook(book.id, { dueDate: e.target.value || undefined })
-                        }
-                      />
-                    </td>
-                    <td className="tpt-total">
-                      <input
-                        type="number"
-                        className="tpt-input tpt-input--num"
-                        value={book.totalCount || ""}
-                        min={0}
-                        placeholder="0"
-                        onChange={(e) =>
-                          updateBook(book.id, { totalCount: parseInt(e.target.value, 10) || 0 })
-                        }
-                      />
-                    </td>
-                    <td className="tpt-pass tpt-derived">{pass}</td>
-                    <td className="tpt-fail tpt-derived">{fail}</td>
-                    <td className="tpt-not tpt-derived">{notEx}</td>
-                    <td className="tpt-bar">
-                      <div className="tpt-bar-wrap">
-                        <div className="tpt-bar-track">
-                          <div className="tpt-bar-pass" style={{ width: `${passRateBook}%` }} />
-                          <div
-                            className="tpt-bar-fail"
-                            style={{
-                              width: `${book.totalCount > 0 ? Math.round((fail / book.totalCount) * 100) : 0}%`,
-                            }}
+                    {/* ブック情報カード */}
+                    <td className="tpt-info-col">
+                      <div className="tpt-info-card">
+                        {/* 行1: ブック名 + 削除 */}
+                        <div className="tpt-info-row tpt-info-row--name">
+                          <input
+                            className="tpt-input tpt-input--name"
+                            value={book.name}
+                            placeholder="ブック名"
+                            onChange={(e) => updateBook(book.id, { name: e.target.value })}
+                          />
+                          <button
+                            className="tpt-del-btn"
+                            onClick={() => deleteBook(book.id)}
+                            title="削除"
+                          >
+                            🗑
+                          </button>
+                        </div>
+                        {/* 行2: WBSタスク */}
+                        <select
+                          className="tpt-select tpt-select--full"
+                          value={book.taskId ?? ""}
+                          onChange={(e) => {
+                            const taskId = e.target.value || undefined;
+                            const linked = tasks.find((t) => t.id === taskId);
+                            updateBook(book.id, {
+                              taskId,
+                              ...(linked?.assignee && !book.assignee
+                                ? { assignee: linked.assignee }
+                                : {}),
+                              ...(linked?.endDate && !book.dueDate
+                                ? { dueDate: linked.endDate.toISOString().slice(0, 10) }
+                                : {}),
+                              ...(linked && book.dailyLogs.length === 0
+                                ? { dailyLogs: buildLogsFromTask(linked) }
+                                : {}),
+                            });
+                          }}
+                        >
+                          <option value="">- WBSタスク未選択 -</option>
+                          {Object.entries(
+                            selectableTasks.reduce<Record<string, Task[]>>((acc, t) => {
+                              const root = getRootTask(t.id, tasks);
+                              const key = root ? root.id : t.id;
+                              (acc[key] ??= []).push(t);
+                              return acc;
+                            }, {}),
+                          ).map(([rootId, leaves]) => {
+                            const rootName = tasks.find((t) => t.id === rootId)?.name ?? "";
+                            return (
+                              <optgroup key={rootId} label={rootName}>
+                                {leaves.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.name}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            );
+                          })}
+                        </select>
+                        {/* 行3: 担当者 + 期限 */}
+                        <div className="tpt-info-row">
+                          <AssigneeCombobox
+                            value={book.assignee ?? ""}
+                            onChange={(v) => updateBook(book.id, { assignee: v || undefined })}
+                            suggestions={allMembers}
+                          />
+                          <input
+                            type="date"
+                            className="tpt-input tpt-input--date"
+                            value={book.dueDate ?? ""}
+                            onChange={(e) =>
+                              updateBook(book.id, { dueDate: e.target.value || undefined })
+                            }
                           />
                         </div>
-                        <span className="tpt-bar-pct">{rate}%</span>
+                        {/* 行4: 総件数 + 集計 */}
+                        <div className="tpt-info-row tpt-info-row--counts">
+                          <span className="tpt-count-label">総件数</span>
+                          <input
+                            type="number"
+                            className="tpt-input tpt-input--num"
+                            value={book.totalCount || ""}
+                            min={0}
+                            placeholder="0"
+                            onChange={(e) =>
+                              updateBook(book.id, {
+                                totalCount: parseInt(e.target.value, 10) || 0,
+                              })
+                            }
+                          />
+                          <span className="tpt-count-pass">合格 {pass}</span>
+                          <span className="tpt-count-fail">不合格 {fail}</span>
+                          <span className="tpt-count-not">未実施 {notEx}</span>
+                        </div>
+                        {/* 行5: 進捗バー + 反映 */}
+                        <div className="tpt-info-row tpt-info-row--footer">
+                          <div className="tpt-bar-wrap">
+                            <div className="tpt-bar-track">
+                              <div className="tpt-bar-pass" style={{ width: `${passRateBook}%` }} />
+                              <div
+                                className="tpt-bar-fail"
+                                style={{
+                                  width: `${book.totalCount > 0 ? Math.round((fail / book.totalCount) * 100) : 0}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="tpt-bar-pct">{rate}%</span>
+                          </div>
+                          {book.taskId && (
+                            <button
+                              className="tpt-sync-btn"
+                              onClick={() => {
+                                onTasksChange(
+                                  tasks.map((t) =>
+                                    t.id === book.taskId ? { ...t, progress: rate } : t,
+                                  ),
+                                );
+                              }}
+                              title={`実施率 ${rate}% をタスクの進捗率に反映`}
+                            >
+                              ↑ 反映
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </td>
-                    <td className="tpt-sync">
-                      {book.taskId && (
-                        <button
-                          className="tpt-sync-btn"
-                          onClick={() => {
-                            onTasksChange(
-                              tasks.map((t) =>
-                                t.id === book.taskId ? { ...t, progress: rate } : t,
-                              ),
-                            );
-                          }}
-                          title={`実施率 ${rate}% をタスクの進捗率に反映`}
-                        >
-                          ↑ 反映
-                        </button>
-                      )}
-                    </td>
-                    <td className="tpt-del">
-                      <button
-                        className="tpt-del-btn"
-                        onClick={() => deleteBook(book.id)}
-                        title="削除"
-                      >
-                        🗑
-                      </button>
                     </td>
                     <td className="tpt-log-col">
                       <div className="tpt-log-col-inner">
