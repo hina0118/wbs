@@ -138,12 +138,6 @@ function sumFail(logs: DailyLog[]): number {
   return logs.reduce((s, l) => s + l.failCount, 0);
 }
 
-function getTaskDepth(taskId: string, tasks: Task[]): number {
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task?.parentId) return 0;
-  return 1 + getTaskDepth(task.parentId, tasks);
-}
-
 function getRootTask(taskId: string, tasks: Task[]): Task | undefined {
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return undefined;
