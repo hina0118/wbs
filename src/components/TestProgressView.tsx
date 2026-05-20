@@ -165,6 +165,12 @@ export default function TestProgressView({
   const childIds = new Set(tasks.map((t) => t.parentId).filter((id): id is string => !!id));
   const selectableTasks = tasks.filter((t) => !t.archived && !childIds.has(t.id));
 
+  useEffect(() => {
+    if (!filterTaskId && selectableTasks.length > 0) {
+      setFilterTaskId(selectableTasks[0].id);
+    }
+  }, [selectableTasks.length]);
+
   const allMembers = [
     ...new Set(
       tasks.flatMap((t) => [t.assignee, ...(t.subMembers ?? [])]).filter((m): m is string => !!m),
@@ -250,7 +256,6 @@ export default function TestProgressView({
             value={filterTaskId}
             onChange={(e) => setFilterTaskId(e.target.value)}
           >
-            <option value="">すべてのタスク</option>
             {Object.entries(
               selectableTasks.reduce<Record<string, Task[]>>((acc, t) => {
                 const root = getRootTask(t.id, tasks);
