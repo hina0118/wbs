@@ -470,21 +470,36 @@ export default function TestProgressView({
                             </div>
                             <span className="tpt-bar-pct">{rate}%</span>
                           </div>
-                          {book.taskId && (
-                            <button
-                              className="tpt-sync-btn"
-                              onClick={() => {
-                                onTasksChange(
-                                  tasks.map((t) =>
-                                    t.id === book.taskId ? { ...t, progress: rate } : t,
-                                  ),
-                                );
-                              }}
-                              title={`実施率 ${rate}% をタスクの進捗率に反映`}
-                            >
-                              ↑ 反映
-                            </button>
-                          )}
+                          {book.taskId &&
+                            (() => {
+                              const linked = testBooks.filter((b) => b.taskId === book.taskId);
+                              const totalAll = linked.reduce((s, b) => s + b.totalCount, 0);
+                              const execAll = linked.reduce(
+                                (s, b) => s + sumPass(b.dailyLogs) + sumFail(b.dailyLogs),
+                                0,
+                              );
+                              const combinedRate =
+                                totalAll > 0 ? Math.round((execAll / totalAll) * 100) : 0;
+                              const label =
+                                linked.length > 1
+                                  ? `${linked.length}ブック合算 実施率 ${combinedRate}%`
+                                  : `実施率 ${combinedRate}%`;
+                              return (
+                                <button
+                                  className="tpt-sync-btn"
+                                  onClick={() => {
+                                    onTasksChange(
+                                      tasks.map((t) =>
+                                        t.id === book.taskId ? { ...t, progress: combinedRate } : t,
+                                      ),
+                                    );
+                                  }}
+                                  title={`${label} をタスクの進捗率に反映`}
+                                >
+                                  ↑ 反映
+                                </button>
+                              );
+                            })()}
                         </div>
                       </div>
                     </td>
