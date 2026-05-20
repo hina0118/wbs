@@ -4604,6 +4604,7 @@
 
 .test-progress-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   background: #fff;
   border-radius: 8px;
@@ -4628,7 +4629,7 @@
 .test-progress-row td {
   padding: 6px 10px;
   border-bottom: 1px solid #f0f2f5;
-  vertical-align: middle;
+  vertical-align: top;
 }
 .test-progress-row:last-child td {
   border-bottom: none;
@@ -4637,34 +4638,51 @@
   background: #f8f9fc;
 }
 
-.tpt-expand {
-  width: 28px;
-}
 .tpt-name {
-  min-width: 160px;
+  width: 150px;
 }
 .tpt-task {
-  min-width: 120px;
+  width: 160px;
 }
 .tpt-assignee {
-  width: 90px;
+  width: 88px;
 }
 .tpt-due {
-  width: 120px;
+  width: 108px;
 }
-.tpt-total,
-.tpt-pass,
+.tpt-total {
+  width: 56px;
+}
+.tpt-pass {
+  width: 48px;
+}
 .tpt-fail {
-  width: 64px;
+  width: 56px;
 }
 .tpt-not {
   width: 56px;
 }
 .tpt-bar {
-  min-width: 100px;
+  width: 130px;
+}
+.tpt-sync {
+  width: 66px;
 }
 .tpt-del {
-  width: 36px;
+  width: 34px;
+}
+/* ログ列: 残り幅を自動取得 */
+.tpt-log-col {
+  overflow: hidden;
+  padding: 6px 8px;
+  vertical-align: top;
+}
+.tpt-log-col-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .tpt-derived {
@@ -4816,22 +4834,6 @@
 }
 
 /* 日次ログテーブル */
-.test-progress-log-row td {
-  padding: 8px 16px 12px 40px;
-  background: #f5f7fb;
-  border-bottom: 1px solid #e8eaf0;
-  /* テーブルセルがログテーブルの幅で広がらないよう制約 */
-  max-width: 0;
-  overflow: hidden;
-}
-
-.tpt-log-area {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-  overflow: hidden;
-}
 
 .tpt-log-scroll {
   overflow-x: auto;
@@ -5111,10 +5113,6 @@
 [data-theme="dark"] .tpt-sync-btn:hover {
   background: #1e3a5f;
   border-color: #42a5f5;
-}
-[data-theme="dark"] .test-progress-log-row td {
-  background: #191b22;
-  border-bottom-color: #2a2d38;
 }
 [data-theme="dark"] .tpt-log-table {
   background: #1e2028;
