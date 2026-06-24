@@ -78,14 +78,28 @@ function migrateOrder(tasks: Task[]): Task[] {
   });
 }
 
+/** 指定ミリ秒でリジェクトする Promise を返す */
+function rejectAfter(ms: number, message: string): Promise<never> {
+  return new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms));
+}
+
+const LOAD_TIMEOUT_MS = 15_000;
+
 /**
  * 起動時のタスク読み込み。
  * memo フィールドを除いたサマリーを取得し、AppState にフルデータを保持させる。
+ * LOAD_TIMEOUT_MS 以内に完了しない場合はタイムアウトエラーとしてフォールバック。
  * ファイルがなければ public/data/sampleTasks.json のデフォルトデータを返す。
  */
 export async function loadTasks(onFallback?: (reason: string) => void): Promise<Task[]> {
   try {
-    const buf = await invoke<ArrayBuffer>("load_tasks_without_memo");
+    const buf = await Promise.race([
+      invoke<ArrayBuffer>("load_tasks_without_memo"),
+      rejectAfter(
+        LOAD_TIMEOUT_MS,
+        `タスク読み込みがタイムアウトしました（${LOAD_TIMEOUT_MS / 1000}秒）`,
+      ),
+    ]);
     const text = new TextDecoder().decode(buf);
     if (text) {
       const raws: TaskRaw[] = JSON.parse(text);

@@ -75,6 +75,21 @@ describe("loadTasks", () => {
     expect(onFallback).toHaveBeenCalledWith("disk full");
   });
 
+  it("タイムアウト時はフォールバックし onFallback にタイムアウトメッセージが渡る", async () => {
+    vi.useFakeTimers();
+    const onFallback = vi.fn();
+    // resolve しない Promise でタイムアウトを再現
+    mockInvoke.mockReturnValueOnce(new Promise(() => {}));
+    const loadPromise = loadTasks(onFallback);
+    // 15秒を超過させる
+    await vi.advanceTimersByTimeAsync(16_000);
+    const tasks = await loadPromise;
+    expect(onFallback).toHaveBeenCalledOnce();
+    expect(onFallback.mock.calls[0][0]).toContain("タイムアウト");
+    expect(tasks).toEqual([]);
+    vi.useRealTimers();
+  });
+
   it("invoke が ArrayBuffer でない値を返した場合はフォールバックする（退行検知）", async () => {
     // Raw bytes 方式でない旧コードに戻った場合の退行検知
     const onFallback = vi.fn();
