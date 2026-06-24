@@ -306,7 +306,6 @@ function App() {
         <SettingsModal
           onClose={() => setShowProxy(false)}
           onChildTaskNamesChange={setDefaultChildTaskNames}
-          tasks={tasks}
         />
       )}
       {showDailyPanel && <DailyTaskPanel onClose={() => setShowDailyPanel(false)} />}

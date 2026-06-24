@@ -8,21 +8,18 @@ import { invoke } from "@tauri-apps/api/core";
 import { loadAppSettings, saveAppSettings, TaskType } from "../utils/settingsStorage";
 import { exportTasksJson } from "../utils/taskStorage";
 
-import { Task } from "../types/task";
-
 type Tab = "children" | "taskTypes" | "proxy" | "data";
 
 interface Props {
   onClose: () => void;
   onChildTaskNamesChange: (names: string[]) => void;
-  tasks: Task[];
 }
 
 function getErrorMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-export default function SettingsModal({ onClose, onChildTaskNamesChange, tasks }: Props) {
+export default function SettingsModal({ onClose, onChildTaskNamesChange }: Props) {
   const [tab, setTab] = useState<Tab>("children");
 
   // ── 子タスクテンプレート ──
