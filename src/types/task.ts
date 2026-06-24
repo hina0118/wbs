@@ -23,4 +23,6 @@ export interface Task {
   isFloating?: boolean; // 開始時期不明の単発タスク（日付なし）
   archived?: boolean; // アーカイブ済み（非表示、データは保持）
   reminder?: TaskReminder; // リマインダー設定
+  taskTypeId?: string; // タスク種別ID（見積もり用）
+  quantity?: number; // 実装数（見積もり用）
 }

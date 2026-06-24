@@ -12,6 +12,8 @@ import {
   toInputDate,
   archiveTask,
 } from "../utils/taskUtils";
+import { loadAppSettings, TaskType } from "../utils/settingsStorage";
+import { calcPersonMonths } from "../utils/estimationUtils";
 
 // カスタムコンボボックス（担当者候補をテーマに合わせて表示）
 function MemberCombobox({
@@ -139,6 +141,19 @@ export default function TaskEditModal({
   const [editReminderRepeat, setEditReminderRepeat] = useState<ReminderRepeat>(
     task.reminder?.repeat ?? "none",
   );
+  const [taskTypes] = useState<TaskType[]>(() => loadAppSettings().taskTypes);
+  const [editTaskTypeId, setEditTaskTypeId] = useState(task.taskTypeId ?? "");
+  const [editQuantity, setEditQuantity] = useState<string>(
+    task.quantity != null ? String(task.quantity) : "",
+  );
+
+  const selectedType = taskTypes.find((t) => t.id === editTaskTypeId);
+  const parsedQuantity = parseFloat(editQuantity);
+  const personMonths =
+    selectedType && !isNaN(parsedQuantity) && parsedQuantity > 0
+      ? calcPersonMonths(parsedQuantity, selectedType.productivity)
+      : null;
+
   const [confirmDelete, setConfirmDelete] = useState(false);
   const initialMode = task.progressCount ? "count" : "percent";
   const [progressMode, setProgressMode] = useState<"percent" | "count">(initialMode);
@@ -198,6 +213,11 @@ export default function TaskEditModal({
         }
       : undefined;
 
+    const quantity =
+      editQuantity !== "" && !isNaN(parseFloat(editQuantity))
+        ? parseFloat(editQuantity)
+        : undefined;
+
     const updated = tasks.map((t) =>
       t.id === task.id
         ? {
@@ -212,6 +232,8 @@ export default function TaskEditModal({
             progressCount,
             isFloating: editIsFloating || undefined,
             reminder,
+            taskTypeId: editTaskTypeId || undefined,
+            quantity,
           }
         : t,
     );
@@ -444,6 +466,49 @@ export default function TaskEditModal({
               className="progress-bar-readonly-fill"
               style={{ width: `${effectiveProgress}%` }}
             />
+          </div>
+        )}
+
+        {/* 見積もり */}
+        {taskTypes.length > 0 && (
+          <div className="modal-estimation-section">
+            <label className="modal-label">タスク種別</label>
+            <select
+              className="estimation-type-select"
+              value={editTaskTypeId}
+              onChange={(e) => setEditTaskTypeId(e.target.value)}
+            >
+              <option value="">─ 未選択 ─</option>
+              {taskTypes.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}（{t.productivity} {t.unit}/月）
+                </option>
+              ))}
+            </select>
+
+            {editTaskTypeId && (
+              <>
+                <label className="modal-label">
+                  実装数{selectedType ? `（${selectedType.unit}）` : ""}
+                </label>
+                <div className="estimation-quantity-row">
+                  <input
+                    type="number"
+                    className="count-input"
+                    min={0}
+                    step={0.1}
+                    placeholder="実装数を入力"
+                    value={editQuantity}
+                    onChange={(e) => setEditQuantity(e.target.value)}
+                  />
+                  {personMonths !== null && (
+                    <span className="estimation-result">
+                      = <strong>{personMonths.toFixed(2)} 人月</strong>
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 

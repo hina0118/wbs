@@ -91,17 +91,6 @@ function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  function handleTasksChange(updated: Task[]) {
-    const sorted = sortByTree(updated);
-    setTasks(sorted);
-    void saveTasks(sorted).catch((e) => console.error("タスクの保存に失敗:", e));
-  }
-
-  function handleTestBooksChange(updated: TestBook[]) {
-    setTestBooks(updated);
-    void saveTestBooks(updated).catch((e) => console.error("テストブックの保存に失敗:", e));
-  }
-
   /** エクスポート結果トーストを表示し、指定 ms 後に自動で閉じる */
   const showExportMsg = useCallback(
     (msg: { text: string; isError: boolean }, durationMs: number) => {
@@ -114,6 +103,23 @@ function App() {
     },
     [],
   );
+
+  function handleTasksChange(updated: Task[]) {
+    const sorted = sortByTree(updated);
+    setTasks(sorted);
+    void saveTasks(sorted).catch((e) => {
+      console.error("タスクの保存に失敗:", e);
+      showExportMsg({ text: `タスクの保存に失敗しました: ${e}`, isError: true }, 6000);
+    });
+  }
+
+  function handleTestBooksChange(updated: TestBook[]) {
+    setTestBooks(updated);
+    void saveTestBooks(updated).catch((e) => {
+      console.error("テストブックの保存に失敗:", e);
+      showExportMsg({ text: `テストブックの保存に失敗しました: ${e}`, isError: true }, 6000);
+    });
+  }
 
   /** リマインダー到達時のアプリ内トースト */
   const showReminderToast = useCallback(
@@ -292,6 +298,7 @@ function App() {
         <SettingsModal
           onClose={() => setShowProxy(false)}
           onChildTaskNamesChange={setDefaultChildTaskNames}
+          tasks={tasks}
         />
       )}
       {showDailyPanel && <DailyTaskPanel onClose={() => setShowDailyPanel(false)} />}
