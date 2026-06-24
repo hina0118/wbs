@@ -214,7 +214,9 @@ export default function TaskEditModal({
       : undefined;
 
     const quantity =
-      editQuantity !== "" && !isNaN(parseFloat(editQuantity)) ? parseFloat(editQuantity) : undefined;
+      editQuantity !== "" && !isNaN(parseFloat(editQuantity))
+        ? parseFloat(editQuantity)
+        : undefined;
 
     const updated = tasks.map((t) =>
       t.id === task.id

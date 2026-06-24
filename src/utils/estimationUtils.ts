@@ -9,7 +9,13 @@ export function calcPersonMonths(quantity: number, productivity: number): number
 export function getTaskEstimation(
   task: Task,
   taskTypes: TaskType[],
-): { quantity: number; productivity: number; personMonths: number; unit: string; typeName: string } | null {
+): {
+  quantity: number;
+  productivity: number;
+  personMonths: number;
+  unit: string;
+  typeName: string;
+} | null {
   if (task.quantity == null || !task.taskTypeId) return null;
   const type = taskTypes.find((t) => t.id === task.taskTypeId);
   if (!type) return null;

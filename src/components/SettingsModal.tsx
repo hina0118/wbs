@@ -34,9 +34,7 @@ export default function SettingsModal({ onClose, onChildTaskNamesChange, tasks }
   const newNameInputRef = useRef<HTMLInputElement>(null);
 
   // ── タスク種別 ──
-  const [taskTypes, setTaskTypes] = useState<TaskType[]>(
-    () => loadAppSettings().taskTypes,
-  );
+  const [taskTypes, setTaskTypes] = useState<TaskType[]>(() => loadAppSettings().taskTypes);
   const [newTypeName, setNewTypeName] = useState("");
   const [newTypeUnit, setNewTypeUnit] = useState("");
   const [newTypeProductivity, setNewTypeProductivity] = useState("");
@@ -316,7 +314,9 @@ export default function SettingsModal({ onClose, onChildTaskNamesChange, tasks }
                 min={0.01}
                 step={0.1}
                 onChange={(e) => setNewTypeProductivity(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") addTaskType(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addTaskType();
+                }}
               />
               <button
                 className="settings-child-add-btn"

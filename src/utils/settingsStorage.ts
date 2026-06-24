@@ -1,7 +1,7 @@
 export interface TaskType {
   id: string;
-  name: string;       // 例: "画面開発"
-  unit: string;       // 例: "画面"
+  name: string; // 例: "画面開発"
+  unit: string; // 例: "画面"
   productivity: number; // 単位/月
 }
 
