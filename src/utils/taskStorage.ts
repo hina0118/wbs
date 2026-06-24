@@ -16,11 +16,14 @@ interface TaskRaw {
   collapsed?: boolean;
   assignee?: string;
   subMembers?: string[];
+  hasMemo?: boolean; // Rust が付与するフラグ（memo の有無）
   progressCount?: { done: number; total: number };
   order?: number;
   isFloating?: boolean;
   archived?: boolean;
   reminder?: { datetime: string; notified: boolean; repeat?: string };
+  taskTypeId?: string;
+  quantity?: number;
 }
 
 function parseLocalDate(s: string): Date {
@@ -52,8 +55,10 @@ function toTask(raw: TaskRaw): Task {
 function toRaw(task: Task): TaskRaw {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  // memo・hasMemo はサーバー側で管理するためシリアライズから除外
+  const { memo: _memo, hasMemo: _hasMemo, ...rest } = task;
   return {
-    ...task,
+    ...rest,
     startDate: task.isFloating ? toInputDate(today) : toInputDate(task.startDate),
     endDate: task.isFloating ? toInputDate(today) : toInputDate(task.endDate),
   };
@@ -75,12 +80,12 @@ function migrateOrder(tasks: Task[]): Task[] {
 
 /**
  * 起動時のタスク読み込み。
- * アプリデータに保存済みデータがあればそれを使い、
- * なければ public/data/sampleTasks.json のデフォルトデータを返す。
+ * memo フィールドを除いたサマリーを取得し、AppState にフルデータを保持させる。
+ * ファイルがなければ public/data/sampleTasks.json のデフォルトデータを返す。
  */
 export async function loadTasks(onFallback?: (reason: string) => void): Promise<Task[]> {
   try {
-    const buf = await invoke<ArrayBuffer>("load_saved_tasks");
+    const buf = await invoke<ArrayBuffer>("load_tasks_without_memo");
     const text = new TextDecoder().decode(buf);
     if (text) {
       const raws: TaskRaw[] = JSON.parse(text);
@@ -94,13 +99,37 @@ export async function loadTasks(onFallback?: (reason: string) => void): Promise<
   return migrateOrder(await loadSampleTasks());
 }
 
+// ── メモの個別取得・保存 ─────────────────────────────────
+
+/** 特定タスクの memo を Tauri から取得する（NoteView 選択時に呼ぶ） */
+export async function getTaskMemo(id: string): Promise<string> {
+  const memo = await invoke<string | null>("get_task_memo", { id });
+  return memo ?? "";
+}
+
+/** 特定タスクの memo を Tauri に保存する */
+export async function saveTaskMemo(id: string, memo: string): Promise<void> {
+  await invoke("save_task_memo", { id, memo });
+}
+
 // ── 保存 ────────────────────────────────────────────────────
 
 /**
  * タスクをアプリデータディレクトリの tasks.json に保存する。
+ * memo フィールドは Rust 側の AppState から自動マージされる。
  * 保存先 (Windows): %APPDATA%\com.wbs.app\tasks.json
  */
 export async function saveTasks(tasks: Task[]): Promise<void> {
   const json = JSON.stringify(tasks.map(toRaw));
   await invoke("save_tasks", { json });
+}
+
+// ── エクスポート ─────────────────────────────────────────
+
+/**
+ * memo を含む全タスクデータを JSON 文字列で返す（設定画面のエクスポート用）。
+ */
+export async function exportTasksJson(): Promise<string> {
+  const buf = await invoke<ArrayBuffer>("get_all_tasks_json");
+  return new TextDecoder().decode(buf);
 }

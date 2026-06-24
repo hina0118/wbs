@@ -1,7 +1,17 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
+use std::sync::Mutex;
 use tauri::Manager;
+
+// ── アプリ状態（メモリ上のタスクデータ）────────────────────
+
+/// タスクデータをメモリに保持する。
+/// フロントエンドへは memo フィールドを除いたサマリーを渡し、
+/// 必要時に個別取得することで初期読み込みの JSON サイズを削減する。
+struct AppState {
+    tasks: Mutex<Vec<serde_json::Value>>,
+}
 
 // ── エラーログ ────────────────────────────────────────────
 
@@ -66,33 +76,140 @@ fn save_proxy_setting(app: tauri::AppHandle, url: Option<String>) -> Result<(), 
 
 // ── タスク保存 ────────────────────────────────────────────
 
-/// アプリデータディレクトリの tasks.json を読む。
-/// tauri::ipc::Response を使い HTTP ボディ経由で返すことで
-/// WebView2 IPC の 64KB 制限を回避する。
-/// ファイルがなければ空ボディ (204) を返す（初回起動 = デフォルトデータをフロントで使う）。
-#[tauri::command]
-fn load_saved_tasks(app: tauri::AppHandle) -> Result<tauri::ipc::Response, String> {
-    let path = app
-        .path()
+fn tasks_file_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    app.path()
         .app_data_dir()
-        .map_err(|e| e.to_string())?
-        .join("tasks.json");
-
-    if path.exists() {
-        let bytes = fs::read(&path).map_err(|e| e.to_string())?;
-        Ok(tauri::ipc::Response::new(bytes))
-    } else {
-        Ok(tauri::ipc::Response::new(Vec::<u8>::new()))
-    }
+        .map(|d| d.join("tasks.json"))
+        .map_err(|e| e.to_string())
 }
 
-/// タスク JSON をアプリデータディレクトリの tasks.json に保存する。
+/// タスクを読み込み、memo フィールドを除いたサマリーを返す。
+/// 読み込んだフルデータは AppState に保持し、get_task_memo で個別取得できる。
+/// tauri::ipc::Response で HTTP ボディ経由送信することで WebView2 IPC の 64KB 制限を回避。
 #[tauri::command]
-fn save_tasks(app: tauri::AppHandle, json: String) -> Result<(), String> {
-    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+fn load_tasks_without_memo(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+) -> Result<tauri::ipc::Response, String> {
+    let path = tasks_file_path(&app)?;
+    if !path.exists() {
+        return Ok(tauri::ipc::Response::new(Vec::<u8>::new()));
+    }
 
+    let bytes = fs::read(&path).map_err(|e| e.to_string())?;
+    let tasks: Vec<serde_json::Value> =
+        serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+
+    // フルデータをメモリに保持
+    *state.tasks.lock().unwrap() = tasks.clone();
+
+    // memo を除いて hasMemo フラグだけ付与したサマリーを返す
+    let summary: Vec<serde_json::Value> = tasks
+        .into_iter()
+        .map(|mut t| {
+            let has_memo = t
+                .get("memo")
+                .and_then(|m| m.as_str())
+                .is_some_and(|s| !s.trim().is_empty());
+            if let Some(obj) = t.as_object_mut() {
+                obj.remove("memo");
+                if has_memo {
+                    obj.insert("hasMemo".to_string(), serde_json::Value::Bool(true));
+                }
+            }
+            t
+        })
+        .collect();
+
+    let json_bytes = serde_json::to_vec(&summary).map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(json_bytes))
+}
+
+/// 特定タスクの memo を AppState から返す。
+#[tauri::command]
+fn get_task_memo(id: String, state: tauri::State<'_, AppState>) -> Option<String> {
+    let tasks = state.tasks.lock().unwrap();
+    tasks
+        .iter()
+        .find(|t| t["id"].as_str() == Some(&id))
+        .and_then(|t| t["memo"].as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+}
+
+/// 特定タスクの memo を更新し、ファイルに保存する。
+#[tauri::command]
+fn save_task_memo(
+    app: tauri::AppHandle,
+    id: String,
+    memo: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    {
+        let mut tasks = state.tasks.lock().unwrap();
+        if let Some(task) = tasks.iter_mut().find(|t| t["id"].as_str() == Some(&id)) {
+            if memo.is_empty() {
+                task.as_object_mut().map(|o| o.remove("memo"));
+            } else {
+                task["memo"] = serde_json::Value::String(memo);
+            }
+        }
+    }
+
+    let json = {
+        let tasks = state.tasks.lock().unwrap();
+        serde_json::to_string(&*tasks).map_err(|e| e.to_string())?
+    };
+
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     fs::write(dir.join("tasks.json"), json).map_err(|e| e.to_string())
+}
+
+/// タスク一覧（memo なし）を受け取り、AppState の memo をマージしてファイルに保存する。
+#[tauri::command]
+fn save_tasks(
+    app: tauri::AppHandle,
+    json: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    let mut new_tasks: Vec<serde_json::Value> =
+        serde_json::from_str(&json).map_err(|e| e.to_string())?;
+
+    // AppState から memo をコピーし、hasMemo（フロントエンド専用フラグ）を除去
+    {
+        let stored = state.tasks.lock().unwrap();
+        for task in &mut new_tasks {
+            let id = task["id"].as_str().unwrap_or("").to_string();
+            if let Some(st) = stored.iter().find(|t| t["id"].as_str() == Some(&id)) {
+                if let Some(memo) = st.get("memo").and_then(|m| m.as_str()) {
+                    if !memo.is_empty() {
+                        task["memo"] = serde_json::Value::String(memo.to_string());
+                    }
+                }
+            }
+            // hasMemo はフロントエンド専用フラグなので保存しない
+            task.as_object_mut().map(|o| o.remove("hasMemo"));
+        }
+    }
+
+    // AppState を更新
+    *state.tasks.lock().unwrap() = new_tasks.clone();
+
+    let out = serde_json::to_string(&new_tasks).map_err(|e| e.to_string())?;
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    fs::write(dir.join("tasks.json"), out).map_err(|e| e.to_string())
+}
+
+/// memo を含む全タスクデータを JSON バイト列で返す（エクスポート用）。
+#[tauri::command]
+fn get_all_tasks_json(
+    state: tauri::State<'_, AppState>,
+) -> Result<tauri::ipc::Response, String> {
+    let tasks = state.tasks.lock().unwrap();
+    let bytes = serde_json::to_vec_pretty(&*tasks).map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(bytes))
 }
 
 // ── テストブック保存 ──────────────────────────────────────
@@ -241,6 +358,9 @@ fn show_notification(app: tauri::AppHandle, title: String, body: String) -> Resu
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(AppState {
+            tasks: Mutex::new(Vec::new()),
+        })
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
@@ -253,8 +373,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            load_saved_tasks,
+            load_tasks_without_memo,
+            get_task_memo,
+            save_task_memo,
             save_tasks,
+            get_all_tasks_json,
             load_test_books,
             save_test_books,
             fetch_holidays,

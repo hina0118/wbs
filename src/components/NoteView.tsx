@@ -1,6 +1,7 @@
 /**
  * NoteView – Obsidian 風のメモビュー
  * 左: タスクツリー / 右: 選択タスクのメモ（閲覧・編集）
+ * memo は起動時にロードせず、タスク選択時に Tauri から個別取得する。
  */
 import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -9,6 +10,7 @@ import TurndownService from "turndown";
 import { markdownComponents } from "./MarkdownComponents";
 import { Task } from "../types/task";
 import { computeProgress, getDepth, isVisible } from "../utils/taskUtils";
+import { getTaskMemo, saveTaskMemo } from "../utils/taskStorage";
 import { INDENT_PER_LEVEL } from "../constants/layout";
 
 const turndownService = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
@@ -35,6 +37,7 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [treeSearch, setTreeSearch] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [loadedMemo, setLoadedMemo] = useState(""); // Tauri から取得したメモ
   const [draftMemo, setDraftMemo] = useState("");
 
   const activeTasks = useMemo(() => tasks.filter((t) => !t.archived), [tasks]);
@@ -75,18 +78,26 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
   function handleSelectTask(task: Task) {
     if (isEditing) return;
     setSelectedId(task.id);
+    setLoadedMemo("");
+    // メモを Tauri から非同期取得
+    void getTaskMemo(task.id).then(setLoadedMemo);
   }
 
   function handleStartEdit() {
-    setDraftMemo(selectedTask?.memo ?? "");
+    setDraftMemo(loadedMemo);
     setIsEditing(true);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!selectedTask) return;
-    const updated = tasks.map((t) => (t.id === selectedTask.id ? { ...t, memo: draftMemo } : t));
-    onTasksChange(updated);
+    await saveTaskMemo(selectedTask.id, draftMemo);
+    setLoadedMemo(draftMemo);
     setIsEditing(false);
+    // hasMemo フラグだけ tasks state に反映（memo 本体は Rust 側で保持）
+    const updated = tasks.map((t) =>
+      t.id === selectedTask.id ? { ...t, hasMemo: draftMemo.trim().length > 0 } : t,
+    );
+    onTasksChange(updated);
   }
 
   function handleCancel() {
@@ -137,7 +148,6 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
             const hasChildren = activeTasks.some((t) => t.parentId === task.id);
             const isCollapsed = collapsedIds.has(task.id);
             const isSelected = task.id === selectedId;
-            const hasMemo = !!(task.memo && task.memo.trim());
 
             return (
               <div
@@ -161,7 +171,7 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
                   <span className="note-tree-leaf-icon">─</span>
                 )}
                 <span className="note-tree-item-name">{task.name}</span>
-                {hasMemo && <span className="note-tree-memo-dot" title="メモあり" />}
+                {task.hasMemo && <span className="note-tree-memo-dot" title="メモあり" />}
               </div>
             );
           })}
@@ -229,7 +239,7 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
                 </button>
               ) : (
                 <>
-                  <button className="note-btn note-btn--save" onClick={handleSave}>
+                  <button className="note-btn note-btn--save" onClick={() => void handleSave()}>
                     💾 保存
                   </button>
                   <button className="note-btn note-btn--cancel" onClick={handleCancel}>
@@ -242,10 +252,10 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
             {/* メモ表示 / 編集 */}
             {!isEditing ? (
               <div className="note-memo-view">
-                {selectedTask.memo && selectedTask.memo.trim() ? (
+                {loadedMemo.trim() ? (
                   <div className="markdown-body">
                     <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                      {selectedTask.memo}
+                      {loadedMemo}
                     </ReactMarkdown>
                   </div>
                 ) : (

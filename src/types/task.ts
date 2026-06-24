@@ -17,7 +17,8 @@ export interface Task {
   collapsed?: boolean;
   assignee?: string;
   subMembers?: string[];
-  memo?: string;
+  memo?: string; // NoteView でのみ使用（起動時はロードしない）
+  hasMemo?: boolean; // Rust 側でメモ有無だけ伝えるフラグ
   progressCount?: { done: number; total: number };
   order?: number;
   isFloating?: boolean; // 開始時期不明の単発タスク（日付なし）

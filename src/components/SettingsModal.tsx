@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { loadAppSettings, saveAppSettings, TaskType } from "../utils/settingsStorage";
+import { exportTasksJson } from "../utils/taskStorage";
 
 import { Task } from "../types/task";
 
@@ -389,16 +390,17 @@ export default function SettingsModal({ onClose, onChildTaskNamesChange, tasks }
               <button
                 className="btn-save"
                 onClick={() => {
-                  const json = JSON.stringify(tasks, null, 2);
-                  const blob = new Blob([json], { type: "application/json" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  const now = new Date();
-                  const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
-                  a.href = url;
-                  a.download = `tasks_${ts}.json`;
-                  a.click();
-                  URL.revokeObjectURL(url);
+                  void exportTasksJson().then((json) => {
+                    const blob = new Blob([json], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    const now = new Date();
+                    const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+                    a.href = url;
+                    a.download = `tasks_${ts}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  });
                 }}
               >
                 タスクデータをダウンロード

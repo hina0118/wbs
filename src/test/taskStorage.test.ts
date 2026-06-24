@@ -212,6 +212,46 @@ describe("loadTasks – isFloating", () => {
   });
 });
 
+// ─── getTaskMemo ──────────────────────────────────────────────
+describe("getTaskMemo", () => {
+  it("Tauri からメモ文字列を返す", async () => {
+    mockInvoke.mockResolvedValueOnce("# メモ内容");
+    const { getTaskMemo } = await import("../utils/taskStorage");
+    const memo = await getTaskMemo("t1");
+    expect(memo).toBe("# メモ内容");
+    expect(mockInvoke).toHaveBeenCalledWith("get_task_memo", { id: "t1" });
+  });
+
+  it("Tauri が null を返した場合は空文字を返す", async () => {
+    mockInvoke.mockResolvedValueOnce(null);
+    const { getTaskMemo } = await import("../utils/taskStorage");
+    const memo = await getTaskMemo("t2");
+    expect(memo).toBe("");
+  });
+});
+
+// ─── saveTaskMemo ─────────────────────────────────────────────
+describe("saveTaskMemo", () => {
+  it("invoke save_task_memo を呼び出す", async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+    const { saveTaskMemo } = await import("../utils/taskStorage");
+    await saveTaskMemo("t1", "新しいメモ");
+    expect(mockInvoke).toHaveBeenCalledWith("save_task_memo", { id: "t1", memo: "新しいメモ" });
+  });
+});
+
+// ─── exportTasksJson ──────────────────────────────────────────
+describe("exportTasksJson", () => {
+  it("ArrayBuffer をデコードして JSON 文字列を返す", async () => {
+    const data = [{ id: "t1", name: "Task1" }];
+    const bytes = new TextEncoder().encode(JSON.stringify(data, null, 2));
+    mockInvoke.mockResolvedValueOnce(bytes.buffer as ArrayBuffer);
+    const { exportTasksJson } = await import("../utils/taskStorage");
+    const json = await exportTasksJson();
+    expect(JSON.parse(json)).toEqual(data);
+  });
+});
+
 // ─── saveTasks ────────────────────────────────────────────────
 describe("saveTasks", () => {
   it("タスクを JSON 文字列に変換して invoke を呼び出す", async () => {
