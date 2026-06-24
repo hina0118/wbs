@@ -67,9 +67,11 @@ fn save_proxy_setting(app: tauri::AppHandle, url: Option<String>) -> Result<(), 
 // ── タスク保存 ────────────────────────────────────────────
 
 /// アプリデータディレクトリの tasks.json を読む。
-/// ファイルがなければ None を返す（初回起動 = デフォルトデータをフロントで使う）。
+/// tauri::ipc::Response を使い HTTP ボディ経由で返すことで
+/// WebView2 IPC の 64KB 制限を回避する。
+/// ファイルがなければ空ボディ (204) を返す（初回起動 = デフォルトデータをフロントで使う）。
 #[tauri::command]
-fn load_saved_tasks(app: tauri::AppHandle) -> Result<Option<String>, String> {
+fn load_saved_tasks(app: tauri::AppHandle) -> Result<tauri::ipc::Response, String> {
     let path = app
         .path()
         .app_data_dir()
@@ -77,11 +79,10 @@ fn load_saved_tasks(app: tauri::AppHandle) -> Result<Option<String>, String> {
         .join("tasks.json");
 
     if path.exists() {
-        fs::read_to_string(&path)
-            .map(Some)
-            .map_err(|e| e.to_string())
+        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        Ok(tauri::ipc::Response::new(content))
     } else {
-        Ok(None)
+        Ok(tauri::ipc::Response::new(String::new()))
     }
 }
 

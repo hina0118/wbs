@@ -80,7 +80,7 @@ function migrateOrder(tasks: Task[]): Task[] {
  */
 export async function loadTasks(): Promise<Task[]> {
   try {
-    const saved = await invoke<string | null>("load_saved_tasks");
+    const saved = await invoke<string>("load_saved_tasks");
     if (saved) {
       const raws: TaskRaw[] = JSON.parse(saved);
       return migrateOrder(raws.map(toTask));
