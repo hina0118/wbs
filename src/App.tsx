@@ -111,35 +111,43 @@ function App() {
   );
 
   // 起動時: タスク・テストブック・祝日を並列ロード
+  // setLoading(false) でアプリシェルを先に描画し、setTimeout(0) でタスク描画を分離する
   useEffect(() => {
-    Promise.all([
-      loadTasks((reason) =>
-        showExportMsg(
-          {
-            text: `タスクの読み込みに失敗しました。サンプルデータを表示しています: ${reason}`,
-            isError: true,
-          },
-          8000,
-        ),
-      ),
-      loadTestBooks(),
-      Promise.race([
-        loadHolidays(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("祝日取得タイムアウト（20秒）")), 20_000),
-        ),
-      ]).catch((e) => {
-        setHolidayError(e instanceof Error ? e.message : String(e));
-        return new Map<string, string>();
-      }),
-    ])
-      .then(([loadedTasks, loadedBooks, loadedHolidays]) => {
-        setTasks(sortByTree(loadedTasks));
-        setTestBooks(loadedBooks);
-        setHolidays(loadedHolidays);
-      })
-      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
-      .finally(() => setLoading(false));
+    void (async () => {
+      let loadedTasks: Task[] = [];
+      try {
+        const [tasks, books, holidayMap] = await Promise.all([
+          loadTasks((reason) =>
+            showExportMsg(
+              {
+                text: `タスクの読み込みに失敗しました。サンプルデータを表示しています: ${reason}`,
+                isError: true,
+              },
+              8000,
+            ),
+          ),
+          loadTestBooks(),
+          Promise.race([
+            loadHolidays(),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("祝日取得タイムアウト（20秒）")), 20_000),
+            ),
+          ]).catch((e) => {
+            setHolidayError(e instanceof Error ? e.message : String(e));
+            return new Map<string, string>();
+          }),
+        ]);
+        loadedTasks = tasks;
+        setTestBooks(books);
+        setHolidays(holidayMap);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        // アプリシェルを先に描画してからタスクを設定（GanttChart の重い初期描画を分離）
+        setLoading(false);
+        setTimeout(() => setTasks(sortByTree(loadedTasks)), 0);
+      }
+    })();
   }, [showExportMsg]);
 
   useReminder(tasks, handleTasksChange, showReminderToast);
