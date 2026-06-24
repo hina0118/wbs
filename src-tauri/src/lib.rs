@@ -339,6 +339,15 @@ async fn save_excel_file(
     }
 }
 
+// ── DevTools ──────────────────────────────────────────────
+
+#[tauri::command]
+fn open_devtools(app: tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        window.open_devtools();
+    }
+}
+
 // ── デスクトップ通知 ──────────────────────────────────────
 
 /// OS ネイティブ通知を表示する（リマインダー機能で利用）
@@ -373,6 +382,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            open_devtools,
             load_tasks_without_memo,
             get_task_memo,
             save_task_memo,
