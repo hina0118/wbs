@@ -5207,3 +5207,78 @@
   color: #7eb8f5;
   background: #1a2d45;
 }
+
+/* ── タスク種別設定 ── */
+.task-type-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.task-type-input {
+  flex: 1;
+  min-width: 100px;
+}
+.task-type-productivity-input {
+  max-width: 140px;
+}
+.task-type-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  margin-bottom: 12px;
+}
+.task-type-table th {
+  text-align: left;
+  padding: 6px 8px;
+  background: #eef0f6;
+  color: #666;
+  font-weight: 600;
+}
+.task-type-table td {
+  padding: 6px 8px;
+  border-top: 1px solid #e8eaf0;
+}
+
+/* ── 見積もりセクション（タスク編集モーダル） ── */
+.modal-estimation-section {
+  margin-top: 12px;
+}
+.estimation-type-select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #c0c4d0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #fff;
+  color: inherit;
+  margin-bottom: 8px;
+}
+.estimation-quantity-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.estimation-result {
+  font-size: 0.95rem;
+  color: #444;
+  white-space: nowrap;
+}
+
+/* ── Dark mode: 見積もり ── */
+[data-theme=dark] .task-type-table th {
+  background: #252830;
+  color: #8a8da0;
+}
+[data-theme=dark] .task-type-table td {
+  border-top-color: #2a2d38;
+}
+[data-theme=dark] .estimation-type-select {
+  background: #1e2028;
+  border-color: #353845;
+  color: #c0c3d0;
+}
+[data-theme=dark] .estimation-result {
+  color: #c0c3d0;
+}
