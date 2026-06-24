@@ -33,10 +33,10 @@ beforeEach(() => {
 // ─── loadTasks ────────────────────────────────────────────────
 describe("loadTasks", () => {
   it("保存済みデータがある場合はパースして返す", async () => {
-    const raw = JSON.stringify([
+    // ipc::Response により invoke はパース済み配列を返す（JSON文字列ではない）
+    mockInvoke.mockResolvedValueOnce([
       { id: "t1", name: "Task1", startDate: "2025-01-01", endDate: "2025-03-31", progress: 50 },
     ]);
-    mockInvoke.mockResolvedValueOnce(raw);
 
     const tasks = await loadTasks();
     expect(tasks).toHaveLength(1);
@@ -58,8 +58,30 @@ describe("loadTasks", () => {
     expect(tasks).toEqual([]);
   });
 
+  it("invoke 失敗時に onFallback コールバックが呼ばれる", async () => {
+    const onFallback = vi.fn();
+    mockInvoke.mockRejectedValueOnce(new Error("disk full"));
+    await loadTasks(onFallback);
+    expect(onFallback).toHaveBeenCalledOnce();
+    expect(onFallback).toHaveBeenCalledWith("disk full");
+  });
+
+  it("invoke が JSON 文字列を返した場合はフォールバックする（旧形式の退行検知）", async () => {
+    // ipc::Response を使わない旧コードに戻った場合、invoke が文字列を返すと
+    // raws.map が存在せずエラーになりフォールバックする
+    const onFallback = vi.fn();
+    mockInvoke.mockResolvedValueOnce(
+      JSON.stringify([
+        { id: "t1", name: "T", startDate: "2025-01-01", endDate: "2025-03-31", progress: 0 },
+      ]),
+    );
+    const tasks = await loadTasks(onFallback);
+    expect(onFallback).toHaveBeenCalledOnce();
+    expect(tasks).toEqual([]);
+  });
+
   it("リマインダーに有効な repeat がある場合はそのまま保持する", async () => {
-    const raw = JSON.stringify([
+    mockInvoke.mockResolvedValueOnce([
       {
         id: "t1",
         name: "Task1",
@@ -69,7 +91,6 @@ describe("loadTasks", () => {
         reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "daily" },
       },
     ]);
-    mockInvoke.mockResolvedValueOnce(raw);
 
     const tasks = await loadTasks();
     expect(tasks[0].reminder?.repeat).toBe("daily");
@@ -77,7 +98,7 @@ describe("loadTasks", () => {
   });
 
   it("order が設定済みのタスクはそのままの order を保持する", async () => {
-    const raw = JSON.stringify([
+    mockInvoke.mockResolvedValueOnce([
       {
         id: "t1",
         name: "A",
@@ -95,7 +116,6 @@ describe("loadTasks", () => {
         order: 3,
       },
     ]);
-    mockInvoke.mockResolvedValueOnce(raw);
 
     const tasks = await loadTasks();
     expect(tasks.find((t) => t.id === "t1")?.order).toBe(5);
@@ -103,11 +123,10 @@ describe("loadTasks", () => {
   });
 
   it("order が未設定のタスクには兄弟内インデックスが自動付与される", async () => {
-    const raw = JSON.stringify([
+    mockInvoke.mockResolvedValueOnce([
       { id: "t1", name: "A", startDate: "2025-01-01", endDate: "2025-03-31", progress: 0 },
       { id: "t2", name: "B", startDate: "2025-01-01", endDate: "2025-03-31", progress: 0 },
     ]);
-    mockInvoke.mockResolvedValueOnce(raw);
 
     const tasks = await loadTasks();
     expect(tasks.find((t) => t.id === "t1")?.order).toBe(0);
@@ -115,7 +134,7 @@ describe("loadTasks", () => {
   });
 
   it("リマインダーに無効な repeat がある場合は undefined になる", async () => {
-    const raw = JSON.stringify([
+    mockInvoke.mockResolvedValueOnce([
       {
         id: "t1",
         name: "Task1",
@@ -125,7 +144,6 @@ describe("loadTasks", () => {
         reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "invalid_value" },
       },
     ]);
-    mockInvoke.mockResolvedValueOnce(raw);
 
     const tasks = await loadTasks();
     expect(tasks[0].reminder?.repeat).toBeUndefined();
@@ -144,7 +162,7 @@ describe("loadTasks – isFloating", () => {
   });
 
   it("isFloating タスクの startDate / endDate は今日の日付になる", async () => {
-    const raw = JSON.stringify([
+    mockInvoke.mockResolvedValueOnce([
       {
         id: "f1",
         name: "Floating",
@@ -154,7 +172,6 @@ describe("loadTasks – isFloating", () => {
         isFloating: true,
       },
     ]);
-    mockInvoke.mockResolvedValueOnce(raw);
 
     const tasks = await loadTasks();
     const today = new Date(2025, 5, 15);
@@ -165,10 +182,9 @@ describe("loadTasks – isFloating", () => {
   });
 
   it("isFloating でない通常タスクは JSON の日付をパースする", async () => {
-    const raw = JSON.stringify([
+    mockInvoke.mockResolvedValueOnce([
       { id: "t1", name: "Normal", startDate: "2025-03-01", endDate: "2025-03-31", progress: 0 },
     ]);
-    mockInvoke.mockResolvedValueOnce(raw);
 
     const tasks = await loadTasks();
     expect(tasks[0].startDate).toEqual(new Date(2025, 2, 1));
