@@ -55,25 +55,6 @@ function App() {
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
-  // 起動時: タスク・テストブック・祝日を並列ロード
-  useEffect(() => {
-    Promise.all([
-      loadTasks(),
-      loadTestBooks(),
-      loadHolidays().catch((e) => {
-        setHolidayError(e instanceof Error ? e.message : String(e));
-        return new Map<string, string>();
-      }),
-    ])
-      .then(([loadedTasks, loadedBooks, loadedHolidays]) => {
-        setTasks(sortByTree(loadedTasks));
-        setTestBooks(loadedBooks);
-        setHolidays(loadedHolidays);
-      })
-      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
-      .finally(() => setLoading(false));
-  }, []);
-
   // Ctrl+F で検索バーにフォーカス / ESC でクリア
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -128,6 +109,33 @@ function App() {
     },
     [showExportMsg],
   );
+
+  // 起動時: タスク・テストブック・祝日を並列ロード
+  useEffect(() => {
+    Promise.all([
+      loadTasks((reason) =>
+        showExportMsg(
+          {
+            text: `タスクの読み込みに失敗しました。サンプルデータを表示しています: ${reason}`,
+            isError: true,
+          },
+          8000,
+        ),
+      ),
+      loadTestBooks(),
+      loadHolidays().catch((e) => {
+        setHolidayError(e instanceof Error ? e.message : String(e));
+        return new Map<string, string>();
+      }),
+    ])
+      .then(([loadedTasks, loadedBooks, loadedHolidays]) => {
+        setTasks(sortByTree(loadedTasks));
+        setTestBooks(loadedBooks);
+        setHolidays(loadedHolidays);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoading(false));
+  }, [showExportMsg]);
 
   useReminder(tasks, handleTasksChange, showReminderToast);
 

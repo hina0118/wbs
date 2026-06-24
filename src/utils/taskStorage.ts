@@ -78,7 +78,7 @@ function migrateOrder(tasks: Task[]): Task[] {
  * アプリデータに保存済みデータがあればそれを使い、
  * なければ public/data/sampleTasks.json のデフォルトデータを返す。
  */
-export async function loadTasks(): Promise<Task[]> {
+export async function loadTasks(onFallback?: (reason: string) => void): Promise<Task[]> {
   try {
     const saved = await invoke<string>("load_saved_tasks");
     if (saved) {
@@ -86,7 +86,9 @@ export async function loadTasks(): Promise<Task[]> {
       return migrateOrder(raws.map(toTask));
     }
   } catch (e) {
-    console.warn("保存済みタスクの読み込みに失敗（デフォルトを使用）:", e);
+    const reason = e instanceof Error ? e.message : String(e);
+    console.warn("保存済みタスクの読み込みに失敗（デフォルトを使用）:", reason);
+    onFallback?.(reason);
   }
   return migrateOrder(await loadSampleTasks());
 }
