@@ -28,10 +28,7 @@ describe("loadAppSettings", () => {
   });
 
   it("taskTypes が未定義の古いデータにデフォルトをマージする", () => {
-    localStorage.setItem(
-      "app_settings",
-      JSON.stringify({ defaultChildTaskNames: ["設計"] }),
-    );
+    localStorage.setItem("app_settings", JSON.stringify({ defaultChildTaskNames: ["設計"] }));
     const settings = loadAppSettings();
     expect(settings.taskTypes).toEqual([]);
     expect(settings.defaultChildTaskNames).toEqual(["設計"]);
