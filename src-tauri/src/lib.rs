@@ -1,3 +1,4 @@
+use log::{debug, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
@@ -91,19 +92,42 @@ fn load_tasks_without_memo(
     app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<tauri::ipc::Response, String> {
+    info!("[load_tasks_without_memo] 開始");
+
     let path = tasks_file_path(&app)?;
+    trace!("[load_tasks_without_memo] ファイルパス: {:?}", path);
+
     if !path.exists() {
+        info!("[load_tasks_without_memo] ファイルなし → 空レスポンスを返す");
         return Ok(tauri::ipc::Response::new(Vec::<u8>::new()));
     }
 
-    let bytes = fs::read(&path).map_err(|e| e.to_string())?;
-    let tasks: Vec<serde_json::Value> =
-        serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+    trace!("[load_tasks_without_memo] fs::read 開始");
+    let bytes = fs::read(&path).map_err(|e| {
+        warn!("[load_tasks_without_memo] fs::read 失敗: {e}");
+        e.to_string()
+    })?;
+    info!(
+        "[load_tasks_without_memo] fs::read 完了 ({} bytes / {:.1} KB)",
+        bytes.len(),
+        bytes.len() as f64 / 1024.0
+    );
 
-    // フルデータをメモリに保持
+    trace!("[load_tasks_without_memo] JSON パース開始");
+    let tasks: Vec<serde_json::Value> = serde_json::from_slice(&bytes).map_err(|e| {
+        warn!("[load_tasks_without_memo] JSON パース失敗: {e}");
+        e.to_string()
+    })?;
+    info!(
+        "[load_tasks_without_memo] JSON パース完了 (タスク数: {})",
+        tasks.len()
+    );
+
+    trace!("[load_tasks_without_memo] AppState へ格納開始");
     *state.tasks.lock().unwrap() = tasks.clone();
+    debug!("[load_tasks_without_memo] AppState 格納完了");
 
-    // memo を除いて hasMemo フラグだけ付与したサマリーを返す
+    trace!("[load_tasks_without_memo] サマリー生成開始 (memo 除去 + hasMemo フラグ付与)");
     let summary: Vec<serde_json::Value> = tasks
         .into_iter()
         .map(|mut t| {
@@ -120,8 +144,19 @@ fn load_tasks_without_memo(
             t
         })
         .collect();
+    debug!(
+        "[load_tasks_without_memo] サマリー生成完了 (hasMemo あり: {})",
+        summary.iter().filter(|t| t.get("hasMemo").is_some()).count()
+    );
 
+    trace!("[load_tasks_without_memo] JSON シリアライズ開始");
     let json_bytes = serde_json::to_vec(&summary).map_err(|e| e.to_string())?;
+    info!(
+        "[load_tasks_without_memo] 完了 → レスポンス送信 ({} bytes / {:.1} KB)",
+        json_bytes.len(),
+        json_bytes.len() as f64 / 1024.0
+    );
+
     Ok(tauri::ipc::Response::new(json_bytes))
 }
 
@@ -173,8 +208,10 @@ fn save_tasks(
     json: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
+    trace!("[save_tasks] 開始 (受信 JSON {} bytes)", json.len());
     let mut new_tasks: Vec<serde_json::Value> =
         serde_json::from_str(&json).map_err(|e| e.to_string())?;
+    debug!("[save_tasks] パース完了 (タスク数: {})", new_tasks.len());
 
     // AppState から memo をコピーし、hasMemo（フロントエンド専用フラグ）を除去
     {
@@ -371,7 +408,19 @@ pub fn run() {
             tasks: Mutex::new(Vec::new()),
         })
         .plugin(tauri_plugin_window_state::Builder::new().build())
-        .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(log::LevelFilter::Trace)
+                .target(tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::LogDir {
+                        file_name: Some("wbs".to_string()),
+                    },
+                ))
+                .target(tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::Stderr,
+                ))
+                .build(),
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
