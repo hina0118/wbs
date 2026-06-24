@@ -79,10 +79,10 @@ fn load_saved_tasks(app: tauri::AppHandle) -> Result<tauri::ipc::Response, Strin
         .join("tasks.json");
 
     if path.exists() {
-        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        Ok(tauri::ipc::Response::new(content))
+        let bytes = fs::read(&path).map_err(|e| e.to_string())?;
+        Ok(tauri::ipc::Response::new(bytes))
     } else {
-        Ok(tauri::ipc::Response::new("null".to_string()))
+        Ok(tauri::ipc::Response::new(Vec::<u8>::new()))
     }
 }
 

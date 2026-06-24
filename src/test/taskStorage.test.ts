@@ -26,6 +26,12 @@ function makeTask(id: string, start: string, end: string, progress = 0): Task {
   };
 }
 
+/** TaskRaw の配列を JSON → UTF-8 バイト → ArrayBuffer に変換する */
+function toArrayBuffer(data: unknown): ArrayBuffer {
+  const bytes = new TextEncoder().encode(JSON.stringify(data));
+  return bytes.buffer as ArrayBuffer;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -33,10 +39,12 @@ beforeEach(() => {
 // ─── loadTasks ────────────────────────────────────────────────
 describe("loadTasks", () => {
   it("保存済みデータがある場合はパースして返す", async () => {
-    // ipc::Response により invoke はパース済み配列を返す（JSON文字列ではない）
-    mockInvoke.mockResolvedValueOnce([
-      { id: "t1", name: "Task1", startDate: "2025-01-01", endDate: "2025-03-31", progress: 50 },
-    ]);
+    // ipc::Response (Raw bytes) により invoke は ArrayBuffer を返す
+    mockInvoke.mockResolvedValueOnce(
+      toArrayBuffer([
+        { id: "t1", name: "Task1", startDate: "2025-01-01", endDate: "2025-03-31", progress: 50 },
+      ]),
+    );
 
     const tasks = await loadTasks();
     expect(tasks).toHaveLength(1);
@@ -47,7 +55,8 @@ describe("loadTasks", () => {
   });
 
   it("保存済みデータが null の場合はサンプルタスクを返す", async () => {
-    mockInvoke.mockResolvedValueOnce(null);
+    // ファイルなし → Rust が空バイト列を返す
+    mockInvoke.mockResolvedValueOnce(new ArrayBuffer(0));
     const tasks = await loadTasks();
     expect(tasks).toEqual([]);
   });
@@ -66,9 +75,8 @@ describe("loadTasks", () => {
     expect(onFallback).toHaveBeenCalledWith("disk full");
   });
 
-  it("invoke が JSON 文字列を返した場合はフォールバックする（旧形式の退行検知）", async () => {
-    // ipc::Response を使わない旧コードに戻った場合、invoke が文字列を返すと
-    // raws.map が存在せずエラーになりフォールバックする
+  it("invoke が ArrayBuffer でない値を返した場合はフォールバックする（退行検知）", async () => {
+    // Raw bytes 方式でない旧コードに戻った場合の退行検知
     const onFallback = vi.fn();
     mockInvoke.mockResolvedValueOnce(
       JSON.stringify([
@@ -81,16 +89,18 @@ describe("loadTasks", () => {
   });
 
   it("リマインダーに有効な repeat がある場合はそのまま保持する", async () => {
-    mockInvoke.mockResolvedValueOnce([
-      {
-        id: "t1",
-        name: "Task1",
-        startDate: "2025-01-01",
-        endDate: "2025-03-31",
-        progress: 0,
-        reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "daily" },
-      },
-    ]);
+    mockInvoke.mockResolvedValueOnce(
+      toArrayBuffer([
+        {
+          id: "t1",
+          name: "Task1",
+          startDate: "2025-01-01",
+          endDate: "2025-03-31",
+          progress: 0,
+          reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "daily" },
+        },
+      ]),
+    );
 
     const tasks = await loadTasks();
     expect(tasks[0].reminder?.repeat).toBe("daily");
@@ -98,24 +108,26 @@ describe("loadTasks", () => {
   });
 
   it("order が設定済みのタスクはそのままの order を保持する", async () => {
-    mockInvoke.mockResolvedValueOnce([
-      {
-        id: "t1",
-        name: "A",
-        startDate: "2025-01-01",
-        endDate: "2025-03-31",
-        progress: 0,
-        order: 5,
-      },
-      {
-        id: "t2",
-        name: "B",
-        startDate: "2025-01-01",
-        endDate: "2025-03-31",
-        progress: 0,
-        order: 3,
-      },
-    ]);
+    mockInvoke.mockResolvedValueOnce(
+      toArrayBuffer([
+        {
+          id: "t1",
+          name: "A",
+          startDate: "2025-01-01",
+          endDate: "2025-03-31",
+          progress: 0,
+          order: 5,
+        },
+        {
+          id: "t2",
+          name: "B",
+          startDate: "2025-01-01",
+          endDate: "2025-03-31",
+          progress: 0,
+          order: 3,
+        },
+      ]),
+    );
 
     const tasks = await loadTasks();
     expect(tasks.find((t) => t.id === "t1")?.order).toBe(5);
@@ -123,10 +135,12 @@ describe("loadTasks", () => {
   });
 
   it("order が未設定のタスクには兄弟内インデックスが自動付与される", async () => {
-    mockInvoke.mockResolvedValueOnce([
-      { id: "t1", name: "A", startDate: "2025-01-01", endDate: "2025-03-31", progress: 0 },
-      { id: "t2", name: "B", startDate: "2025-01-01", endDate: "2025-03-31", progress: 0 },
-    ]);
+    mockInvoke.mockResolvedValueOnce(
+      toArrayBuffer([
+        { id: "t1", name: "A", startDate: "2025-01-01", endDate: "2025-03-31", progress: 0 },
+        { id: "t2", name: "B", startDate: "2025-01-01", endDate: "2025-03-31", progress: 0 },
+      ]),
+    );
 
     const tasks = await loadTasks();
     expect(tasks.find((t) => t.id === "t1")?.order).toBe(0);
@@ -134,16 +148,18 @@ describe("loadTasks", () => {
   });
 
   it("リマインダーに無効な repeat がある場合は undefined になる", async () => {
-    mockInvoke.mockResolvedValueOnce([
-      {
-        id: "t1",
-        name: "Task1",
-        startDate: "2025-01-01",
-        endDate: "2025-03-31",
-        progress: 0,
-        reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "invalid_value" },
-      },
-    ]);
+    mockInvoke.mockResolvedValueOnce(
+      toArrayBuffer([
+        {
+          id: "t1",
+          name: "Task1",
+          startDate: "2025-01-01",
+          endDate: "2025-03-31",
+          progress: 0,
+          reminder: { datetime: "2026-03-27T09:00", notified: false, repeat: "invalid_value" },
+        },
+      ]),
+    );
 
     const tasks = await loadTasks();
     expect(tasks[0].reminder?.repeat).toBeUndefined();
@@ -162,16 +178,18 @@ describe("loadTasks – isFloating", () => {
   });
 
   it("isFloating タスクの startDate / endDate は今日の日付になる", async () => {
-    mockInvoke.mockResolvedValueOnce([
-      {
-        id: "f1",
-        name: "Floating",
-        startDate: "2020-01-01",
-        endDate: "2020-12-31",
-        progress: 0,
-        isFloating: true,
-      },
-    ]);
+    mockInvoke.mockResolvedValueOnce(
+      toArrayBuffer([
+        {
+          id: "f1",
+          name: "Floating",
+          startDate: "2020-01-01",
+          endDate: "2020-12-31",
+          progress: 0,
+          isFloating: true,
+        },
+      ]),
+    );
 
     const tasks = await loadTasks();
     const today = new Date(2025, 5, 15);
@@ -182,9 +200,11 @@ describe("loadTasks – isFloating", () => {
   });
 
   it("isFloating でない通常タスクは JSON の日付をパースする", async () => {
-    mockInvoke.mockResolvedValueOnce([
-      { id: "t1", name: "Normal", startDate: "2025-03-01", endDate: "2025-03-31", progress: 0 },
-    ]);
+    mockInvoke.mockResolvedValueOnce(
+      toArrayBuffer([
+        { id: "t1", name: "Normal", startDate: "2025-03-01", endDate: "2025-03-31", progress: 0 },
+      ]),
+    );
 
     const tasks = await loadTasks();
     expect(tasks[0].startDate).toEqual(new Date(2025, 2, 1));
