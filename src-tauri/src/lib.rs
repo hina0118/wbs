@@ -327,7 +327,9 @@ async fn fetch_holidays(app: tauri::AppHandle) -> Result<Vec<(String, String)>, 
 /// プロキシ URL を受け取って reqwest クライアントを構築する
 fn build_client(proxy_url: Option<String>) -> Result<reqwest::Client, String> {
     let mut builder = reqwest::Client::builder()
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+        .timeout(std::time::Duration::from_secs(15))
+        .connect_timeout(std::time::Duration::from_secs(10));
     if let Some(url) = proxy_url {
         let proxy = reqwest::Proxy::all(&url).map_err(|e| format!("プロキシ設定エラー: {e}"))?;
         builder = builder.proxy(proxy);

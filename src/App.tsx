@@ -123,7 +123,12 @@ function App() {
         ),
       ),
       loadTestBooks(),
-      loadHolidays().catch((e) => {
+      Promise.race([
+        loadHolidays(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("祝日取得タイムアウト（20秒）")), 20_000),
+        ),
+      ]).catch((e) => {
         setHolidayError(e instanceof Error ? e.message : String(e));
         return new Map<string, string>();
       }),
