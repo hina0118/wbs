@@ -99,7 +99,10 @@ export default function GanttTimeline({
   onOpenEdit,
   onSetTooltip,
 }: Props) {
-  const allDates = tasks.filter((t) => !t.isFloating).flatMap((t) => [t.startDate, t.endDate]);
+  const isValidDate = (d: Date) => d instanceof Date && !isNaN(d.getTime());
+  const allDates = tasks
+    .filter((t) => !t.isFloating && isValidDate(t.startDate) && isValidDate(t.endDate))
+    .flatMap((t) => [t.startDate, t.endDate]);
   if (dragPreview) allDates.push(dragPreview.startDate, dragPreview.endDate);
 
   if (allDates.length === 0) {

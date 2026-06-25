@@ -26,9 +26,13 @@ interface TaskRaw {
   quantity?: number;
 }
 
-function parseLocalDate(s: string): Date {
-  const [y, m, d] = s.split("-").map(Number);
-  return new Date(y, m - 1, d);
+function parseLocalDate(s: string): Date | null {
+  if (!s) return null;
+  const parts = s.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  const [y, m, d] = parts;
+  const date = new Date(y, m - 1, d);
+  return isNaN(date.getTime()) ? null : date;
 }
 
 const VALID_REPEATS = new Set<ReminderRepeat>(["none", "daily", "weekly", "monthly"]);
@@ -44,10 +48,15 @@ function toTask(raw: TaskRaw): Task {
           : undefined,
       }
     : undefined;
+  const startDate = raw.isFloating ? today : (parseLocalDate(raw.startDate) ?? today);
+  const endDate = raw.isFloating ? today : (parseLocalDate(raw.endDate) ?? startDate);
+  if (!raw.isFloating && (!raw.startDate || !raw.endDate)) {
+    console.warn(`[loadTasks] タスク "${raw.name}" (id=${raw.id}) の日付が欠損しています。今日の日付を使用します。`);
+  }
   return {
     ...raw,
-    startDate: raw.isFloating ? today : parseLocalDate(raw.startDate),
-    endDate: raw.isFloating ? today : parseLocalDate(raw.endDate),
+    startDate,
+    endDate,
     reminder,
   };
 }
