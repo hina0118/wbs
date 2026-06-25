@@ -80,9 +80,6 @@ interface Props {
   onStartDrag: (e: React.MouseEvent, task: Task, type: "start" | "end" | "move") => void;
   onOpenEdit: (task: Task) => void;
   onSetTooltip: (tooltip: { task: Task; progress: number; x: number; y: number } | null) => void;
-  virtualStart: number;
-  virtualEnd: number;
-  totalScheduled: number;
 }
 
 export default function GanttTimeline({
@@ -97,9 +94,6 @@ export default function GanttTimeline({
   onStartDrag,
   onOpenEdit,
   onSetTooltip,
-  virtualStart,
-  virtualEnd,
-  totalScheduled,
 }: Props) {
   const allDates = tasks.filter((t) => !t.isFloating).flatMap((t) => [t.startDate, t.endDate]);
   if (dragPreview) allDates.push(dragPreview.startDate, dragPreview.endDate);
@@ -132,13 +126,9 @@ export default function GanttTimeline({
   today.setHours(0, 0, 0, 0);
   const todayOffset = diffDays(rangeStart, today);
 
-  const scheduledHeight = totalScheduled * ROW_HEIGHT;
+  const scheduledHeight = visibleTasks.length * ROW_HEIGHT;
   const floatingHeight = floatingTasks.length > 0 ? (1 + floatingTasks.length) * ROW_HEIGHT : 0;
   const totalBodyHeight = scheduledHeight + floatingHeight;
-
-  const topSpacerHeight = virtualStart * ROW_HEIGHT;
-  const bottomSpacerHeight = Math.max(0, (totalScheduled - virtualEnd - 1) * ROW_HEIGHT);
-  const virtualRows = visibleTasks.slice(virtualStart, virtualEnd + 1);
 
   return (
     <div className="gantt-timeline-wrapper">
@@ -246,13 +236,9 @@ export default function GanttTimeline({
           )}
         </div>
 
-        {/* 仮想スクロール行コンテナ（オーバーレイより前面） */}
+        {/* 行コンテナ（オーバーレイより前面、バーのみ・グリッドセルなし） */}
         <div style={{ position: "relative", zIndex: 1 }}>
-          {/* 上スペーサー */}
-          {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
-
-          {/* 仮想ウィンドウ内の行のみ描画（バーのみ、グリッドセルなし） */}
-          {virtualRows.map((task) => {
+          {visibleTasks.map((task) => {
             const depth = getDepth(task.id, tasks);
             const preview = dragPreview?.taskId === task.id ? dragPreview : null;
             const barStart = preview ? preview.startDate : task.startDate;
@@ -322,12 +308,9 @@ export default function GanttTimeline({
               </div>
             );
           })}
-
-          {/* 下スペーサー */}
-          {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
         </div>
 
-        {/* 未スケジュールセクション（件数が少ないため仮想化しない） */}
+        {/* 未スケジュールセクション */}
         {floatingTasks.length > 0 && (
           <div
             className="gantt-unscheduled-section gantt-unscheduled-section--timeline"

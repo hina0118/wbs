@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, useEffect } from "react";
+import { useRef, useState, useMemo } from "react";
 import { Task } from "../types/task";
 import {
   toInputDate,
@@ -11,7 +11,6 @@ import {
   isVisible,
 } from "../utils/taskUtils";
 import { useDragHandler } from "../hooks/useDragHandler";
-import { ROW_HEIGHT } from "../constants/layout";
 import { useGanttFilter } from "../hooks/useGanttFilter";
 import GanttLeftPanel from "./GanttLeftPanel";
 import GanttTimeline from "./GanttTimeline";
@@ -184,42 +183,16 @@ export default function GanttChart({
     setAddState(null);
   }
 
-  // ── 仮想スクロール ──
-
-  const [scrollTop, setScrollTop] = useState(0);
-  const [viewportHeight, setViewportHeight] = useState(600);
-
-  useEffect(() => {
-    const el = timelineRef.current;
-    if (!el) return;
-    setViewportHeight(el.clientHeight);
-    const ro = new ResizeObserver(() => setViewportHeight(el.clientHeight));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const OVERSCAN = 5;
-  const totalScheduled = scheduledVisibleTasks.length;
-  const virtualStart = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
-  const virtualEnd = Math.min(
-    totalScheduled - 1,
-    Math.ceil((scrollTop + viewportHeight) / ROW_HEIGHT) + OVERSCAN,
-  );
-
   // ── スクロール同期 ──
 
   function handleTimelineScroll() {
-    if (leftScrollRef.current && timelineRef.current) {
+    if (leftScrollRef.current && timelineRef.current)
       leftScrollRef.current.scrollTop = timelineRef.current.scrollTop;
-      setScrollTop(timelineRef.current.scrollTop);
-    }
   }
 
   function handleLeftScroll() {
-    if (leftScrollRef.current && timelineRef.current) {
+    if (leftScrollRef.current && timelineRef.current)
       timelineRef.current.scrollTop = leftScrollRef.current.scrollTop;
-      setScrollTop(leftScrollRef.current.scrollTop);
-    }
   }
 
   // ── 行並び替え ──
@@ -276,9 +249,6 @@ export default function GanttChart({
         onFilterAssigneeChange={setFilterAssignee}
         onLeftScroll={handleLeftScroll}
         onReorderTasks={reorderTasks}
-        virtualStart={virtualStart}
-        virtualEnd={virtualEnd}
-        totalScheduled={totalScheduled}
       />
 
       {/* 右タイムラインパネル */}
@@ -294,9 +264,6 @@ export default function GanttChart({
         onStartDrag={startDrag}
         onOpenEdit={(task) => setEditingId(task.id)}
         onSetTooltip={setTooltip}
-        virtualStart={virtualStart}
-        virtualEnd={virtualEnd}
-        totalScheduled={totalScheduled}
       />
 
       {/* ツールチップ */}
