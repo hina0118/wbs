@@ -51,17 +51,18 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
     );
   }, [activeTasks, searchLower]);
 
+  const activeTaskMap = useMemo(() => new Map(activeTasks.map((t) => [t.id, t])), [activeTasks]);
   const visibleTreeTasks = useMemo(() => {
     if (searchLower) {
       return activeTasks.filter((t) => matchingIds?.has(t.id));
     }
     // ガントチャートと同様: スケジュール済みタスク（ツリー順）→ 未スケジュールタスクを末尾に
     const scheduled = activeTasks.filter(
-      (t) => !t.isFloating && isVisible(t, activeTasks, collapsedIds),
+      (t) => !t.isFloating && isVisible(t, activeTaskMap, collapsedIds),
     );
     const floating = activeTasks.filter((t) => t.isFloating);
     return [...scheduled, ...floating];
-  }, [activeTasks, collapsedIds, searchLower, matchingIds]);
+  }, [activeTasks, activeTaskMap, collapsedIds, searchLower, matchingIds]);
 
   const selectedTask = selectedId ? (activeTasks.find((t) => t.id === selectedId) ?? null) : null;
   const ancestors = selectedTask ? getAncestors(selectedTask.id, activeTasks) : [];

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { Task } from "../types/task";
 import {
   toInputDate,
@@ -85,10 +85,12 @@ export default function GanttChart({
     setFilterAssignee,
   } = useGanttFilter(tasks);
 
-  const scheduledVisibleTasks = filteredTasks.filter(
-    (t) => !t.isFloating && isVisible(t, filteredTasks, collapsedIds),
+  const taskMap = useMemo(() => new Map(filteredTasks.map((t) => [t.id, t])), [filteredTasks]);
+  const scheduledVisibleTasks = useMemo(
+    () => filteredTasks.filter((t) => !t.isFloating && isVisible(t, taskMap, collapsedIds)),
+    [filteredTasks, taskMap, collapsedIds],
   );
-  const floatingTasks = filteredTasks.filter((t) => t.isFloating);
+  const floatingTasks = useMemo(() => filteredTasks.filter((t) => t.isFloating), [filteredTasks]);
 
   // ── 操作 ──
 

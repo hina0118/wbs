@@ -100,13 +100,17 @@ export function getDepth(taskId: string, tasks: Task[]): number {
   return 1 + getDepth(task.parentId, tasks);
 }
 
-/** 折りたたみ状態を考慮してタスクが表示されるかを返す */
-export function isVisible(task: Task, tasks: Task[], collapsedIds: Set<string>): boolean {
+/** 折りたたみ状態を考慮してタスクが表示されるかを返す（Map を使って O(depth) に最適化） */
+export function isVisible(
+  task: Task,
+  taskMap: Map<string, Task>,
+  collapsedIds: Set<string>,
+): boolean {
   if (!task.parentId) return true;
   if (collapsedIds.has(task.parentId)) return false;
-  const parent = tasks.find((t) => t.id === task.parentId);
+  const parent = taskMap.get(task.parentId);
   if (!parent) return true;
-  return isVisible(parent, tasks, collapsedIds);
+  return isVisible(parent, taskMap, collapsedIds);
 }
 
 /** ルートから対象タスクまでの祖先名（自身を除く） */

@@ -383,30 +383,32 @@ describe("getDepth", () => {
 
 // ─── isVisible ────────────────────────────────────────────────
 describe("isVisible", () => {
+  const flatMap = new Map(flatTasks.map((t) => [t.id, t]));
+
   it("ルートタスクは常に表示される", () => {
-    expect(isVisible(root, flatTasks, new Set())).toBe(true);
-    expect(isVisible(root, flatTasks, new Set(["root"]))).toBe(true);
+    expect(isVisible(root, flatMap, new Set())).toBe(true);
+    expect(isVisible(root, flatMap, new Set(["root"]))).toBe(true);
   });
 
   it("親が折りたたまれていない場合は表示される", () => {
-    expect(isVisible(child1, flatTasks, new Set())).toBe(true);
+    expect(isVisible(child1, flatMap, new Set())).toBe(true);
   });
 
   it("親が折りたたまれている場合は非表示になる", () => {
-    expect(isVisible(child1, flatTasks, new Set(["root"]))).toBe(false);
+    expect(isVisible(child1, flatMap, new Set(["root"]))).toBe(false);
   });
 
   it("祖父が折りたたまれている場合は孫も非表示になる", () => {
-    expect(isVisible(grandchild, flatTasks, new Set(["root"]))).toBe(false);
+    expect(isVisible(grandchild, flatMap, new Set(["root"]))).toBe(false);
   });
 
   it("親だけが折りたたまれている場合は孫も非表示になる", () => {
-    expect(isVisible(grandchild, flatTasks, new Set(["child1"]))).toBe(false);
+    expect(isVisible(grandchild, flatMap, new Set(["child1"]))).toBe(false);
   });
 
   it("親タスクが tasks に存在しない場合は表示される（孤立タスク）", () => {
     const orphan = makeTask({ id: "orphan", parentId: "ghost" });
-    expect(isVisible(orphan, [orphan], new Set())).toBe(true);
+    expect(isVisible(orphan, new Map([["orphan", orphan]]), new Set())).toBe(true);
   });
 });
 
