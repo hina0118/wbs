@@ -50,6 +50,9 @@ interface Props {
   onFilterAssigneeChange: (value: string) => void;
   onLeftScroll: () => void;
   onReorderTasks: (draggedId: string, targetId: string, insertAfter?: boolean) => void;
+  virtualStart: number;
+  virtualEnd: number;
+  totalScheduled: number;
 }
 
 export default function GanttLeftPanel({
@@ -72,6 +75,9 @@ export default function GanttLeftPanel({
   onFilterAssigneeChange,
   onLeftScroll,
   onReorderTasks,
+  virtualStart,
+  virtualEnd,
+  totalScheduled,
 }: Props) {
   const draggedIdRef = useRef<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -124,6 +130,10 @@ export default function GanttLeftPanel({
     draggedIdRef.current = null;
     setDragOverId(null);
   }
+
+  const virtualRows = visibleTasks.slice(virtualStart, virtualEnd + 1);
+  const topSpacerHeight = virtualStart * ROW_HEIGHT;
+  const bottomSpacerHeight = Math.max(0, (totalScheduled - virtualEnd - 1) * ROW_HEIGHT);
 
   return (
     <div
@@ -195,7 +205,12 @@ export default function GanttLeftPanel({
               : "条件に一致するタスクがありません。"}
           </div>
         )}
-        {visibleTasks.map((task) => {
+
+        {/* 仮想スクロール: 上スペーサー */}
+        {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
+
+        {/* 仮想ウィンドウ内の行のみ描画 */}
+        {virtualRows.map((task) => {
           const depth = getDepth(task.id, tasks);
           const hasChildren = tasks.some((t) => t.parentId === task.id);
           const isCollapsed = collapsedIds.has(task.id);
@@ -315,7 +330,10 @@ export default function GanttLeftPanel({
           );
         })}
 
-        {/* 未スケジュールセクション */}
+        {/* 仮想スクロール: 下スペーサー */}
+        {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
+
+        {/* 未スケジュールセクション（件数が少ないため仮想化しない） */}
         {floatingTasks.length > 0 && (
           <div className="gantt-unscheduled-section">
             <div className="gantt-unscheduled-header">未スケジュール ({floatingTasks.length})</div>

@@ -15,7 +15,6 @@ function getLuminance(hexColor: string): number {
   return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 }
 
-/** CSS brightness(factor) フィルターを近似してRGB各チャンネルを乗算した16進カラーを返す */
 function applyBrightness(hexColor: string, factor: number): string {
   const clamp = (v: number) => Math.min(255, Math.max(0, Math.round(v)));
   const r = clamp(parseInt(hexColor.slice(1, 3), 16) * factor);
@@ -24,14 +23,8 @@ function applyBrightness(hexColor: string, factor: number): string {
   return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }
 
-/**
- * バー上のテキスト色を返す。
- * 進捗オーバーレイ（brightness 0.75）と素のバー背景の
- * 両方に対してコントラストが取れるよう、暗い方の色で判定する。
- */
 function getContrastTextColor(baseColor: string): string {
   const progressColor = applyBrightness(baseColor, 0.75);
-  // 進捗部分の方が常に暗いため、そちらで判定すれば非進捗部分も担保される
   const luminance = getLuminance(progressColor);
   return luminance > 0.179 ? "#000000" : "#ffffff";
 }
@@ -87,6 +80,9 @@ interface Props {
   onStartDrag: (e: React.MouseEvent, task: Task, type: "start" | "end" | "move") => void;
   onOpenEdit: (task: Task) => void;
   onSetTooltip: (tooltip: { task: Task; progress: number; x: number; y: number } | null) => void;
+  virtualStart: number;
+  virtualEnd: number;
+  totalScheduled: number;
 }
 
 export default function GanttTimeline({
@@ -101,6 +97,9 @@ export default function GanttTimeline({
   onStartDrag,
   onOpenEdit,
   onSetTooltip,
+  virtualStart,
+  virtualEnd,
+  totalScheduled,
 }: Props) {
   const allDates = tasks.filter((t) => !t.isFloating).flatMap((t) => [t.startDate, t.endDate]);
   if (dragPreview) allDates.push(dragPreview.startDate, dragPreview.endDate);
@@ -133,8 +132,17 @@ export default function GanttTimeline({
   today.setHours(0, 0, 0, 0);
   const todayOffset = diffDays(rangeStart, today);
 
+  const scheduledHeight = totalScheduled * ROW_HEIGHT;
+  const floatingHeight = floatingTasks.length > 0 ? (1 + floatingTasks.length) * ROW_HEIGHT : 0;
+  const totalBodyHeight = scheduledHeight + floatingHeight;
+
+  const topSpacerHeight = virtualStart * ROW_HEIGHT;
+  const bottomSpacerHeight = Math.max(0, (totalScheduled - virtualEnd - 1) * ROW_HEIGHT);
+  const virtualRows = visibleTasks.slice(virtualStart, virtualEnd + 1);
+
   return (
     <div className="gantt-timeline-wrapper">
+      {/* ヘッダー（月行・日行）*/}
       <div
         className="gantt-timeline-header"
         style={{ height: HEADER_HEIGHT, width: totalDays * DAY_WIDTH }}
@@ -170,113 +178,160 @@ export default function GanttTimeline({
         </div>
       </div>
 
+      {/* ボディ */}
       <div
         className="gantt-timeline-body"
         ref={timelineRef}
         onScroll={onTimelineScroll}
         style={{
+          position: "relative",
           width: totalDays * DAY_WIDTH,
           maxHeight: `calc(100vh - ${HEADER_HEIGHT + 80}px)`,
           overflowY: "auto",
         }}
       >
-        {visibleTasks.map((task) => {
-          const depth = getDepth(task.id, tasks);
-          const preview = dragPreview?.taskId === task.id ? dragPreview : null;
-          const barStart = preview ? preview.startDate : task.startDate;
-          const barEnd = preview ? preview.endDate : task.endDate;
-
-          const barLeft = diffDays(rangeStart, barStart) * DAY_WIDTH;
-          const barWidth = Math.max((diffDays(barStart, barEnd) + 1) * DAY_WIDTH, DAY_WIDTH);
-          const effectiveProg = computeProgress(task.id, tasks);
-          const done = effectiveProg === 100;
-          const baseColor = done ? "#999" : (task.color ?? "#4A90D9");
-          const barColor = `${baseColor}${barOpacity(depth)}`;
-          const textColor = getContrastTextColor(baseColor);
-          const barHeight = Math.max(14, ROW_HEIGHT - depth * 4 - 18);
-
-          return (
-            <div key={task.id} className="gantt-timeline-row" style={{ height: ROW_HEIGHT }}>
-              {days.map((d, i) => {
-                const holiday = isHoliday(d, holidays);
-                const holidayName = holiday ? getHolidayName(d, holidays) : "";
-                return (
-                  <div
-                    key={i}
-                    className={[
-                      "gantt-grid-cell",
-                      isSunday(d) || isSaturday(d) ? "grid-weekend" : "",
-                      isMonthStart(d) ? "grid-month-start" : "",
-                      holiday ? "grid-holiday" : "",
-                    ].join(" ")}
-                    style={{ left: i * DAY_WIDTH, width: DAY_WIDTH }}
-                    title={holidayName}
-                  />
-                );
-              })}
-
-              {todayOffset >= 0 && todayOffset < totalDays && (
-                <div
-                  className="gantt-today-line"
-                  style={{ left: todayOffset * DAY_WIDTH + DAY_WIDTH / 2 }}
-                />
-              )}
-
+        {/*
+         * 列グリッドオーバーレイ: 週末・祝日・月初のみ描画。
+         * 全タスク行にわたって1枚で表示し、行ごとの day セルを廃止。
+         * pointerEvents: none でバー操作を妨げない。
+         */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: totalDays * DAY_WIDTH,
+            height: totalBodyHeight,
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        >
+          {days.map((d, i) => {
+            const weekend = isSunday(d) || isSaturday(d);
+            const holiday = isHoliday(d, holidays);
+            const monthStart = isMonthStart(d);
+            if (!weekend && !holiday && !monthStart) return null;
+            const holidayName = holiday ? getHolidayName(d, holidays) : "";
+            return (
               <div
-                className="gantt-bar"
+                key={i}
+                className={[
+                  "gantt-grid-cell",
+                  weekend ? "grid-weekend" : "",
+                  monthStart ? "grid-month-start" : "",
+                  holiday ? "grid-holiday" : "",
+                ].join(" ")}
                 style={{
-                  left: barLeft,
-                  width: barWidth,
-                  height: barHeight,
-                  background: barColor,
-                  cursor: "grab",
-                  userSelect: "none",
+                  position: "absolute",
+                  left: i * DAY_WIDTH,
+                  width: DAY_WIDTH,
+                  top: 0,
+                  height: "100%",
                 }}
-                onMouseDown={(e) => onStartDrag(e, task, "move")}
-                onClick={() => {
-                  if (!didDragRef.current) onOpenEdit(task);
-                }}
-                onMouseEnter={(e) => {
-                  if (!dragPreview)
-                    onSetTooltip({ task, progress: effectiveProg, x: e.clientX, y: e.clientY });
-                }}
-                onMouseMove={(e) => {
-                  if (!dragPreview)
-                    onSetTooltip({ task, progress: effectiveProg, x: e.clientX, y: e.clientY });
-                }}
-                onMouseLeave={() => onSetTooltip(null)}
+                title={holidayName}
+              />
+            );
+          })}
+          {/* 今日ライン */}
+          {todayOffset >= 0 && todayOffset < totalDays && (
+            <div
+              className="gantt-today-line"
+              style={{
+                position: "absolute",
+                left: todayOffset * DAY_WIDTH + DAY_WIDTH / 2,
+                top: 0,
+                height: scheduledHeight,
+              }}
+            />
+          )}
+        </div>
+
+        {/* 仮想スクロール行コンテナ（オーバーレイより前面） */}
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {/* 上スペーサー */}
+          {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
+
+          {/* 仮想ウィンドウ内の行のみ描画（バーのみ、グリッドセルなし） */}
+          {virtualRows.map((task) => {
+            const depth = getDepth(task.id, tasks);
+            const preview = dragPreview?.taskId === task.id ? dragPreview : null;
+            const barStart = preview ? preview.startDate : task.startDate;
+            const barEnd = preview ? preview.endDate : task.endDate;
+
+            const barLeft = diffDays(rangeStart, barStart) * DAY_WIDTH;
+            const barWidth = Math.max((diffDays(barStart, barEnd) + 1) * DAY_WIDTH, DAY_WIDTH);
+            const effectiveProg = computeProgress(task.id, tasks);
+            const done = effectiveProg === 100;
+            const baseColor = done ? "#999" : (task.color ?? "#4A90D9");
+            const barColor = `${baseColor}${barOpacity(depth)}`;
+            const textColor = getContrastTextColor(baseColor);
+            const barHeight = Math.max(14, ROW_HEIGHT - depth * 4 - 18);
+
+            return (
+              <div
+                key={task.id}
+                className="gantt-timeline-row"
+                style={{ height: ROW_HEIGHT, position: "relative" }}
               >
                 <div
-                  className="gantt-bar-handle gantt-bar-handle--left"
-                  style={{ width: HANDLE_WIDTH }}
-                  onMouseDown={(e) => onStartDrag(e, task, "start")}
-                />
-                <div
-                  className="gantt-bar-progress"
+                  className="gantt-bar"
                   style={{
-                    width: `${effectiveProg}%`,
-                    background: baseColor,
-                    filter: "brightness(0.75)",
+                    left: barLeft,
+                    width: barWidth,
+                    height: barHeight,
+                    background: barColor,
+                    cursor: "grab",
+                    userSelect: "none",
                   }}
-                />
-                <span className="gantt-bar-label" style={{ color: textColor }}>
-                  {task.name}
-                </span>
-                <div
-                  className="gantt-bar-handle gantt-bar-handle--right"
-                  style={{ width: HANDLE_WIDTH }}
-                  onMouseDown={(e) => onStartDrag(e, task, "end")}
-                />
+                  onMouseDown={(e) => onStartDrag(e, task, "move")}
+                  onClick={() => {
+                    if (!didDragRef.current) onOpenEdit(task);
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!dragPreview)
+                      onSetTooltip({ task, progress: effectiveProg, x: e.clientX, y: e.clientY });
+                  }}
+                  onMouseMove={(e) => {
+                    if (!dragPreview)
+                      onSetTooltip({ task, progress: effectiveProg, x: e.clientX, y: e.clientY });
+                  }}
+                  onMouseLeave={() => onSetTooltip(null)}
+                >
+                  <div
+                    className="gantt-bar-handle gantt-bar-handle--left"
+                    style={{ width: HANDLE_WIDTH }}
+                    onMouseDown={(e) => onStartDrag(e, task, "start")}
+                  />
+                  <div
+                    className="gantt-bar-progress"
+                    style={{
+                      width: `${effectiveProg}%`,
+                      background: baseColor,
+                      filter: "brightness(0.75)",
+                    }}
+                  />
+                  <span className="gantt-bar-label" style={{ color: textColor }}>
+                    {task.name}
+                  </span>
+                  <div
+                    className="gantt-bar-handle gantt-bar-handle--right"
+                    style={{ width: HANDLE_WIDTH }}
+                    onMouseDown={(e) => onStartDrag(e, task, "end")}
+                  />
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
 
-        {/* 未スケジュールセクション対応の空行（左パネルと高さ合わせ） */}
+          {/* 下スペーサー */}
+          {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
+        </div>
+
+        {/* 未スケジュールセクション（件数が少ないため仮想化しない） */}
         {floatingTasks.length > 0 && (
           <div
             className="gantt-unscheduled-section gantt-unscheduled-section--timeline"
-            style={{ width: totalDays * DAY_WIDTH }}
+            style={{ position: "relative", zIndex: 1, width: totalDays * DAY_WIDTH }}
           >
             <div className="gantt-unscheduled-header" style={{ visibility: "hidden" }}>
               placeholder
@@ -285,7 +340,7 @@ export default function GanttTimeline({
               <div
                 key={task.id}
                 className="gantt-timeline-row gantt-timeline-row--floating"
-                style={{ height: ROW_HEIGHT }}
+                style={{ height: ROW_HEIGHT, position: "relative" }}
               >
                 {days.map((d, i) => {
                   const holiday = isHoliday(d, holidays);
