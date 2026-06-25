@@ -181,6 +181,91 @@ export function getSignalStatus(taskId: string, tasks: Task[]): SignalStatus {
   return "green";
 }
 
+// ── バッチ計算（GanttChart で useMemo と組み合わせて使用） ──────
+
+/**
+ * 全タスクの有効進捗率を一括計算して Map で返す。
+ * 内部でメモ化再帰を使うため O(n)。
+ */
+export function buildProgressMap(tasks: Task[]): Map<string, number> {
+  const childrenMap = new Map<string, string[]>();
+  const progressByLeaf = new Map<string, number>();
+  for (const t of tasks) {
+    progressByLeaf.set(t.id, t.progress);
+    const key = t.parentId ?? "";
+    if (!childrenMap.has(key)) childrenMap.set(key, []);
+    childrenMap.get(key)!.push(t.id);
+  }
+  const cache = new Map<string, number>();
+  function compute(id: string): number {
+    if (cache.has(id)) return cache.get(id)!;
+    const children = childrenMap.get(id) ?? [];
+    const result =
+      children.length === 0
+        ? (progressByLeaf.get(id) ?? 0)
+        : Math.round(children.reduce((s, cid) => s + compute(cid), 0) / children.length);
+    cache.set(id, result);
+    return result;
+  }
+  for (const t of tasks) compute(t.id);
+  return cache;
+}
+
+/**
+ * 全タスクのツリー深さを一括計算して Map で返す。O(n)。
+ */
+export function buildDepthMap(tasks: Task[]): Map<string, number> {
+  const taskMap = new Map(tasks.map((t) => [t.id, t]));
+  const cache = new Map<string, number>();
+  function depth(id: string): number {
+    if (cache.has(id)) return cache.get(id)!;
+    const parentId = taskMap.get(id)?.parentId;
+    const result = parentId ? 1 + depth(parentId) : 0;
+    cache.set(id, result);
+    return result;
+  }
+  for (const t of tasks) depth(t.id);
+  return cache;
+}
+
+/**
+ * 全タスクのシグナル状態を一括計算して Map で返す。O(n)。
+ * progressMap を受け取ることで computeProgress の重複計算を避ける。
+ */
+export function buildSignalMap(
+  tasks: Task[],
+  progressMap: Map<string, number>,
+): Map<string, SignalStatus> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayTime = today.getTime();
+  const result = new Map<string, SignalStatus>();
+  for (const task of tasks) {
+    const prog = progressMap.get(task.id) ?? 0;
+    if (prog === 100 || task.isFloating) {
+      result.set(task.id, "none");
+      continue;
+    }
+    if (task.endDate < today) {
+      result.set(task.id, "red");
+      continue;
+    }
+    const startTime = task.startDate.getTime();
+    const endTime = task.endDate.getTime();
+    if (todayTime >= startTime) {
+      const totalDuration = endTime - startTime;
+      const expected =
+        totalDuration > 0 ? Math.min(((todayTime - startTime) / totalDuration) * 100, 100) : 100;
+      if (prog < expected - BEHIND_THRESHOLD) {
+        result.set(task.id, "yellow");
+        continue;
+      }
+    }
+    result.set(task.id, "green");
+  }
+  return result;
+}
+
 /** ルートタスク（parentId なし）とその全子孫を archived:true にする */
 export function archiveTask(taskId: string, tasks: Task[]): Task[] {
   const ids = new Set(getAllDescendantIds(taskId, tasks));

@@ -9,6 +9,9 @@ import {
   getAncestorNames,
   addDays,
   isVisible,
+  buildProgressMap,
+  buildDepthMap,
+  buildSignalMap,
 } from "../utils/taskUtils";
 import { useDragHandler } from "../hooks/useDragHandler";
 import { useGanttFilter } from "../hooks/useGanttFilter";
@@ -91,6 +94,10 @@ export default function GanttChart({
     [filteredTasks, taskMap, collapsedIds],
   );
   const floatingTasks = useMemo(() => filteredTasks.filter((t) => t.isFloating), [filteredTasks]);
+
+  const progressMap = useMemo(() => buildProgressMap(tasks), [tasks]);
+  const depthMap = useMemo(() => buildDepthMap(tasks), [tasks]);
+  const signalMap = useMemo(() => buildSignalMap(tasks, progressMap), [tasks, progressMap]);
 
   // ── 操作 ──
 
@@ -233,6 +240,9 @@ export default function GanttChart({
         tasks={tasks}
         visibleTasks={scheduledVisibleTasks}
         floatingTasks={floatingTasks}
+        progressMap={progressMap}
+        depthMap={depthMap}
+        signalMap={signalMap}
         collapsedIds={collapsedIds}
         filterParentId={filterParentId}
         filterAssignee={filterAssignee}
@@ -256,6 +266,8 @@ export default function GanttChart({
         tasks={tasks}
         visibleTasks={scheduledVisibleTasks}
         floatingTasks={floatingTasks}
+        progressMap={progressMap}
+        depthMap={depthMap}
         dragPreview={dragPreview}
         holidays={holidays}
         timelineRef={timelineRef}

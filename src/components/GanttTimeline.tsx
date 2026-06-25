@@ -1,6 +1,6 @@
 import { Task } from "../types/task";
 import { toHolidayKey } from "../utils/holidays";
-import { computeProgress, addDays, formatDateShort, getDepth } from "../utils/taskUtils";
+import { addDays, formatDateShort } from "../utils/taskUtils";
 import { DragPreview } from "../hooks/useDragHandler";
 import { DAY_WIDTH, ROW_HEIGHT, HEADER_HEIGHT } from "../constants/layout";
 import React from "react";
@@ -72,6 +72,8 @@ interface Props {
   tasks: Task[];
   visibleTasks: Task[];
   floatingTasks: Task[];
+  progressMap: Map<string, number>;
+  depthMap: Map<string, number>;
   dragPreview: DragPreview | null;
   holidays: Map<string, string>;
   timelineRef: React.RefObject<HTMLDivElement>;
@@ -86,6 +88,8 @@ export default function GanttTimeline({
   tasks,
   visibleTasks,
   floatingTasks,
+  progressMap,
+  depthMap,
   dragPreview,
   holidays,
   timelineRef,
@@ -239,14 +243,14 @@ export default function GanttTimeline({
         {/* 行コンテナ（オーバーレイより前面、バーのみ・グリッドセルなし） */}
         <div style={{ position: "relative", zIndex: 1 }}>
           {visibleTasks.map((task) => {
-            const depth = getDepth(task.id, tasks);
+            const depth = depthMap.get(task.id) ?? 0;
             const preview = dragPreview?.taskId === task.id ? dragPreview : null;
             const barStart = preview ? preview.startDate : task.startDate;
             const barEnd = preview ? preview.endDate : task.endDate;
 
             const barLeft = diffDays(rangeStart, barStart) * DAY_WIDTH;
             const barWidth = Math.max((diffDays(barStart, barEnd) + 1) * DAY_WIDTH, DAY_WIDTH);
-            const effectiveProg = computeProgress(task.id, tasks);
+            const effectiveProg = progressMap.get(task.id) ?? 0;
             const done = effectiveProg === 100;
             const baseColor = done ? "#999" : (task.color ?? "#4A90D9");
             const barColor = `${baseColor}${barOpacity(depth)}`;

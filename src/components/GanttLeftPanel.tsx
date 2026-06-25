@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Task } from "../types/task";
-import { getSignalStatus, computeProgress, getDepth, SignalStatus } from "../utils/taskUtils";
+import { SignalStatus } from "../utils/taskUtils";
 import { ROW_HEIGHT, HEADER_HEIGHT, INDENT_PER_LEVEL } from "../constants/layout";
 
 const LEFT_PANEL_WIDTH = 260;
@@ -34,6 +34,9 @@ interface Props {
   tasks: Task[];
   visibleTasks: Task[];
   floatingTasks: Task[];
+  progressMap: Map<string, number>;
+  depthMap: Map<string, number>;
+  signalMap: Map<string, SignalStatus>;
   collapsedIds: Set<string>;
   filterParentId: string;
   filterAssignee: string;
@@ -56,6 +59,9 @@ export default function GanttLeftPanel({
   tasks,
   visibleTasks,
   floatingTasks,
+  progressMap,
+  depthMap,
+  signalMap,
   collapsedIds,
   filterParentId,
   filterAssignee,
@@ -196,10 +202,10 @@ export default function GanttLeftPanel({
           </div>
         )}
         {visibleTasks.map((task) => {
-          const depth = getDepth(task.id, tasks);
+          const depth = depthMap.get(task.id) ?? 0;
           const hasChildren = tasks.some((t) => t.parentId === task.id);
           const isCollapsed = collapsedIds.has(task.id);
-          const effectiveProg = computeProgress(task.id, tasks);
+          const effectiveProg = progressMap.get(task.id) ?? 0;
           const expected = expectedProgress(task, today);
           const isBehind = effectiveProg < expected;
           const isDragOver = dragOverId === task.id;
@@ -234,7 +240,7 @@ export default function GanttLeftPanel({
                 ) : (
                   <span className="gantt-leaf-icon">─</span>
                 )}
-                <SignalDot status={getSignalStatus(task.id, tasks)} />
+                <SignalDot status={signalMap.get(task.id) ?? "none"} />
                 {editingNameId === task.id ? (
                   <input
                     className="gantt-task-name-input"
@@ -320,7 +326,7 @@ export default function GanttLeftPanel({
           <div className="gantt-unscheduled-section">
             <div className="gantt-unscheduled-header">未スケジュール ({floatingTasks.length})</div>
             {floatingTasks.map((task) => {
-              const effectiveProg = computeProgress(task.id, tasks);
+              const effectiveProg = progressMap.get(task.id) ?? 0;
               const isDragOver = dragOverId === task.id;
               return (
                 <div
