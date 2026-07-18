@@ -1,9 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { TestBook } from "../types/testBook";
 
-export async function loadTestBooks(): Promise<TestBook[]> {
+export async function loadTestBooks(projectId: string): Promise<TestBook[]> {
   try {
-    const saved = await invoke<string | null>("load_test_books");
+    const saved = await invoke<string | null>("load_test_books", { projectId });
     if (saved) {
       return JSON.parse(saved) as TestBook[];
     }
@@ -13,7 +13,7 @@ export async function loadTestBooks(): Promise<TestBook[]> {
   return [];
 }
 
-export async function saveTestBooks(books: TestBook[]): Promise<void> {
+export async function saveTestBooks(projectId: string, books: TestBook[]): Promise<void> {
   const json = JSON.stringify(books);
-  await invoke("save_test_books", { json });
+  await invoke("save_test_books", { projectId, json });
 }

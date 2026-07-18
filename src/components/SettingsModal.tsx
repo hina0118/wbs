@@ -7,20 +7,48 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { loadAppSettings, saveAppSettings, TaskType } from "../utils/settingsStorage";
 import { exportTasksJson } from "../utils/taskStorage";
+import { ProjectMeta } from "../types/project";
 
-type Tab = "children" | "taskTypes" | "proxy" | "data";
+type Tab = "children" | "taskTypes" | "projects" | "proxy" | "data";
 
 interface Props {
   onClose: () => void;
   onChildTaskNamesChange: (names: string[]) => void;
+  projects: ProjectMeta[];
+  onRenameProject: (id: string, name: string) => void;
+  onDeleteProject: (id: string) => void;
 }
 
 function getErrorMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-export default function SettingsModal({ onClose, onChildTaskNamesChange }: Props) {
+export default function SettingsModal({
+  onClose,
+  onChildTaskNamesChange,
+  projects,
+  onRenameProject,
+  onDeleteProject,
+}: Props) {
   const [tab, setTab] = useState<Tab>("children");
+
+  // ── プロジェクト管理 ──
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingProjectName, setEditingProjectName] = useState("");
+
+  function startEditProject(p: ProjectMeta) {
+    setEditingProjectId(p.id);
+    setEditingProjectName(p.name);
+  }
+
+  function commitEditProject() {
+    const trimmed = editingProjectName.trim();
+    if (editingProjectId && trimmed) {
+      onRenameProject(editingProjectId, trimmed);
+    }
+    setEditingProjectId(null);
+    setEditingProjectName("");
+  }
 
   // ── 子タスクテンプレート ──
   const [childNames, setChildNames] = useState<string[]>(
@@ -184,6 +212,12 @@ export default function SettingsModal({ onClose, onChildTaskNamesChange }: Props
             onClick={() => setTab("taskTypes")}
           >
             タスク種別
+          </button>
+          <button
+            className={`settings-tab-btn${tab === "projects" ? " settings-tab-btn--active" : ""}`}
+            onClick={() => setTab("projects")}
+          >
+            プロジェクト
           </button>
           <button
             className={`settings-tab-btn${tab === "proxy" ? " settings-tab-btn--active" : ""}`}
@@ -367,6 +401,65 @@ export default function SettingsModal({ onClose, onChildTaskNamesChange }: Props
               </button>
               <button className="btn-save" onClick={saveTaskTypeSettings}>
                 保存
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── プロジェクト タブ ── */}
+        {tab === "projects" && (
+          <div className="settings-tab-content">
+            <p className="settings-desc">
+              タスクデータをプロジェクト単位で分けて管理します。1ファイルの肥大化を防ぐため、
+              用途ごとにプロジェクトを分けることをお勧めします。
+            </p>
+
+            <ul className="settings-child-list">
+              {projects.map((p) => (
+                <li key={p.id} className="settings-child-item">
+                  {editingProjectId === p.id ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      className="assignee-input settings-child-input"
+                      value={editingProjectName}
+                      onChange={(e) => setEditingProjectName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitEditProject();
+                        if (e.key === "Escape") {
+                          setEditingProjectId(null);
+                          setEditingProjectName("");
+                        }
+                      }}
+                      onBlur={commitEditProject}
+                    />
+                  ) : (
+                    <span className="settings-child-name">{p.name}</span>
+                  )}
+                  <div className="settings-child-actions">
+                    <button
+                      className="settings-child-move-btn"
+                      onClick={() => startEditProject(p)}
+                      title="名前を変更"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      className="settings-child-remove-btn"
+                      onClick={() => onDeleteProject(p.id)}
+                      disabled={projects.length <= 1}
+                      title={projects.length <= 1 ? "最後のプロジェクトは削除できません" : "削除"}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <div className="gantt-modal-actions">
+              <button className="btn-cancel" onClick={onClose}>
+                閉じる
               </button>
             </div>
           </div>

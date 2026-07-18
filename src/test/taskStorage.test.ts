@@ -15,6 +15,7 @@ import { loadTasks, saveTasks } from "../utils/taskStorage";
 import type { Task } from "../types/task";
 
 const mockInvoke = vi.mocked(invoke);
+const PROJECT_ID = "test-project";
 
 function makeTask(id: string, start: string, end: string, progress = 0): Task {
   return {
@@ -46,7 +47,7 @@ describe("loadTasks", () => {
       ]),
     );
 
-    const tasks = await loadTasks();
+    const tasks = await loadTasks(PROJECT_ID);
     expect(tasks).toHaveLength(1);
     expect(tasks[0].id).toBe("t1");
     expect(tasks[0].startDate).toEqual(new Date(2025, 0, 1));
@@ -57,20 +58,20 @@ describe("loadTasks", () => {
   it("保存済みデータが null の場合はサンプルタスクを返す", async () => {
     // ファイルなし → Rust が空バイト列を返す
     mockInvoke.mockResolvedValueOnce(new ArrayBuffer(0));
-    const tasks = await loadTasks();
+    const tasks = await loadTasks(PROJECT_ID);
     expect(tasks).toEqual([]);
   });
 
   it("invoke が失敗した場合はサンプルタスクにフォールバック", async () => {
     mockInvoke.mockRejectedValueOnce(new Error("File not found"));
-    const tasks = await loadTasks();
+    const tasks = await loadTasks(PROJECT_ID);
     expect(tasks).toEqual([]);
   });
 
   it("invoke 失敗時に onFallback コールバックが呼ばれる", async () => {
     const onFallback = vi.fn();
     mockInvoke.mockRejectedValueOnce(new Error("disk full"));
-    await loadTasks(onFallback);
+    await loadTasks(PROJECT_ID, onFallback);
     expect(onFallback).toHaveBeenCalledOnce();
     expect(onFallback).toHaveBeenCalledWith("disk full");
   });
@@ -80,7 +81,7 @@ describe("loadTasks", () => {
     const onFallback = vi.fn();
     // resolve しない Promise でタイムアウトを再現
     mockInvoke.mockReturnValueOnce(new Promise(() => {}));
-    const loadPromise = loadTasks(onFallback);
+    const loadPromise = loadTasks(PROJECT_ID, onFallback);
     // 15秒を超過させる
     await vi.advanceTimersByTimeAsync(16_000);
     const tasks = await loadPromise;
@@ -98,7 +99,7 @@ describe("loadTasks", () => {
         { id: "t1", name: "T", startDate: "2025-01-01", endDate: "2025-03-31", progress: 0 },
       ]),
     );
-    const tasks = await loadTasks(onFallback);
+    const tasks = await loadTasks(PROJECT_ID, onFallback);
     expect(onFallback).toHaveBeenCalledOnce();
     expect(tasks).toEqual([]);
   });
@@ -117,7 +118,7 @@ describe("loadTasks", () => {
       ]),
     );
 
-    const tasks = await loadTasks();
+    const tasks = await loadTasks(PROJECT_ID);
     expect(tasks[0].reminder?.repeat).toBe("daily");
     expect(tasks[0].reminder?.notified).toBe(false);
   });
@@ -144,7 +145,7 @@ describe("loadTasks", () => {
       ]),
     );
 
-    const tasks = await loadTasks();
+    const tasks = await loadTasks(PROJECT_ID);
     expect(tasks.find((t) => t.id === "t1")?.order).toBe(5);
     expect(tasks.find((t) => t.id === "t2")?.order).toBe(3);
   });
@@ -157,7 +158,7 @@ describe("loadTasks", () => {
       ]),
     );
 
-    const tasks = await loadTasks();
+    const tasks = await loadTasks(PROJECT_ID);
     expect(tasks.find((t) => t.id === "t1")?.order).toBe(0);
     expect(tasks.find((t) => t.id === "t2")?.order).toBe(1);
   });
@@ -176,7 +177,7 @@ describe("loadTasks", () => {
       ]),
     );
 
-    const tasks = await loadTasks();
+    const tasks = await loadTasks(PROJECT_ID);
     expect(tasks[0].reminder?.repeat).toBeUndefined();
   });
 });
@@ -206,7 +207,7 @@ describe("loadTasks – isFloating", () => {
       ]),
     );
 
-    const tasks = await loadTasks();
+    const tasks = await loadTasks(PROJECT_ID);
     const today = new Date(2025, 5, 15);
     today.setHours(0, 0, 0, 0);
 
@@ -221,7 +222,7 @@ describe("loadTasks – isFloating", () => {
       ]),
     );
 
-    const tasks = await loadTasks();
+    const tasks = await loadTasks(PROJECT_ID);
     expect(tasks[0].startDate).toEqual(new Date(2025, 2, 1));
     expect(tasks[0].endDate).toEqual(new Date(2025, 2, 31));
   });

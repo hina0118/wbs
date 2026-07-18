@@ -12,6 +12,7 @@ use tauri::Manager;
 /// 必要時に個別取得することで初期読み込みの JSON サイズを削減する。
 struct AppState {
     tasks: Mutex<Vec<serde_json::Value>>,
+    current_project_id: Mutex<Option<String>>,
 }
 
 // ── エラーログ ────────────────────────────────────────────
@@ -75,14 +76,170 @@ fn save_proxy_setting(app: tauri::AppHandle, url: Option<String>) -> Result<(), 
     fs::write(dir.join("proxy.json"), json).map_err(|e| e.to_string())
 }
 
-// ── タスク保存 ────────────────────────────────────────────
+// ── プロジェクト管理 ──────────────────────────────────────
+//
+// タスクデータを「プロジェクト」単位（app_data_dir/projects/<id>/tasks.json 他）に
+// 分割し、1ファイルの肥大化を防ぐ。旧形式（app_data_dir/tasks.json 直下）で
+// 運用していたユーザーは初回起動時に自動で「メインプロジェクト」へ移行する。
 
-fn tasks_file_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+#[derive(Serialize, Deserialize, Clone)]
+struct ProjectMeta {
+    id: String,
+    name: String,
+    #[serde(rename = "createdAt")]
+    created_at: String,
+    #[serde(rename = "updatedAt")]
+    updated_at: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct ProjectsManifest {
+    projects: Vec<ProjectMeta>,
+    #[serde(rename = "activeProjectId")]
+    active_project_id: String,
+}
+
+fn manifest_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
     app.path()
         .app_data_dir()
-        .map(|d| d.join("tasks.json"))
+        .map(|d| d.join("projects.json"))
         .map_err(|e| e.to_string())
 }
+
+fn project_dir(app: &tauri::AppHandle, id: &str) -> Result<std::path::PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map(|d| d.join("projects").join(id))
+        .map_err(|e| e.to_string())
+}
+
+fn write_manifest(app: &tauri::AppHandle, manifest: &ProjectsManifest) -> Result<(), String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let json = serde_json::to_string_pretty(manifest).map_err(|e| e.to_string())?;
+    fs::write(manifest_path(app)?, json).map_err(|e| e.to_string())
+}
+
+/// projects.json が無ければ、旧形式の app_data_dir/tasks.json・testBooks.json を
+/// 「メインプロジェクト」(id: "default") へ移行してから返す。冪等。
+fn ensure_migrated(app: &tauri::AppHandle) -> Result<ProjectsManifest, String> {
+    let manifest_file = manifest_path(app)?;
+    if manifest_file.exists() {
+        let json = fs::read_to_string(&manifest_file).map_err(|e| e.to_string())?;
+        return serde_json::from_str(&json).map_err(|e| e.to_string());
+    }
+
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let default_id = "default".to_string();
+    let dir = project_dir(app, &default_id)?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+
+    let legacy_tasks = app_data_dir.join("tasks.json");
+    if legacy_tasks.exists() {
+        fs::rename(&legacy_tasks, dir.join("tasks.json")).map_err(|e| e.to_string())?;
+    }
+    let legacy_test_books = app_data_dir.join("testBooks.json");
+    if legacy_test_books.exists() {
+        fs::rename(&legacy_test_books, dir.join("testBooks.json")).map_err(|e| e.to_string())?;
+    }
+
+    let now = chrono::Local::now().to_rfc3339();
+    let manifest = ProjectsManifest {
+        projects: vec![ProjectMeta {
+            id: default_id.clone(),
+            name: "メインプロジェクト".to_string(),
+            created_at: now.clone(),
+            updated_at: now,
+        }],
+        active_project_id: default_id,
+    };
+    write_manifest(app, &manifest)?;
+    Ok(manifest)
+}
+
+/// プロジェクト一覧とアクティブIDを返す（未移行なら移行してから返す）。
+#[tauri::command]
+fn list_projects(app: tauri::AppHandle) -> Result<ProjectsManifest, String> {
+    ensure_migrated(&app)
+}
+
+/// 新規プロジェクトを作成する。id はフロントエンドが生成して渡す。
+#[tauri::command]
+fn create_project(
+    app: tauri::AppHandle,
+    id: String,
+    name: String,
+) -> Result<ProjectsManifest, String> {
+    let mut manifest = ensure_migrated(&app)?;
+    if manifest.projects.iter().any(|p| p.id == id) {
+        return Err("同じIDのプロジェクトが既に存在します".to_string());
+    }
+    fs::create_dir_all(project_dir(&app, &id)?).map_err(|e| e.to_string())?;
+    let now = chrono::Local::now().to_rfc3339();
+    manifest.projects.push(ProjectMeta {
+        id,
+        name,
+        created_at: now.clone(),
+        updated_at: now,
+    });
+    write_manifest(&app, &manifest)?;
+    Ok(manifest)
+}
+
+/// プロジェクト名を変更する。
+#[tauri::command]
+fn rename_project(
+    app: tauri::AppHandle,
+    id: String,
+    name: String,
+) -> Result<ProjectsManifest, String> {
+    let mut manifest = ensure_migrated(&app)?;
+    let project = manifest
+        .projects
+        .iter_mut()
+        .find(|p| p.id == id)
+        .ok_or_else(|| "プロジェクトが見つかりません".to_string())?;
+    project.name = name;
+    project.updated_at = chrono::Local::now().to_rfc3339();
+    write_manifest(&app, &manifest)?;
+    Ok(manifest)
+}
+
+/// プロジェクトを削除する。最後の1件は削除できない。
+/// アクティブなプロジェクトを削除する場合は、残りの先頭プロジェクトへ切り替える。
+#[tauri::command]
+fn delete_project(app: tauri::AppHandle, id: String) -> Result<ProjectsManifest, String> {
+    let mut manifest = ensure_migrated(&app)?;
+    if manifest.projects.len() <= 1 {
+        return Err("最後のプロジェクトは削除できません".to_string());
+    }
+    if !manifest.projects.iter().any(|p| p.id == id) {
+        return Err("プロジェクトが見つかりません".to_string());
+    }
+    manifest.projects.retain(|p| p.id != id);
+    if manifest.active_project_id == id {
+        manifest.active_project_id = manifest.projects[0].id.clone();
+    }
+    write_manifest(&app, &manifest)?;
+
+    if let Ok(dir) = project_dir(&app, &id) {
+        let _ = fs::remove_dir_all(dir);
+    }
+    Ok(manifest)
+}
+
+/// アクティブなプロジェクトを切り替える。
+#[tauri::command]
+fn set_active_project(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    let mut manifest = ensure_migrated(&app)?;
+    if !manifest.projects.iter().any(|p| p.id == id) {
+        return Err("プロジェクトが見つかりません".to_string());
+    }
+    manifest.active_project_id = id;
+    write_manifest(&app, &manifest)
+}
+
+// ── タスク保存 ────────────────────────────────────────────
 
 /// タスクを読み込み、memo フィールドを除いたサマリーを返す。
 /// 読み込んだフルデータは AppState に保持し、get_task_memo で個別取得できる。
@@ -90,15 +247,19 @@ fn tasks_file_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String>
 #[tauri::command]
 fn load_tasks_without_memo(
     app: tauri::AppHandle,
+    project_id: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<tauri::ipc::Response, String> {
-    info!("[load_tasks_without_memo] 開始");
+    info!("[load_tasks_without_memo] 開始 (project_id: {project_id})");
 
-    let path = tasks_file_path(&app)?;
+    let path = project_dir(&app, &project_id)?.join("tasks.json");
     trace!("[load_tasks_without_memo] ファイルパス: {:?}", path);
+
+    *state.current_project_id.lock().unwrap() = Some(project_id.clone());
 
     if !path.exists() {
         info!("[load_tasks_without_memo] ファイルなし → 空レスポンスを返す");
+        *state.tasks.lock().unwrap() = Vec::new();
         return Ok(tauri::ipc::Response::new(Vec::<u8>::new()));
     }
 
@@ -196,7 +357,13 @@ fn save_task_memo(
         serde_json::to_string(&*tasks).map_err(|e| e.to_string())?
     };
 
-    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let project_id = state
+        .current_project_id
+        .lock()
+        .unwrap()
+        .clone()
+        .ok_or_else(|| "プロジェクトが読み込まれていません".to_string())?;
+    let dir = project_dir(&app, &project_id)?;
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     fs::write(dir.join("tasks.json"), json).map_err(|e| e.to_string())
 }
@@ -234,7 +401,13 @@ fn save_tasks(
     *state.tasks.lock().unwrap() = new_tasks.clone();
 
     let out = serde_json::to_string(&new_tasks).map_err(|e| e.to_string())?;
-    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let project_id = state
+        .current_project_id
+        .lock()
+        .unwrap()
+        .clone()
+        .ok_or_else(|| "プロジェクトが読み込まれていません".to_string())?;
+    let dir = project_dir(&app, &project_id)?;
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     fs::write(dir.join("tasks.json"), out).map_err(|e| e.to_string())
 }
@@ -251,14 +424,10 @@ fn get_all_tasks_json(
 
 // ── テストブック保存 ──────────────────────────────────────
 
-/// アプリデータディレクトリの testBooks.json を読む。
+/// プロジェクトディレクトリの testBooks.json を読む。
 #[tauri::command]
-fn load_test_books(app: tauri::AppHandle) -> Result<Option<String>, String> {
-    let path = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| e.to_string())?
-        .join("testBooks.json");
+fn load_test_books(app: tauri::AppHandle, project_id: String) -> Result<Option<String>, String> {
+    let path = project_dir(&app, &project_id)?.join("testBooks.json");
 
     if path.exists() {
         fs::read_to_string(&path)
@@ -269,10 +438,10 @@ fn load_test_books(app: tauri::AppHandle) -> Result<Option<String>, String> {
     }
 }
 
-/// テストブック JSON をアプリデータディレクトリの testBooks.json に保存する。
+/// テストブック JSON をプロジェクトディレクトリの testBooks.json に保存する。
 #[tauri::command]
-fn save_test_books(app: tauri::AppHandle, json: String) -> Result<(), String> {
-    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+fn save_test_books(app: tauri::AppHandle, project_id: String, json: String) -> Result<(), String> {
+    let dir = project_dir(&app, &project_id)?;
 
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     fs::write(dir.join("testBooks.json"), json).map_err(|e| e.to_string())
@@ -408,6 +577,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(AppState {
             tasks: Mutex::new(Vec::new()),
+            current_project_id: Mutex::new(None),
         })
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(
@@ -434,6 +604,11 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             open_devtools,
+            list_projects,
+            create_project,
+            rename_project,
+            delete_project,
+            set_active_project,
             load_tasks_without_memo,
             get_task_memo,
             save_task_memo,

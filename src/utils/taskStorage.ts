@@ -95,15 +95,18 @@ function rejectAfter(ms: number, message: string): Promise<never> {
 const LOAD_TIMEOUT_MS = 15_000;
 
 /**
- * 起動時のタスク読み込み。
+ * 起動時（またはプロジェクト切替時）のタスク読み込み。
  * memo フィールドを除いたサマリーを取得し、AppState にフルデータを保持させる。
  * LOAD_TIMEOUT_MS 以内に完了しない場合はタイムアウトエラーとしてフォールバック。
  * ファイルがなければ public/data/sampleTasks.json のデフォルトデータを返す。
  */
-export async function loadTasks(onFallback?: (reason: string) => void): Promise<Task[]> {
+export async function loadTasks(
+  projectId: string,
+  onFallback?: (reason: string) => void,
+): Promise<Task[]> {
   try {
     const buf = await Promise.race([
-      invoke<ArrayBuffer>("load_tasks_without_memo"),
+      invoke<ArrayBuffer>("load_tasks_without_memo", { projectId }),
       rejectAfter(
         LOAD_TIMEOUT_MS,
         `タスク読み込みがタイムアウトしました（${LOAD_TIMEOUT_MS / 1000}秒）`,
@@ -138,9 +141,10 @@ export async function saveTaskMemo(id: string, memo: string): Promise<void> {
 // ── 保存 ────────────────────────────────────────────────────
 
 /**
- * タスクをアプリデータディレクトリの tasks.json に保存する。
+ * タスクを現在ロード中のプロジェクトの tasks.json に保存する。
  * memo フィールドは Rust 側の AppState から自動マージされる。
- * 保存先 (Windows): %APPDATA%\com.wbs.app\tasks.json
+ * 保存先 (Windows): %APPDATA%\com.wbs.app\projects\<projectId>\tasks.json
+ * （どのプロジェクトかは直前の loadTasks 呼び出しを Rust 側 AppState が記憶している）
  */
 export async function saveTasks(tasks: Task[]): Promise<void> {
   const json = JSON.stringify(tasks.map(toRaw));

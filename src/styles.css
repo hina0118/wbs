@@ -93,6 +93,121 @@
   white-space: nowrap;
 }
 
+.project-switcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* プロジェクト切替ドロップダウン（自前描画）
+   ヘッダーは常にほぼ黒に近い暗色背景のため、テーマに関わらず固定の暗色で描画する。
+   ネイティブ <select> のポップアップは OS 依存で白背景になり暗色ヘッダーと馴染まないため使用しない。 */
+.project-dropdown-wrapper {
+  position: relative;
+}
+
+.project-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  max-width: 160px;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+}
+.project-dropdown-trigger:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.project-dropdown-trigger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.project-dropdown-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-dropdown-arrow {
+  font-size: 0.7rem;
+  color: #aaa;
+  flex-shrink: 0;
+}
+
+.project-dropdown-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 160px;
+  z-index: 1000;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #1e2028;
+  border: 1px solid #353845;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  max-height: 220px;
+  overflow-y: auto;
+}
+.project-dropdown-option {
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  color: #e2e4f0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.project-dropdown-option:hover {
+  background: #2a2d3a;
+}
+.project-dropdown-option--active {
+  color: #7aa2ff;
+  font-weight: 600;
+}
+
+.project-add-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ccc;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+  line-height: 1;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+}
+.project-add-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.project-new-input {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 0.82rem;
+  width: 130px;
+}
+.project-new-input::placeholder {
+  color: #aaa;
+}
+
 .app-summary {
   display: flex;
   align-items: center;
@@ -821,8 +936,8 @@
 
 /* 設定モーダル（タブ付き） */
 .settings-modal {
-  min-width: 460px;
-  max-width: 560px;
+  min-width: 560px;
+  max-width: 680px;
 }
 .settings-tabs {
   display: flex;
@@ -839,6 +954,7 @@
   border: none;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
+  white-space: nowrap;
   cursor: pointer;
   transition:
     color 0.15s,

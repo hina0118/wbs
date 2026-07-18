@@ -13,6 +13,7 @@ import UpdateNotifier from "./components/UpdateNotifier";
 import DailyTaskPanel from "./components/DailyTaskPanel";
 import { Task } from "./types/task";
 import { TestBook } from "./types/testBook";
+import { ProjectMeta } from "./types/project";
 import { loadTasks, saveTasks } from "./utils/taskStorage";
 import { loadTestBooks, saveTestBooks } from "./utils/testBookStorage";
 import { loadHolidays } from "./utils/holidays";
@@ -20,8 +21,73 @@ import { sortByTree } from "./utils/taskUtils";
 import { exportToExcel } from "./utils/exportToExcel";
 import { useReminder } from "./hooks/useReminder";
 import { loadAppSettings } from "./utils/settingsStorage";
+import {
+  listProjects,
+  createProject,
+  renameProject,
+  deleteProject,
+  setActiveProject,
+} from "./utils/projectStorage";
 
 type ViewMode = "gantt" | "kanban" | "analysis" | "archive" | "note" | "test";
+
+// カスタムプロジェクト切替ドロップダウン
+// ヘッダーが常に暗色背景のため、ネイティブ <select> のポップアップ（OS依存で白背景になる）は使わず自前で描画する
+function ProjectSwitcher({
+  projects,
+  activeProjectId,
+  onSwitch,
+}: {
+  projects: ProjectMeta[];
+  activeProjectId: string | null;
+  onSwitch: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const activeName = projects.find((p) => p.id === activeProjectId)?.name ?? "";
+
+  return (
+    <div className="project-dropdown-wrapper" ref={containerRef}>
+      <button
+        type="button"
+        className="project-dropdown-trigger"
+        onClick={() => setOpen((v) => !v)}
+        disabled={projects.length === 0}
+        aria-label="プロジェクトを切替"
+      >
+        <span className="project-dropdown-label">{activeName}</span>
+        <span className="project-dropdown-arrow">▾</span>
+      </button>
+      {open && (
+        <ul className="project-dropdown-list">
+          {projects.map((p) => (
+            <li
+              key={p.id}
+              className={`project-dropdown-option${p.id === activeProjectId ? " project-dropdown-option--active" : ""}`}
+              onMouseDown={() => {
+                setOpen(false);
+                if (p.id !== activeProjectId) onSwitch(p.id);
+              }}
+            >
+              {p.name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -39,6 +105,10 @@ function App() {
   const [exportMsg, setExportMsg] = useState<{ text: string; isError: boolean } | null>(null);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const [showDailyPanel, setShowDailyPanel] = useState(false);
+  const [projects, setProjects] = useState<ProjectMeta[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [showNewProjectInput, setShowNewProjectInput] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const exportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -95,11 +165,86 @@ function App() {
   }
 
   function handleTestBooksChange(updated: TestBook[]) {
+    if (!activeProjectId) return;
     setTestBooks(updated);
-    void saveTestBooks(updated).catch((e) => {
+    void saveTestBooks(activeProjectId, updated).catch((e) => {
       console.error("テストブックの保存に失敗:", e);
       showExportMsg({ text: `テストブックの保存に失敗しました: ${e}`, isError: true }, 6000);
     });
+  }
+
+  /** 指定プロジェクトのタスク・テストブックを読み込み、表示中のデータを差し替える */
+  const applyProjectData = useCallback(
+    async (id: string) => {
+      const [loadedTasks, books] = await Promise.all([
+        loadTasks(id, (reason) =>
+          showExportMsg(
+            {
+              text: `タスクの読み込みに失敗しました。サンプルデータを表示しています: ${reason}`,
+              isError: true,
+            },
+            8000,
+          ),
+        ),
+        loadTestBooks(id),
+      ]);
+      setActiveProjectId(id);
+      setTasks(sortByTree(loadedTasks));
+      setTestBooks(books);
+    },
+    [showExportMsg],
+  );
+
+  async function handleSwitchProject(id: string) {
+    if (id === activeProjectId) return;
+    setLoading(true);
+    try {
+      await setActiveProject(id);
+      await applyProjectData(id);
+    } catch (e) {
+      showExportMsg({ text: `プロジェクトの切り替えに失敗しました: ${e}`, isError: true }, 6000);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCreateProject(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    try {
+      const manifest = await createProject(trimmed);
+      setProjects(manifest.projects);
+      const created = manifest.projects[manifest.projects.length - 1];
+      await handleSwitchProject(created.id);
+    } catch (e) {
+      showExportMsg({ text: `プロジェクトの作成に失敗しました: ${e}`, isError: true }, 6000);
+    }
+  }
+
+  async function handleRenameProject(id: string, name: string) {
+    try {
+      const manifest = await renameProject(id, name);
+      setProjects(manifest.projects);
+    } catch (e) {
+      showExportMsg({ text: `プロジェクト名の変更に失敗しました: ${e}`, isError: true }, 6000);
+    }
+  }
+
+  async function handleDeleteProject(id: string) {
+    try {
+      const manifest = await deleteProject(id);
+      setProjects(manifest.projects);
+      if (manifest.activeProjectId !== activeProjectId) {
+        setLoading(true);
+        try {
+          await applyProjectData(manifest.activeProjectId);
+        } finally {
+          setLoading(false);
+        }
+      }
+    } catch (e) {
+      showExportMsg({ text: `プロジェクトの削除に失敗しました: ${e}`, isError: true }, 6000);
+    }
   }
 
   /** リマインダー到達時のアプリ内トースト */
@@ -116,8 +261,11 @@ function App() {
     void (async () => {
       let loadedTasks: Task[] = [];
       try {
+        const manifest = await listProjects();
+        setProjects(manifest.projects);
+        setActiveProjectId(manifest.activeProjectId);
         const [tasks, books, holidayMap] = await Promise.all([
-          loadTasks((reason) =>
+          loadTasks(manifest.activeProjectId, (reason) =>
             showExportMsg(
               {
                 text: `タスクの読み込みに失敗しました。サンプルデータを表示しています: ${reason}`,
@@ -126,7 +274,7 @@ function App() {
               8000,
             ),
           ),
-          loadTestBooks(),
+          loadTestBooks(manifest.activeProjectId),
           Promise.race([
             loadHolidays(),
             new Promise<never>((_, reject) =>
@@ -167,6 +315,47 @@ function App() {
     <div className="app">
       <header className="app-header">
         <h1>WBS 進捗管理</h1>
+
+        {/* プロジェクト切替 */}
+        <div className="project-switcher">
+          <ProjectSwitcher
+            projects={projects}
+            activeProjectId={activeProjectId}
+            onSwitch={(id) => void handleSwitchProject(id)}
+          />
+          {showNewProjectInput ? (
+            <input
+              autoFocus
+              className="project-new-input"
+              value={newProjectName}
+              placeholder="新規プロジェクト名"
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  void handleCreateProject(newProjectName);
+                  setNewProjectName("");
+                  setShowNewProjectInput(false);
+                } else if (e.key === "Escape") {
+                  setNewProjectName("");
+                  setShowNewProjectInput(false);
+                }
+              }}
+              onBlur={() => {
+                setNewProjectName("");
+                setShowNewProjectInput(false);
+              }}
+            />
+          ) : (
+            <button
+              className="project-add-btn"
+              onClick={() => setShowNewProjectInput(true)}
+              title="新規プロジェクト"
+              aria-label="新規プロジェクトを作成"
+            >
+              ＋
+            </button>
+          )}
+        </div>
 
         <div className="app-summary">
           <span>タスク数: {totalTasks}</span>
@@ -319,6 +508,9 @@ function App() {
         <SettingsModal
           onClose={() => setShowProxy(false)}
           onChildTaskNamesChange={setDefaultChildTaskNames}
+          projects={projects}
+          onRenameProject={handleRenameProject}
+          onDeleteProject={handleDeleteProject}
         />
       )}
       {showDailyPanel && <DailyTaskPanel onClose={() => setShowDailyPanel(false)} />}
