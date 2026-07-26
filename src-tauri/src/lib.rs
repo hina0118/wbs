@@ -239,6 +239,81 @@ fn set_active_project(app: tauri::AppHandle, id: String) -> Result<(), String> {
     write_manifest(&app, &manifest)
 }
 
+/// 指定したプロジェクトの tasks.json をディスクから直接読み込んで返す（エクスポート用）。
+/// AppState に依存しないため、非アクティブなプロジェクトでも取得できる。
+#[tauri::command]
+fn export_project_tasks(
+    app: tauri::AppHandle,
+    project_id: String,
+) -> Result<tauri::ipc::Response, String> {
+    let path = project_dir(&app, &project_id)?.join("tasks.json");
+    if !path.exists() {
+        return Ok(tauri::ipc::Response::new(b"[]".to_vec()));
+    }
+    let bytes = fs::read(&path).map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// 他メンバーからエクスポートされた tasks.json をファイル選択ダイアログで選ばせ、
+/// その内容で新規プロジェクトを作成する（既存プロジェクトには影響しない）。
+/// ダイアログでキャンセルした場合は Ok(None) を返す。
+#[tauri::command]
+async fn import_project(
+    app: tauri::AppHandle,
+    id: String,
+    name: String,
+) -> Result<Option<ProjectsManifest>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let path = app
+        .dialog()
+        .file()
+        .add_filter("JSON ファイル", &["json"])
+        .blocking_pick_file();
+
+    let Some(path) = path else {
+        return Ok(None); // キャンセル
+    };
+
+    let path_str = path.to_string();
+    let content =
+        fs::read_to_string(&path_str).map_err(|e| format!("ファイルの読み込みに失敗しました: {e}"))?;
+
+    let tasks: Vec<serde_json::Value> = serde_json::from_str(&content).map_err(|_| {
+        "tasks.json の形式が正しくありません（タスク配列の JSON である必要があります）".to_string()
+    })?;
+    let valid = tasks.iter().all(|t| {
+        t.get("id").and_then(|v| v.as_str()).is_some()
+            && t.get("name").and_then(|v| v.as_str()).is_some()
+    });
+    if !valid {
+        return Err(
+            "tasks.json の形式が正しくありません（id・name を持つタスクの配列である必要があります）"
+                .to_string(),
+        );
+    }
+
+    let mut manifest = ensure_migrated(&app)?;
+    if manifest.projects.iter().any(|p| p.id == id) {
+        return Err("同じIDのプロジェクトが既に存在します".to_string());
+    }
+
+    let dir = project_dir(&app, &id)?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let out = serde_json::to_string(&tasks).map_err(|e| e.to_string())?;
+    fs::write(dir.join("tasks.json"), out).map_err(|e| e.to_string())?;
+
+    let now = chrono::Local::now().to_rfc3339();
+    manifest.projects.push(ProjectMeta {
+        id,
+        name,
+        created_at: now.clone(),
+        updated_at: now,
+    });
+    write_manifest(&app, &manifest)?;
+    Ok(Some(manifest))
+}
+
 // ── タスク保存 ────────────────────────────────────────────
 
 /// タスクを読み込み、memo フィールドを除いたサマリーを返す。
@@ -412,16 +487,6 @@ fn save_tasks(
     fs::write(dir.join("tasks.json"), out).map_err(|e| e.to_string())
 }
 
-/// memo を含む全タスクデータを JSON バイト列で返す（エクスポート用）。
-#[tauri::command]
-fn get_all_tasks_json(
-    state: tauri::State<'_, AppState>,
-) -> Result<tauri::ipc::Response, String> {
-    let tasks = state.tasks.lock().unwrap();
-    let bytes = serde_json::to_vec_pretty(&*tasks).map_err(|e| e.to_string())?;
-    Ok(tauri::ipc::Response::new(bytes))
-}
-
 // ── テストブック保存 ──────────────────────────────────────
 
 /// プロジェクトディレクトリの testBooks.json を読む。
@@ -547,6 +612,47 @@ async fn save_excel_file(
     }
 }
 
+// ── JSON ファイル保存 ─────────────────────────────────────
+
+/// 名前を付けて保存ダイアログを表示し、選択されたパスに JSON テキストを書き込む。
+/// tasks.json のエクスポート（プロジェクト個別ダウンロード等）に使う。
+/// キャンセル時は Ok(None) を返す。
+#[tauri::command]
+async fn save_json_file(
+    app: tauri::AppHandle,
+    filename: String,
+    content: String,
+) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let default_dir = app
+        .path()
+        .desktop_dir()
+        .or_else(|_| app.path().document_dir())
+        .ok();
+
+    let mut dialog = app
+        .dialog()
+        .file()
+        .set_file_name(&filename)
+        .add_filter("JSON ファイル", &["json"]);
+
+    if let Some(dir) = default_dir {
+        dialog = dialog.set_directory(dir);
+    }
+
+    let path = dialog.blocking_save_file();
+
+    match path {
+        None => Ok(None), // キャンセル
+        Some(p) => {
+            let path_str = p.to_string();
+            fs::write(&path_str, &content).map_err(|e| format!("ファイルの書き込みに失敗: {e}"))?;
+            Ok(Some(path_str))
+        }
+    }
+}
+
 // ── DevTools ──────────────────────────────────────────────
 
 #[tauri::command]
@@ -609,17 +715,19 @@ pub fn run() {
             rename_project,
             delete_project,
             set_active_project,
+            import_project,
+            export_project_tasks,
             load_tasks_without_memo,
             get_task_memo,
             save_task_memo,
             save_tasks,
-            get_all_tasks_json,
             load_test_books,
             save_test_books,
             fetch_holidays,
             get_proxy_setting,
             save_proxy_setting,
             save_excel_file,
+            save_json_file,
             show_notification,
         ])
         .run(tauri::generate_context!())

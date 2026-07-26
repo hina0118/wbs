@@ -256,18 +256,6 @@ describe("saveTaskMemo", () => {
   });
 });
 
-// ─── exportTasksJson ──────────────────────────────────────────
-describe("exportTasksJson", () => {
-  it("ArrayBuffer をデコードして JSON 文字列を返す", async () => {
-    const data = [{ id: "t1", name: "Task1" }];
-    const bytes = new TextEncoder().encode(JSON.stringify(data, null, 2));
-    mockInvoke.mockResolvedValueOnce(bytes.buffer as ArrayBuffer);
-    const { exportTasksJson } = await import("../utils/taskStorage");
-    const json = await exportTasksJson();
-    expect(JSON.parse(json)).toEqual(data);
-  });
-});
-
 // ─── saveTasks ────────────────────────────────────────────────
 describe("saveTasks", () => {
   it("タスクを JSON 文字列に変換して invoke を呼び出す", async () => {

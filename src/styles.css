@@ -977,6 +977,11 @@
   color: #64748b;
   line-height: 1.6;
 }
+.settings-divider {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 4px 0;
+}
 .settings-child-add-row {
   display: flex;
   gap: 8px;
@@ -1298,6 +1303,17 @@
 .btn-cancel:hover,
 .btn-save:hover {
   filter: brightness(0.92);
+}
+
+.btn-cancel:disabled,
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-cancel:disabled:hover,
+.btn-save:disabled:hover {
+  filter: none;
 }
 
 /* ══════════════════════════════════════════
@@ -3709,6 +3725,9 @@
 }
 [data-theme="dark"] .settings-desc {
   color: #6e7080;
+}
+[data-theme="dark"] .settings-divider {
+  border-top-color: #2a2d38;
 }
 [data-theme="dark"] .settings-child-item {
   background: #1e2028;

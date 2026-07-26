@@ -27,6 +27,7 @@ import {
   renameProject,
   deleteProject,
   setActiveProject,
+  importProject,
 } from "./utils/projectStorage";
 
 type ViewMode = "gantt" | "kanban" | "analysis" | "archive" | "note" | "test";
@@ -227,6 +228,22 @@ function App() {
       setProjects(manifest.projects);
     } catch (e) {
       showExportMsg({ text: `プロジェクト名の変更に失敗しました: ${e}`, isError: true }, 6000);
+    }
+  }
+
+  async function handleImportProject(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    try {
+      const manifest = await importProject(trimmed);
+      if (!manifest) return; // ファイル選択ダイアログをキャンセル
+      setProjects(manifest.projects);
+      const imported = manifest.projects[manifest.projects.length - 1];
+      await handleSwitchProject(imported.id);
+      setShowProxy(false);
+      showExportMsg({ text: `プロジェクト「${imported.name}」をインポートしました`, isError: false }, 5000);
+    } catch (e) {
+      showExportMsg({ text: `プロジェクトのインポートに失敗しました: ${e}`, isError: true }, 6000);
     }
   }
 
@@ -511,6 +528,7 @@ function App() {
           projects={projects}
           onRenameProject={handleRenameProject}
           onDeleteProject={handleDeleteProject}
+          onImportProject={handleImportProject}
         />
       )}
       {showDailyPanel && <DailyTaskPanel onClose={() => setShowDailyPanel(false)} />}

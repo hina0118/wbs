@@ -11,6 +11,7 @@ import {
   renameProject,
   deleteProject,
   setActiveProject,
+  importProject,
 } from "../utils/projectStorage";
 import type { ProjectsManifest } from "../types/project";
 
@@ -67,5 +68,23 @@ describe("setActiveProject", () => {
     mockInvoke.mockResolvedValueOnce(undefined);
     await setActiveProject("default");
     expect(mockInvoke).toHaveBeenCalledWith("set_active_project", { id: "default" });
+  });
+});
+
+describe("importProject", () => {
+  it("uuid を生成して import_project を呼び出す", async () => {
+    mockInvoke.mockResolvedValueOnce(manifest);
+    await importProject("インポートされたプロジェクト");
+    const [cmd, args] = mockInvoke.mock.calls[0] as [string, { id: string; name: string }];
+    expect(cmd).toBe("import_project");
+    expect(args.name).toBe("インポートされたプロジェクト");
+    expect(typeof args.id).toBe("string");
+    expect(args.id.length).toBeGreaterThan(0);
+  });
+
+  it("ダイアログをキャンセルすると null を返す", async () => {
+    mockInvoke.mockResolvedValueOnce(null);
+    const result = await importProject("キャンセル");
+    expect(result).toBeNull();
   });
 });

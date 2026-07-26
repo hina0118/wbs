@@ -26,3 +26,18 @@ export async function deleteProject(id: string): Promise<ProjectsManifest> {
 export async function setActiveProject(id: string): Promise<void> {
   await invoke("set_active_project", { id });
 }
+
+/**
+ * 他メンバーから受け取った tasks.json をファイル選択ダイアログで選ばせ、
+ * 新規プロジェクトとしてインポートする。ダイアログでキャンセルした場合は null を返す。
+ */
+export async function importProject(name: string): Promise<ProjectsManifest | null> {
+  const id = crypto.randomUUID();
+  return invoke<ProjectsManifest | null>("import_project", { id, name });
+}
+
+/** 指定したプロジェクトの tasks.json（memo 含む）を JSON 文字列で取得する。アクティブでなくてもよい。 */
+export async function exportProjectTasksJson(projectId: string): Promise<string> {
+  const buf = await invoke<ArrayBuffer>("export_project_tasks", { projectId });
+  return new TextDecoder().decode(buf);
+}

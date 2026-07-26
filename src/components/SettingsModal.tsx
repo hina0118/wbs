@@ -6,10 +6,20 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { loadAppSettings, saveAppSettings, TaskType } from "../utils/settingsStorage";
-import { exportTasksJson } from "../utils/taskStorage";
+import { exportProjectTasksJson } from "../utils/projectStorage";
 import { ProjectMeta } from "../types/project";
 
-type Tab = "children" | "taskTypes" | "projects" | "proxy" | "data";
+/** 保存ダイアログを表示し、選択された場所に JSON を書き出す。キャンセル時は null を返す。 */
+function saveJsonFile(json: string, filenamePrefix: string): Promise<string | null> {
+  const now = new Date();
+  const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+  return invoke<string | null>("save_json_file", {
+    filename: `${filenamePrefix}_${ts}.json`,
+    content: json,
+  });
+}
+
+type Tab = "children" | "taskTypes" | "projects" | "proxy";
 
 interface Props {
   onClose: () => void;
@@ -17,6 +27,7 @@ interface Props {
   projects: ProjectMeta[];
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (id: string) => void;
+  onImportProject: (name: string) => void | Promise<void>;
 }
 
 function getErrorMessage(e: unknown): string {
@@ -29,16 +40,54 @@ export default function SettingsModal({
   projects,
   onRenameProject,
   onDeleteProject,
+  onImportProject,
 }: Props) {
   const [tab, setTab] = useState<Tab>("children");
+
+  // ── プロジェクトインポート ──
+  const [importProjectName, setImportProjectName] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+
+  async function handleImportClick() {
+    const trimmed = importProjectName.trim();
+    if (!trimmed || isImporting) return;
+    setIsImporting(true);
+    try {
+      await onImportProject(trimmed);
+      setImportProjectName("");
+    } finally {
+      setIsImporting(false);
+    }
+  }
 
   // ── プロジェクト管理 ──
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [editingProjectName, setEditingProjectName] = useState("");
+  const [exportingProjectId, setExportingProjectId] = useState<string | null>(null);
+  const [exportErrorId, setExportErrorId] = useState<string | null>(null);
+  const exportErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function startEditProject(p: ProjectMeta) {
     setEditingProjectId(p.id);
     setEditingProjectName(p.name);
+  }
+
+  async function handleExportProject(p: ProjectMeta) {
+    if (exportingProjectId) return;
+    setExportingProjectId(p.id);
+    try {
+      const json = await exportProjectTasksJson(p.id);
+      await saveJsonFile(json, `tasks_${p.name}`);
+    } catch {
+      setExportErrorId(p.id);
+      if (exportErrorTimerRef.current !== null) clearTimeout(exportErrorTimerRef.current);
+      exportErrorTimerRef.current = setTimeout(() => {
+        setExportErrorId(null);
+        exportErrorTimerRef.current = null;
+      }, 3000);
+    } finally {
+      setExportingProjectId(null);
+    }
   }
 
   function commitEditProject() {
@@ -224,12 +273,6 @@ export default function SettingsModal({
             onClick={() => setTab("proxy")}
           >
             プロキシ設定
-          </button>
-          <button
-            className={`settings-tab-btn${tab === "data" ? " settings-tab-btn--active" : ""}`}
-            onClick={() => setTab("data")}
-          >
-            データ
           </button>
         </div>
 
@@ -439,6 +482,18 @@ export default function SettingsModal({
                   <div className="settings-child-actions">
                     <button
                       className="settings-child-move-btn"
+                      onClick={() => void handleExportProject(p)}
+                      disabled={exportingProjectId === p.id}
+                      title={
+                        exportErrorId === p.id
+                          ? "ダウンロードに失敗しました"
+                          : "tasks.json をダウンロード（メンバーへの共有用）"
+                      }
+                    >
+                      {exportErrorId === p.id ? "⚠" : "⬇"}
+                    </button>
+                    <button
+                      className="settings-child-move-btn"
                       onClick={() => startEditProject(p)}
                       title="名前を変更"
                     >
@@ -457,43 +512,35 @@ export default function SettingsModal({
               ))}
             </ul>
 
+            <hr className="settings-divider" />
+
+            <p className="settings-desc">
+              他のメンバーから受け取った tasks.json を、新規プロジェクトとしてインポートします。
+              <br />
+              既存のプロジェクトのデータは変更されません。
+            </p>
+            <label className="modal-label">プロジェクト名</label>
+            <input
+              type="text"
+              className="assignee-input"
+              value={importProjectName}
+              onChange={(e) => setImportProjectName(e.target.value)}
+              placeholder="例: 田中さんのタスク"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleImportClick();
+              }}
+            />
             <div className="gantt-modal-actions">
               <button className="btn-cancel" onClick={onClose}>
                 閉じる
               </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── データ タブ ── */}
-        {tab === "data" && (
-          <div className="settings-tab-content">
-            <p className="settings-desc">
-              現在メモリ上にあるタスクデータを JSON ファイルとしてダウンロードします。
-              <br />
-              保存に失敗したときのバックアップとしてご利用ください。
-            </p>
-            <div className="gantt-modal-actions">
-              <button className="btn-cancel" onClick={onClose}>
-                キャンセル
-              </button>
               <button
                 className="btn-save"
-                onClick={() => {
-                  void exportTasksJson().then((json) => {
-                    const blob = new Blob([json], { type: "application/json" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    const now = new Date();
-                    const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
-                    a.href = url;
-                    a.download = `tasks_${ts}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  });
-                }}
+                onClick={() => void handleImportClick()}
+                disabled={!importProjectName.trim() || isImporting}
+                title={!importProjectName.trim() ? "プロジェクト名を入力してください" : undefined}
               >
-                タスクデータをダウンロード
+                {isImporting ? "インポート中…" : "ファイルを選択してインポート"}
               </button>
             </div>
           </div>

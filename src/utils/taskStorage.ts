@@ -150,13 +150,3 @@ export async function saveTasks(tasks: Task[]): Promise<void> {
   const json = JSON.stringify(tasks.map(toRaw));
   await invoke("save_tasks", { json });
 }
-
-// ── エクスポート ─────────────────────────────────────────
-
-/**
- * memo を含む全タスクデータを JSON 文字列で返す（設定画面のエクスポート用）。
- */
-export async function exportTasksJson(): Promise<string> {
-  const buf = await invoke<ArrayBuffer>("get_all_tasks_json");
-  return new TextDecoder().decode(buf);
-}
