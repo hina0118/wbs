@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { Task } from "../types/task";
 import {
   toInputDate,
@@ -61,6 +61,14 @@ export default function GanttChart({
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(
     () => new Set(tasks.filter((t) => t.collapsed).map((t) => t.id)),
   );
+  // 起動直後は tasks=[] でマウントされ、直後の setTimeout(0) で実データが流れ込むため、
+  // 初回マウント時に空だった場合のみ実データ到着時点で collapsedIds を再同期する。
+  const collapsedInitializedRef = useRef(tasks.length > 0);
+  useEffect(() => {
+    if (collapsedInitializedRef.current || tasks.length === 0) return;
+    collapsedInitializedRef.current = true;
+    setCollapsedIds(new Set(tasks.filter((t) => t.collapsed).map((t) => t.id)));
+  }, [tasks]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [memoPanelId, setMemoPanelId] = useState<string | null>(null);
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
