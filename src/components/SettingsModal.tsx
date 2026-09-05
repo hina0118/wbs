@@ -66,10 +66,16 @@ export default function SettingsModal({
   const [exportingProjectId, setExportingProjectId] = useState<string | null>(null);
   const [exportErrorId, setExportErrorId] = useState<string | null>(null);
   const exportErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
 
   function startEditProject(p: ProjectMeta) {
     setEditingProjectId(p.id);
     setEditingProjectName(p.name);
+  }
+
+  function handleConfirmDeleteProject(id: string) {
+    onDeleteProject(id);
+    setDeletingProjectId(null);
   }
 
   async function handleExportProject(p: ProjectMeta) {
@@ -480,33 +486,53 @@ export default function SettingsModal({
                     <span className="settings-child-name">{p.name}</span>
                   )}
                   <div className="settings-child-actions">
-                    <button
-                      className="settings-child-move-btn"
-                      onClick={() => void handleExportProject(p)}
-                      disabled={exportingProjectId === p.id}
-                      title={
-                        exportErrorId === p.id
-                          ? "ダウンロードに失敗しました"
-                          : "tasks.json をダウンロード（メンバーへの共有用）"
-                      }
-                    >
-                      {exportErrorId === p.id ? "⚠" : "⬇"}
-                    </button>
-                    <button
-                      className="settings-child-move-btn"
-                      onClick={() => startEditProject(p)}
-                      title="名前を変更"
-                    >
-                      ✎
-                    </button>
-                    <button
-                      className="settings-child-remove-btn"
-                      onClick={() => onDeleteProject(p.id)}
-                      disabled={projects.length <= 1}
-                      title={projects.length <= 1 ? "最後のプロジェクトは削除できません" : "削除"}
-                    >
-                      ✕
-                    </button>
+                    {deletingProjectId === p.id ? (
+                      <>
+                        <span className="settings-child-confirm-text">削除しますか？</span>
+                        <button
+                          className="settings-child-move-btn settings-child-confirm-btn"
+                          onClick={() => setDeletingProjectId(null)}
+                        >
+                          いいえ
+                        </button>
+                        <button
+                          className="settings-child-remove-btn settings-child-confirm-btn"
+                          onClick={() => handleConfirmDeleteProject(p.id)}
+                        >
+                          削除する
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          className="settings-child-move-btn"
+                          onClick={() => void handleExportProject(p)}
+                          disabled={exportingProjectId === p.id}
+                          title={
+                            exportErrorId === p.id
+                              ? "ダウンロードに失敗しました"
+                              : "tasks.json をダウンロード（メンバーへの共有用）"
+                          }
+                        >
+                          {exportErrorId === p.id ? "⚠" : "⬇"}
+                        </button>
+                        <button
+                          className="settings-child-move-btn"
+                          onClick={() => startEditProject(p)}
+                          title="名前を変更"
+                        >
+                          ✎
+                        </button>
+                        <button
+                          className="settings-child-remove-btn"
+                          onClick={() => setDeletingProjectId(p.id)}
+                          disabled={projects.length <= 1}
+                          title={projects.length <= 1 ? "最後のプロジェクトは削除できません" : "削除"}
+                        >
+                          ✕
+                        </button>
+                      </>
+                    )}
                   </div>
                 </li>
               ))}
