@@ -174,7 +174,24 @@ fn create_project(
     if manifest.projects.iter().any(|p| p.id == id) {
         return Err("同じIDのプロジェクトが既に存在します".to_string());
     }
-    fs::create_dir_all(project_dir(&app, &id)?).map_err(|e| e.to_string())?;
+    let dir = project_dir(&app, &id)?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+
+    // 初期タスクを1件作成しておく（tasks.json が空のままだとサンプルデータにフォールバックしてしまうため）。
+    // トップレベルタスクの名前はプロジェクト名をそのまま使う。
+    let today = chrono::Local::now().date_naive();
+    let end = today + chrono::Duration::days(6);
+    let initial_tasks = serde_json::json!([{
+        "id": format!("task-{}", chrono::Local::now().timestamp_millis()),
+        "name": name,
+        "startDate": today.format("%Y-%m-%d").to_string(),
+        "endDate": end.format("%Y-%m-%d").to_string(),
+        "progress": 0,
+        "color": "#4A90D9",
+    }]);
+    let tasks_json = serde_json::to_string_pretty(&initial_tasks).map_err(|e| e.to_string())?;
+    fs::write(dir.join("tasks.json"), tasks_json).map_err(|e| e.to_string())?;
+
     let now = chrono::Local::now().to_rfc3339();
     manifest.projects.push(ProjectMeta {
         id,
