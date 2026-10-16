@@ -310,3 +310,86 @@ describe("saveTasks", () => {
     vi.useRealTimers();
   });
 });
+
+// ─── floatingStartDate / floatingEndDate（単発タスクの任意日付） ─────
+describe("loadTasks / saveTasks – floatingStartDate / floatingEndDate", () => {
+  it("単発タスクの任意日付が設定されていればパースされる", async () => {
+    mockInvoke.mockResolvedValueOnce(
+      toArrayBuffer([
+        {
+          id: "f1",
+          name: "Floating",
+          startDate: "2020-01-01",
+          endDate: "2020-12-31",
+          progress: 0,
+          isFloating: true,
+          floatingStartDate: "2026-03-01",
+          floatingEndDate: "2026-03-10",
+        },
+      ]),
+    );
+
+    const tasks = await loadTasks(PROJECT_ID);
+    expect(tasks[0].floatingStartDate).toEqual(new Date(2026, 2, 1));
+    expect(tasks[0].floatingEndDate).toEqual(new Date(2026, 2, 10));
+  });
+
+  it("単発タスクの任意日付が未設定なら undefined のままになる", async () => {
+    mockInvoke.mockResolvedValueOnce(
+      toArrayBuffer([
+        {
+          id: "f1",
+          name: "Floating",
+          startDate: "2020-01-01",
+          endDate: "2020-12-31",
+          progress: 0,
+          isFloating: true,
+        },
+      ]),
+    );
+
+    const tasks = await loadTasks(PROJECT_ID);
+    expect(tasks[0].floatingStartDate).toBeUndefined();
+    expect(tasks[0].floatingEndDate).toBeUndefined();
+  });
+
+  it("単発タスクの任意日付が設定されていれば YYYY-MM-DD でシリアライズされる", async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+
+    const task: Task = {
+      id: "f1",
+      name: "Floating",
+      startDate: new Date(2025, 5, 15),
+      endDate: new Date(2025, 5, 15),
+      progress: 0,
+      isFloating: true,
+      floatingStartDate: new Date(2026, 2, 1),
+      floatingEndDate: new Date(2026, 2, 10),
+    };
+    await saveTasks([task]);
+
+    const [, args] = mockInvoke.mock.calls[0] as [string, { json: string }];
+    const parsed = JSON.parse(args.json);
+    expect(parsed[0].floatingStartDate).toBe("2026-03-01");
+    expect(parsed[0].floatingEndDate).toBe("2026-03-10");
+  });
+
+  it("単発タスクの任意日付が未設定ならシリアライズされない", async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+
+    const task: Task = {
+      id: "f1",
+      name: "Floating",
+      startDate: new Date(2025, 5, 15),
+      endDate: new Date(2025, 5, 15),
+      progress: 0,
+      isFloating: true,
+    };
+    await saveTasks([task]);
+
+    const [, args] = mockInvoke.mock.calls[0] as [string, { json: string }];
+    const parsed = JSON.parse(args.json);
+    expect(parsed[0].floatingStartDate).toBeUndefined();
+    expect(parsed[0].floatingEndDate).toBeUndefined();
+  });
+});

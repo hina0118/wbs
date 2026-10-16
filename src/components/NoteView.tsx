@@ -211,7 +211,20 @@ export default function NoteView({ tasks, onTasksChange }: Props) {
 
             {/* メタ情報 */}
             <div className="note-meta">
-              {!selectedTask.isFloating && (
+              {selectedTask.isFloating ? (
+                (selectedTask.floatingStartDate || selectedTask.floatingEndDate) && (
+                  <span className="note-meta-item">
+                    📅{" "}
+                    {selectedTask.floatingStartDate
+                      ? selectedTask.floatingStartDate.toLocaleDateString("ja-JP")
+                      : "未定"}{" "}
+                    ～{" "}
+                    {selectedTask.floatingEndDate
+                      ? selectedTask.floatingEndDate.toLocaleDateString("ja-JP")
+                      : "未定"}
+                  </span>
+                )
+              ) : (
                 <span className="note-meta-item">
                   📅 {selectedTask.startDate.toLocaleDateString("ja-JP")} ～{" "}
                   {selectedTask.endDate.toLocaleDateString("ja-JP")}

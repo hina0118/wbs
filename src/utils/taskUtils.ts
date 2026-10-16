@@ -129,6 +129,16 @@ export function toInputDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/** "YYYY-MM-DD" 形式の input[type=date] 値をローカル日付の Date に変換する（空文字・不正値は undefined） */
+export function parseInputDate(s: string): Date | undefined {
+  if (!s) return undefined;
+  const parts = s.split("-").map(Number);
+  if (parts.length !== 3 || parts.some((n) => isNaN(n))) return undefined;
+  const [y, m, d] = parts;
+  const date = new Date(y, m - 1, d);
+  return isNaN(date.getTime()) ? undefined : date;
+}
+
 export function genId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
@@ -150,6 +160,8 @@ export function copyTaskFields(source: Task, overrides: Partial<Task> = {}): Omi
       ? { done: 0, total: source.progressCount.total }
       : undefined,
     isFloating: source.isFloating,
+    floatingStartDate: source.floatingStartDate,
+    floatingEndDate: source.floatingEndDate,
     ...overrides,
   };
 }

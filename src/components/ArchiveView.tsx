@@ -115,7 +115,16 @@ export default function ArchiveView({ tasks, onTasksChange }: Props) {
                     {task.assignee && (
                       <span className="archive-item-assignee">👤 {task.assignee}</span>
                     )}
-                    {!task.isFloating && (
+                    {task.isFloating ? (
+                      (task.floatingStartDate || task.floatingEndDate) && (
+                        <span className="archive-item-dates">
+                          📅{" "}
+                          {task.floatingStartDate ? formatDateYMD(task.floatingStartDate) : "未定"}
+                          {" – "}
+                          {task.floatingEndDate ? formatDateYMD(task.floatingEndDate) : "未定"}
+                        </span>
+                      )
+                    ) : (
                       <span className="archive-item-dates">
                         📅 {formatDateYMD(task.startDate)} – {formatDateYMD(task.endDate)}
                       </span>

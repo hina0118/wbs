@@ -22,6 +22,8 @@ export interface Task {
   progressCount?: { done: number; total: number };
   order?: number;
   isFloating?: boolean; // 開始時期不明の単発タスク（日付なし）
+  floatingStartDate?: Date; // 単発タスクの開始日（任意入力、非必須）
+  floatingEndDate?: Date; // 単発タスクの終了日（任意入力、非必須）
   archived?: boolean; // アーカイブ済み（非表示、データは保持）
   reminder?: TaskReminder; // リマインダー設定
   taskTypeId?: string; // タスク種別ID（見積もり用）

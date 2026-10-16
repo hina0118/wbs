@@ -2,6 +2,7 @@ import { useRef, useState, useMemo, useEffect } from "react";
 import { Task } from "../types/task";
 import {
   toInputDate,
+  parseInputDate,
   genId,
   propagateDates,
   sortByTree,
@@ -44,6 +45,8 @@ interface AddState {
   name: string;
   startDate: string;
   endDate: string;
+  floatingStartDate: string;
+  floatingEndDate: string;
   color: string;
   copySourceId?: string;
   isFloating?: boolean;
@@ -136,6 +139,8 @@ export default function GanttChart({
       name: "",
       startDate: toInputDate(today),
       endDate: toInputDate(addDays(today, 6)),
+      floatingStartDate: "",
+      floatingEndDate: "",
       color: defaultColor,
     });
   }
@@ -150,6 +155,14 @@ export default function GanttChart({
       newEnd = new Date(addState.endDate);
       if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
     }
+
+    const floatingStartDate = addState.isFloating
+      ? parseInputDate(addState.floatingStartDate)
+      : undefined;
+    const floatingEndDate = addState.isFloating
+      ? parseInputDate(addState.floatingEndDate)
+      : undefined;
+    if (floatingStartDate && floatingEndDate && floatingStartDate > floatingEndDate) return;
 
     const copySource = addState.copySourceId
       ? tasks.find((t) => t.id === addState.copySourceId)
@@ -167,6 +180,8 @@ export default function GanttChart({
       color: addState.color,
       parentId: addState.parentId,
       isFloating: addState.isFloating || undefined,
+      floatingStartDate,
+      floatingEndDate,
       ...(copiedFields
         ? {
             assignee: copiedFields.assignee,
@@ -405,7 +420,34 @@ export default function GanttChart({
                   単発タスク（開始時期未定）
                 </label>
 
-                {!addState.isFloating && (
+                {addState.isFloating ? (
+                  <div className="modal-date-row">
+                    <div className="modal-date-field">
+                      <label className="modal-label">開始日（任意）</label>
+                      <input
+                        type="date"
+                        value={addState.floatingStartDate}
+                        max={addState.floatingEndDate || undefined}
+                        onChange={(e) =>
+                          setAddState({ ...addState, floatingStartDate: e.target.value })
+                        }
+                        className="date-input"
+                      />
+                    </div>
+                    <div className="modal-date-field">
+                      <label className="modal-label">終了日（任意）</label>
+                      <input
+                        type="date"
+                        value={addState.floatingEndDate}
+                        min={addState.floatingStartDate || undefined}
+                        onChange={(e) =>
+                          setAddState({ ...addState, floatingEndDate: e.target.value })
+                        }
+                        className="date-input"
+                      />
+                    </div>
+                  </div>
+                ) : (
                   <div className="modal-date-row">
                     <div className="modal-date-field">
                       <label className="modal-label">開始日</label>

@@ -10,6 +10,7 @@ import {
   propagateDates,
   getAllDescendantIds,
   toInputDate,
+  parseInputDate,
   archiveTask,
 } from "../utils/taskUtils";
 import { loadAppSettings, TaskType } from "../utils/settingsStorage";
@@ -137,6 +138,12 @@ export default function TaskEditModal({
   const [editStartDate, setEditStartDate] = useState(toInputDate(task.startDate));
   const [editEndDate, setEditEndDate] = useState(toInputDate(task.endDate));
   const [editIsFloating, setEditIsFloating] = useState(task.isFloating ?? false);
+  const [editFloatingStartDate, setEditFloatingStartDate] = useState(
+    task.floatingStartDate ? toInputDate(task.floatingStartDate) : "",
+  );
+  const [editFloatingEndDate, setEditFloatingEndDate] = useState(
+    task.floatingEndDate ? toInputDate(task.floatingEndDate) : "",
+  );
   const [editReminderDatetime, setEditReminderDatetime] = useState(task.reminder?.datetime ?? "");
   const [editReminderRepeat, setEditReminderRepeat] = useState<ReminderRepeat>(
     task.reminder?.repeat ?? "none",
@@ -198,6 +205,10 @@ export default function TaskEditModal({
       if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
     }
 
+    const floatingStartDate = editIsFloating ? parseInputDate(editFloatingStartDate) : undefined;
+    const floatingEndDate = editIsFloating ? parseInputDate(editFloatingEndDate) : undefined;
+    if (floatingStartDate && floatingEndDate && floatingStartDate > floatingEndDate) return;
+
     const progressCount =
       progressMode === "count" && totalCount > 0
         ? { done: doneCount, total: totalCount }
@@ -231,6 +242,8 @@ export default function TaskEditModal({
             memo: task.memo,
             progressCount,
             isFloating: editIsFloating || undefined,
+            floatingStartDate,
+            floatingEndDate,
             reminder,
             taskTypeId: editTaskTypeId || undefined,
             quantity,
@@ -276,7 +289,30 @@ export default function TaskEditModal({
         </label>
 
         {/* 期間 */}
-        {!editIsFloating && (
+        {editIsFloating ? (
+          <div className="modal-date-row">
+            <div className="modal-date-field">
+              <label className="modal-label">開始日（任意）</label>
+              <input
+                type="date"
+                value={editFloatingStartDate}
+                max={editFloatingEndDate || undefined}
+                onChange={(e) => setEditFloatingStartDate(e.target.value)}
+                className="date-input"
+              />
+            </div>
+            <div className="modal-date-field">
+              <label className="modal-label">終了日（任意）</label>
+              <input
+                type="date"
+                value={editFloatingEndDate}
+                min={editFloatingStartDate || undefined}
+                onChange={(e) => setEditFloatingEndDate(e.target.value)}
+                className="date-input"
+              />
+            </div>
+          </div>
+        ) : (
           <div className="modal-date-row">
             <div className="modal-date-field">
               <label className="modal-label">開始日</label>

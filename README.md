@@ -157,6 +157,8 @@ interface Task {
   progressCount?: { done: number; total: number }; // カンバン用件数カウント
   order?:         number;                          // 表示順序
   isFloating?:    boolean;                         // 開始時期不明のフローティングタスク
+  floatingStartDate?: Date;                        // 単発タスクの開始日（任意入力）
+  floatingEndDate?:   Date;                        // 単発タスクの終了日（任意入力）
   archived?:      boolean;                         // アーカイブ済み（非表示、データは保持）
   reminder?:      TaskReminder;                    // リマインダー設定
 }

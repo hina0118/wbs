@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Task, ReminderRepeat } from "../types/task";
 import { loadSampleTasks } from "../data/sampleData";
-import { toInputDate } from "./taskUtils";
+import { toInputDate, parseInputDate } from "./taskUtils";
 
 // ── JSON ↔ Task 変換 ──────────────────────────────────────
 
@@ -20,6 +20,8 @@ interface TaskRaw {
   progressCount?: { done: number; total: number };
   order?: number;
   isFloating?: boolean;
+  floatingStartDate?: string;
+  floatingEndDate?: string;
   archived?: boolean;
   reminder?: { datetime: string; notified: boolean; repeat?: string };
   taskTypeId?: string;
@@ -58,6 +60,8 @@ function toTask(raw: TaskRaw): Task {
     startDate,
     endDate,
     reminder,
+    floatingStartDate: raw.floatingStartDate ? parseInputDate(raw.floatingStartDate) : undefined,
+    floatingEndDate: raw.floatingEndDate ? parseInputDate(raw.floatingEndDate) : undefined,
   };
 }
 
@@ -65,11 +69,13 @@ function toRaw(task: Task): TaskRaw {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   // memo・hasMemo はサーバー側で管理するためシリアライズから除外
-  const { memo: _memo, hasMemo: _hasMemo, ...rest } = task;
+  const { memo: _memo, hasMemo: _hasMemo, floatingStartDate, floatingEndDate, ...rest } = task;
   return {
     ...rest,
     startDate: task.isFloating ? toInputDate(today) : toInputDate(task.startDate),
     endDate: task.isFloating ? toInputDate(today) : toInputDate(task.endDate),
+    floatingStartDate: floatingStartDate ? toInputDate(floatingStartDate) : undefined,
+    floatingEndDate: floatingEndDate ? toInputDate(floatingEndDate) : undefined,
   };
 }
 

@@ -7,6 +7,7 @@ import {
   computeProgress,
   getAncestorNames,
   toInputDate,
+  parseInputDate,
   genId,
   copyTaskFields,
   addDays,
@@ -74,6 +75,8 @@ interface AddState {
   name: string;
   startDate: string;
   endDate: string;
+  floatingStartDate: string;
+  floatingEndDate: string;
   color: string;
   parentId?: string;
   copySourceId?: string;
@@ -152,6 +155,8 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
       name: "",
       startDate: toInputDate(today),
       endDate: toInputDate(addDays(today, 6)),
+      floatingStartDate: "",
+      floatingEndDate: "",
       color: defaultColor,
       parentId: resolvedParentId,
     });
@@ -173,6 +178,14 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
       if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime()) || newStart > newEnd) return;
     }
 
+    const floatingStartDate = addState.isFloating
+      ? parseInputDate(addState.floatingStartDate)
+      : undefined;
+    const floatingEndDate = addState.isFloating
+      ? parseInputDate(addState.floatingEndDate)
+      : undefined;
+    if (floatingStartDate && floatingEndDate && floatingStartDate > floatingEndDate) return;
+
     const col = COLUMNS.find((c) => c.id === addState.columnId)!;
     const initProg = col.dropProgress(0);
 
@@ -190,7 +203,7 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
       endDate: newEnd,
       progress: initProg,
       color: addState.color,
-      ...(addState.isFloating ? { isFloating: true } : {}),
+      ...(addState.isFloating ? { isFloating: true, floatingStartDate, floatingEndDate } : {}),
       ...(addState.parentId ? { parentId: addState.parentId } : {}),
       ...(copiedFields
         ? {
@@ -377,9 +390,19 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
 
                       {/* フッター */}
                       <div className="kanban-card-footer">
-                        <span className="kanban-card-dates">
-                          {formatDateShort(task.startDate)} – {formatDateShort(task.endDate)}
-                        </span>
+                        {task.isFloating ? (
+                          (task.floatingStartDate || task.floatingEndDate) && (
+                            <span className="kanban-card-dates">
+                              {task.floatingStartDate ? formatDateShort(task.floatingStartDate) : "未定"}
+                              {" – "}
+                              {task.floatingEndDate ? formatDateShort(task.floatingEndDate) : "未定"}
+                            </span>
+                          )
+                        ) : (
+                          <span className="kanban-card-dates">
+                            {formatDateShort(task.startDate)} – {formatDateShort(task.endDate)}
+                          </span>
+                        )}
                         {task.assignee && (
                           <span
                             className="kanban-card-assignee"
@@ -547,7 +570,34 @@ export default function KanbanBoard({ tasks, onTasksChange }: Props) {
               単発タスク（開始時期未定）
             </label>
 
-            {!addState.isFloating && (
+            {addState.isFloating ? (
+              <div className="modal-date-row">
+                <div className="modal-date-field">
+                  <label className="modal-label">開始日（任意）</label>
+                  <input
+                    type="date"
+                    value={addState.floatingStartDate}
+                    max={addState.floatingEndDate || undefined}
+                    onChange={(e) =>
+                      setAddState({ ...addState, floatingStartDate: e.target.value })
+                    }
+                    className="date-input"
+                  />
+                </div>
+                <div className="modal-date-field">
+                  <label className="modal-label">終了日（任意）</label>
+                  <input
+                    type="date"
+                    value={addState.floatingEndDate}
+                    min={addState.floatingStartDate || undefined}
+                    onChange={(e) =>
+                      setAddState({ ...addState, floatingEndDate: e.target.value })
+                    }
+                    className="date-input"
+                  />
+                </div>
+              </div>
+            ) : (
               <div className="modal-date-row">
                 <div className="modal-date-field">
                   <label className="modal-label">開始日</label>
